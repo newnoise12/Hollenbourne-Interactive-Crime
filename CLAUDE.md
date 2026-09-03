@@ -5,6 +5,16 @@ Students work in teams (~8-10 teams, ~40 students) investigating a fictional
 murder case across a 12-week module, building "trust" through weekly
 institutional-review activities that unlock bonus investigation actions.
 
+**The module spec** — full case narrative, victims/suspects, and the
+week-by-week topic/activity/skills table for all 12 weeks — is
+`Reference/hollenbourne-activity-plan.md`. Treat that table as the
+authoritative plan for what each week's trust activity should be about when
+building future weeks (Week 2's ranking quiz is already built; Weeks 3-11
+each have a described activity — e.g. Week 3 is referencing/"Cite Them
+Right", Week 4 is a crime-data quiz, Week 5 a PACE quiz — none built yet).
+It also documents a case detail not yet in the app: a fourth victim, Sara
+Butt, not currently modelled in `lib/actions-catalog.ts`.
+
 ## Commands
 
 ```
@@ -67,12 +77,18 @@ npx drizzle-kit migrate   # applies migrations to the local dev.db
   both clean.
 
 **Not yet built — the next work:**
-- That was the last item on the original punch list. Next work is either
-  quizzes/trust activities for weeks other than Week 2 — same pattern
-  (`lib/quiz-catalog.ts` → `lib/quiz.ts` → `app/dashboard/quiz`) but
-  currently hardcoded to the one Week 2 quiz, would need generalizing (or
-  duplicating) once content for another week exists — or whatever the user
-  asks for next.
+- Trust activities for weeks other than Week 2, per the spec in
+  `Reference/hollenbourne-activity-plan.md`'s week-by-week table (Week 3
+  referencing, Week 4 crime-data quiz, Week 5 PACE quiz, Week 6 argument-
+  formation quiz, etc.) — same pattern as Week 2
+  (`lib/quiz-catalog.ts` → `lib/quiz.ts` → `app/dashboard/quiz`), currently
+  hardcoded to the one Week 2 quiz and would need generalizing (or
+  duplicating) once content for another week is written. Actual content
+  (readings, quiz questions, etc.) still needs authoring per week before
+  any of this can be built — the table names the topic/skill, not the
+  content itself.
+- Sara Butt (4th victim, per the activity plan) isn't represented in
+  `lib/actions-catalog.ts`'s re-interview/investigation actions yet.
 
 ## Env vars
 
