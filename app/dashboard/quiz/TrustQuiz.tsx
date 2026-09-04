@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { QuizItem } from "@/lib/quiz-catalog";
+import { MAX_ATTEMPTS, type QuizItem } from "@/lib/quiz-catalog";
 import type { QuizAttempt } from "@/lib/quiz";
 
 function shuffle<T>(items: T[]): T[] {
@@ -101,15 +101,28 @@ function StageResults({ items, order, points }: { items: QuizItem[]; order: stri
   );
 }
 
+function stagePoints(stage1Items: QuizItem[], stage2Items: QuizItem[], attempt: QuizAttempt) {
+  const stage1Correct = stage1Items.every((item) => attempt.answers.stage1Order[item.correctRank - 1] === item.id);
+  const anchor2A = stage2Items.find((i) => i.id === "2A")!;
+  const anchor2E = stage2Items.find((i) => i.id === "2E")!;
+  const stage2Correct =
+    attempt.answers.stage2Order[anchor2A.correctRank - 1] === anchor2A.id &&
+    attempt.answers.stage2Order[anchor2E.correctRank - 1] === anchor2E.id;
+  return { stage1Points: stage1Correct ? 1 : 0, stage2Points: stage2Correct ? 2 : 0 };
+}
+
 export default function TrustQuiz({
   stage1Items,
   stage2Items,
-  initialAttempt,
+  initialAttempts,
 }: {
   stage1Items: QuizItem[];
   stage2Items: QuizItem[];
-  initialAttempt: QuizAttempt | null;
+  initialAttempts: QuizAttempt[];
 }) {
+  const [attempts, setAttempts] = useState<QuizAttempt[]>(initialAttempts);
+  const [mode, setMode] = useState<"ranking" | "result">(initialAttempts.length > 0 ? "result" : "ranking");
+
   // Shuffled only after mount: shuffling during the initial render would run
   // once on the server and again on the client with a different result,
   // causing a hydration mismatch. Displaying in catalog order for one frame
@@ -125,21 +138,44 @@ export default function TrustQuiz({
     setDisplay2(shuffle(stage2Items));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const [stage1Order, setStage1Order] = useState<string[]>([]);
   const [stage2Order, setStage2Order] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState<QuizAttempt | null>(initialAttempt);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const rankOf = (order: string[], id: string) => (order.includes(id) ? order.indexOf(id) + 1 : null);
 
   const stage1Done = stage1Order.length === stage1Items.length;
   const stage2Done = stage2Order.length === stage2Items.length;
+  const anyProgress = stage1Order.length > 0 || stage2Order.length > 0;
 
   const pick1 = (id: string) => setStage1Order((prev) => (prev.includes(id) ? prev : [...prev, id]));
   const pick2 = (id: string) => setStage2Order((prev) => (prev.includes(id) ? prev : [...prev, id]));
 
-  const submit = async () => {
+  const resetRanking = () => {
+    setStage1Order([]);
+    setStage2Order([]);
+    setError(null);
+    setPendingSubmit(false);
+  };
+
+  const attemptsUsed = attempts.length;
+  const attemptsRemaining = MAX_ATTEMPTS - attemptsUsed;
+  const bestScore = attempts.length > 0 ? Math.max(...attempts.map((a) => a.score)) : null;
+  const latestAttempt = attempts[attempts.length - 1];
+
+  const startNewAttempt = () => {
+    resetRanking();
+    setDisplay1(shuffle(stage1Items));
+    setDisplay2(shuffle(stage2Items));
+    setMode("ranking");
+  };
+
+  const remainingAfterThis = attemptsRemaining - 1;
+
+  const confirmSubmit = async () => {
     setError(null);
     setSubmitting(true);
     try {
@@ -154,22 +190,20 @@ export default function TrustQuiz({
         setSubmitting(false);
         return;
       }
-      setAttempt(data.attempt);
+      setAttempts((prev) => [...prev, data.attempt]);
+      setMode("result");
+      setPendingSubmit(false);
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
       setSubmitting(false);
     }
   };
 
-  if (attempt) {
+  if (mode === "result" && latestAttempt) {
     // Recompute per-stage correctness for the two feedback banners below —
     // attempt.score is only the combined total (0-3), not split by stage.
-    const stage1Correct = stage1Items.every((item) => attempt.answers.stage1Order[item.correctRank - 1] === item.id);
-    const anchor2A = stage2Items.find((i) => i.id === "2A")!;
-    const anchor2E = stage2Items.find((i) => i.id === "2E")!;
-    const stage2Correct =
-      attempt.answers.stage2Order[anchor2A.correctRank - 1] === anchor2A.id &&
-      attempt.answers.stage2Order[anchor2E.correctRank - 1] === anchor2E.id;
+    const { stage1Points, stage2Points } = stagePoints(stage1Items, stage2Items, latestAttempt);
 
     return (
       <div className="bg-[#23262B] min-h-full px-6 py-8">
@@ -181,25 +215,41 @@ export default function TrustQuiz({
             </Link>
           </div>
           <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
-            Completed &mdash; here&apos;s how your team ranked each source, and why.
+            Attempt {attemptsUsed} of {MAX_ATTEMPTS} &mdash; here&apos;s how your team ranked each source, and why.
           </p>
 
-          <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4 mb-6 flex justify-between items-center">
-            <span className="font-mono text-sm text-[#2A2F27]">Score</span>
+          <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4 mb-2 flex justify-between items-center">
+            <span className="font-mono text-sm text-[#2A2F27]">This attempt&apos;s score</span>
             <span className="font-serif font-semibold text-xl text-[#2A2F27]">
-              {attempt.score} / {attempt.maxScore}
+              {latestAttempt.score} / {latestAttempt.maxScore}
             </span>
           </div>
-          <p className="font-mono text-xs text-[#8A8A80] mb-6 -mt-2">
-            This score has been applied as your team&apos;s trust bonus for{" "}
+          <p className="font-mono text-xs text-[#8A8A80] mb-6">
+            Best score so far: <span className="text-[#E8E1D0]">{bestScore} / {latestAttempt.maxScore}</span> &mdash; this
+            has been applied as your team&apos;s trust bonus for{" "}
             <Link href="/dashboard/actions" className="underline text-[#A6764A]">
               Week 2 investigation actions
             </Link>
             .
           </p>
 
-          <StageResults items={stage1Items} order={attempt.answers.stage1Order} points={stage1Correct ? 1 : 0} />
-          <StageResults items={stage2Items} order={attempt.answers.stage2Order} points={stage2Correct ? 2 : 0} />
+          <StageResults items={stage1Items} order={latestAttempt.answers.stage1Order} points={stage1Points} />
+          <StageResults items={stage2Items} order={latestAttempt.answers.stage2Order} points={stage2Points} />
+
+          {attemptsRemaining > 0 ? (
+            <div className="flex items-center gap-4 mt-2">
+              <button
+                onClick={startNewAttempt}
+                className="font-mono text-xs tracking-wide bg-transparent text-[#E8E1D0] px-5 py-2.5 border border-[#E8E1D0]"
+              >
+                TRY AGAIN ({attemptsRemaining} attempt{attemptsRemaining === 1 ? "" : "s"} left)
+              </button>
+            </div>
+          ) : (
+            <p className="font-mono text-xs text-[#8A8A80] mt-2">
+              No attempts remaining &mdash; your best score is locked in as the trust bonus.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -214,9 +264,13 @@ export default function TrustQuiz({
             back to dashboard
           </Link>
         </div>
-        <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
+        <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0">
           Ranking sources by trustworthiness. Click each item below in the order you&apos;d rank it, most trustworthy
-          first. This is a one-time task &mdash; your score (0&ndash;3) becomes your team&apos;s trust bonus for Week 2.
+          first.
+        </p>
+        <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
+          Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS} &mdash; your best score across all attempts (0&ndash;3) becomes
+          your team&apos;s trust bonus for Week 2.
         </p>
 
         <div className="mb-8">
@@ -227,14 +281,6 @@ export default function TrustQuiz({
           {display1.map((item) => (
             <ItemCard key={item.id} item={item} rank={rankOf(stage1Order, item.id)} onClick={() => pick1(item.id)} disabled={false} />
           ))}
-          {stage1Order.length > 0 && !stage1Done && (
-            <button
-              onClick={() => setStage1Order([])}
-              className="font-mono text-[11px] text-[#8A8A80] underline bg-transparent border-none cursor-pointer p-0"
-            >
-              start stage 1 over
-            </button>
-          )}
         </div>
 
         {stage1Done && (
@@ -246,29 +292,63 @@ export default function TrustQuiz({
             {display2.map((item) => (
               <ItemCard key={item.id} item={item} rank={rankOf(stage2Order, item.id)} onClick={() => pick2(item.id)} disabled={false} />
             ))}
-            {stage2Order.length > 0 && !stage2Done && (
-              <button
-                onClick={() => setStage2Order([])}
-                className="font-mono text-[11px] text-[#8A8A80] underline bg-transparent border-none cursor-pointer p-0"
-              >
-                start stage 2 over
-              </button>
-            )}
           </div>
         )}
 
-        {stage1Done && stage2Done && (
-          <div className="flex items-center gap-4">
-            <button
-              onClick={submit}
-              disabled={submitting}
-              className="font-mono text-xs tracking-wide bg-[#E8E1D0] text-[#2A2F27] px-5 py-2.5 border border-[#E8E1D0] disabled:opacity-50"
-            >
-              {submitting ? "SUBMITTING…" : "SUBMIT RANKING"}
-            </button>
-            {error && <p className="font-mono text-xs text-[#8B3226] m-0">{error}</p>}
+        {pendingSubmit ? (
+          <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4">
+            <p className="font-mono text-[13px] text-[#2A2F27] mb-1 mt-0">
+              This will be attempt {attemptsUsed + 1} of {MAX_ATTEMPTS}.
+            </p>
+            <p className="font-mono text-xs text-[#5B5A4E] mb-4 mt-0">
+              {remainingAfterThis > 0
+                ? `You'll have ${remainingAfterThis} attempt${remainingAfterThis === 1 ? "" : "s"} left after this one. Your best score across all attempts becomes your team's Week 2 trust bonus.`
+                : "This is your last attempt — there won't be any more after this."}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={confirmSubmit}
+                disabled={submitting}
+                className="font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] px-5 py-2.5 border border-[#2A2F27] disabled:opacity-50"
+              >
+                {submitting ? "SUBMITTING…" : "YES, SUBMIT"}
+              </button>
+              <button
+                onClick={() => setPendingSubmit(false)}
+                disabled={submitting}
+                className="font-mono text-xs tracking-wide bg-transparent text-[#5B5A4E] px-5 py-2.5 border border-[#5B5A4E] disabled:opacity-50"
+              >
+                CANCEL
+              </button>
+            </div>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setPendingSubmit(true)}
+                disabled={!stage1Done || !stage2Done}
+                className="font-mono text-xs tracking-wide bg-[#E8E1D0] text-[#2A2F27] px-5 py-2.5 border border-[#E8E1D0] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                SUBMIT RANKING
+              </button>
+              {anyProgress && (
+                <button
+                  onClick={resetRanking}
+                  className="font-mono text-xs tracking-wide bg-transparent text-[#8A8A80] px-5 py-2.5 border border-[#5B5A4E]"
+                >
+                  RESET
+                </button>
+              )}
+            </div>
+            {(!stage1Done || !stage2Done) && (
+              <p className="font-mono text-[11px] text-[#8A8A80] mt-2">
+                Rank every item in both stages before you can submit.
+              </p>
+            )}
+          </>
         )}
+        {error && <p className="font-mono text-xs text-[#8B3226] mt-3">{error}</p>}
       </div>
     </div>
   );

@@ -3,8 +3,9 @@ import { teams, evidenceCitations, actionLog } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCitationsForTeam } from "./evidence";
 import { getAllWeekState, getActionLog } from "./actions";
-import { getQuizAttempt } from "./quiz";
+import { getQuizAttempts } from "./quiz";
 import { EVIDENCE } from "./evidence-catalog";
+import { MAX_ATTEMPTS } from "./quiz-catalog";
 
 export type TeamSummary = {
   id: string;
@@ -12,8 +13,10 @@ export type TeamSummary = {
   createdAt: Date;
   citedCount: number;
   citableCount: number;
-  quizScore: number | null;
+  quizBestScore: number | null;
   quizMaxScore: number | null;
+  quizAttemptsUsed: number;
+  quizMaxAttempts: number;
   totalActionsSpent: number;
 };
 
@@ -25,11 +28,13 @@ export async function getAllTeamsSummary(): Promise<TeamSummary[]> {
 
   return Promise.all(
     allTeams.map(async (team) => {
-      const [citations, log, quiz] = await Promise.all([
+      const [citations, log, attempts] = await Promise.all([
         db.query.evidenceCitations.findMany({ where: eq(evidenceCitations.teamId, team.id) }),
         db.query.actionLog.findMany({ where: eq(actionLog.teamId, team.id) }),
-        getQuizAttempt(team.id),
+        getQuizAttempts(team.id),
       ]);
+
+      const bestScore = attempts.length > 0 ? Math.max(...attempts.map((a) => a.score)) : null;
 
       return {
         id: team.id,
@@ -37,8 +42,10 @@ export async function getAllTeamsSummary(): Promise<TeamSummary[]> {
         createdAt: team.createdAt,
         citedCount: citations.length,
         citableCount: CITABLE_COUNT,
-        quizScore: quiz?.score ?? null,
-        quizMaxScore: quiz?.maxScore ?? null,
+        quizBestScore: bestScore,
+        quizMaxScore: attempts[0]?.maxScore ?? null,
+        quizAttemptsUsed: attempts.length,
+        quizMaxAttempts: MAX_ATTEMPTS,
         totalActionsSpent: log.length, // one row per action taken; cost is implicit in the catalog, count is enough for an at-a-glance summary
       };
     })
@@ -50,7 +57,7 @@ export type TeamDetail = {
   citations: Awaited<ReturnType<typeof getCitationsForTeam>>;
   weekState: Awaited<ReturnType<typeof getAllWeekState>>;
   log: Awaited<ReturnType<typeof getActionLog>>;
-  quiz: Awaited<ReturnType<typeof getQuizAttempt>>;
+  quizAttempts: Awaited<ReturnType<typeof getQuizAttempts>>;
 };
 
 /** Full detail for one team — reuses the same queries the team's own dashboard pages use. */
@@ -58,11 +65,11 @@ export async function getTeamDetail(teamId: string): Promise<TeamDetail | null> 
   const team = await db.query.teams.findFirst({ where: eq(teams.id, teamId) });
   if (!team) return null;
 
-  const [citations, weekState, log, quiz] = await Promise.all([
+  const [citations, weekState, log, quizAttempts] = await Promise.all([
     getCitationsForTeam(team.id),
     getAllWeekState(team.id),
     getActionLog(team.id),
-    getQuizAttempt(team.id),
+    getQuizAttempts(team.id),
   ]);
 
   return {
@@ -70,6 +77,6 @@ export async function getTeamDetail(teamId: string): Promise<TeamDetail | null> 
     citations,
     weekState,
     log,
-    quiz,
+    quizAttempts,
   };
 }

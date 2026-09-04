@@ -53,12 +53,16 @@ npx drizzle-kit migrate   # applies migrations to the local dev.db
   feedback) and server-side (`lib/evidence.ts`, defense in depth).
 - The Week 2 trustworthiness-ranking quiz (`app/dashboard/quiz`), content
   from `Reference/week2-trustworthiness-quiz (1).md`, backed by
-  `quizAttempts`. One attempt per team (`lib/quiz.ts` rejects a second
-  submission). **This quiz is the institutional-review activity**: on
-  submission its score (0-3) is written directly as that team's Week 2
-  trust bonus via `setTrustBonus` in `lib/actions.ts` — confirmed
-  end-to-end (submitting the quiz changes the Week 2 available-actions count
-  on the actions page). The manual trust-bonus +/- control on the actions
+  `quizAttempts`. Up to `MAX_ATTEMPTS` (3, `lib/quiz-catalog.ts`) attempts
+  per team — `lib/quiz.ts` rejects a submission past that. Submitting shows
+  an in-page confirmation panel first (not `window.confirm` — that gets
+  silently suppressed by some automated/controlled browsers, confirmed
+  during testing) naming which attempt this is and how many are left.
+  **This quiz is the institutional-review activity**: the *best* score
+  across all attempts (not just the latest) is written as that team's Week
+  2 trust bonus via `setTrustBonus` in `lib/actions.ts` — confirmed
+  end-to-end, including that a worse later attempt doesn't lower an
+  already-earned trust bonus. The manual trust-bonus +/- control on the actions
   page still exists for weeks without a quiz behind them yet.
 - The instructor dashboard (`app/instructor`) — read-only cross-team view,
   gated by a single shared passcode (`INSTRUCTOR_PASSCODE_HASH` env var,

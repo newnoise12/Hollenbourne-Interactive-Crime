@@ -6,7 +6,7 @@ import { INSTRUCTOR_SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getTeamDetail } from "@/lib/instructor-data";
 import { getEvidenceItem } from "@/lib/evidence-catalog";
 import { BASELINE_ACTIONS, MAX_WEEK } from "@/lib/actions-catalog";
-import { STAGE_1_ITEMS, STAGE_2_ITEMS } from "@/lib/quiz-catalog";
+import { STAGE_1_ITEMS, STAGE_2_ITEMS, MAX_ATTEMPTS } from "@/lib/quiz-catalog";
 
 export default async function InstructorTeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
   const sessionId = (await cookies()).get(INSTRUCTOR_SESSION_COOKIE_NAME)?.value;
@@ -20,7 +20,8 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
     notFound();
   }
 
-  const { team, citations, weekState, log, quiz } = detail;
+  const { team, citations, weekState, log, quizAttempts } = detail;
+  const quizBestScore = quizAttempts.length > 0 ? Math.max(...quizAttempts.map((a) => a.score)) : null;
   const weeksWithActivity = Object.keys(weekState)
     .map(Number)
     .sort((a, b) => a - b);
@@ -107,45 +108,53 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
 
       <section>
         <h2 className="text-lg font-semibold mb-3">Week 2 trust activity</h2>
-        {!quiz ? (
+        {quizAttempts.length === 0 ? (
           <p className="text-sm text-neutral-500">Not attempted yet.</p>
         ) : (
           <div>
-            <p className="text-sm mb-3">
-              Score: <span className="font-semibold">{quiz.score} / {quiz.maxScore}</span> — completed{" "}
-              {quiz.completedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+            <p className="text-sm mb-5">
+              Best score: <span className="font-semibold">{quizBestScore} / {quizAttempts[0].maxScore}</span> (applied
+              as the Week 2 trust bonus) — {quizAttempts.length} of {MAX_ATTEMPTS} attempts used
             </p>
-            {[STAGE_1_ITEMS, STAGE_2_ITEMS].map((items, stageIdx) => {
-              const order = stageIdx === 0 ? quiz.answers.stage1Order : quiz.answers.stage2Order;
-              return (
-                <table key={stageIdx} className="w-full text-sm mb-4 border border-neutral-200 rounded-lg overflow-hidden">
-                  <thead>
-                    <tr className="bg-neutral-50 text-left text-neutral-500 border-b border-neutral-200">
-                      <th className="px-4 py-2 font-medium">Stage {stageIdx + 1} item</th>
-                      <th className="px-4 py-2 font-medium">Correct rank</th>
-                      <th className="px-4 py-2 font-medium">Team&apos;s rank</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...items]
-                      .sort((a, b) => a.correctRank - b.correctRank)
-                      .map((item) => {
-                        const yourRank = order.indexOf(item.id) + 1;
-                        const correct = yourRank === item.correctRank;
-                        return (
-                          <tr key={item.id} className="border-b border-neutral-100 last:border-0">
-                            <td className="px-4 py-2">
-                              {item.id} — {item.sourceType}
-                            </td>
-                            <td className="px-4 py-2">{item.correctRank}</td>
-                            <td className={`px-4 py-2 ${correct ? "text-green-700" : "text-red-700"}`}>{yourRank}</td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              );
-            })}
+            {quizAttempts.map((attempt, attemptIdx) => (
+              <div key={attemptIdx} className="mb-6">
+                <p className="text-sm font-medium mb-2">
+                  Attempt {attemptIdx + 1}: {attempt.score} / {attempt.maxScore} — completed{" "}
+                  {attempt.completedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+                {[STAGE_1_ITEMS, STAGE_2_ITEMS].map((items, stageIdx) => {
+                  const order = stageIdx === 0 ? attempt.answers.stage1Order : attempt.answers.stage2Order;
+                  return (
+                    <table key={stageIdx} className="w-full text-sm mb-4 border border-neutral-200 rounded-lg overflow-hidden">
+                      <thead>
+                        <tr className="bg-neutral-50 text-left text-neutral-500 border-b border-neutral-200">
+                          <th className="px-4 py-2 font-medium">Stage {stageIdx + 1} item</th>
+                          <th className="px-4 py-2 font-medium">Correct rank</th>
+                          <th className="px-4 py-2 font-medium">Team&apos;s rank</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...items]
+                          .sort((a, b) => a.correctRank - b.correctRank)
+                          .map((item) => {
+                            const yourRank = order.indexOf(item.id) + 1;
+                            const correct = yourRank === item.correctRank;
+                            return (
+                              <tr key={item.id} className="border-b border-neutral-100 last:border-0">
+                                <td className="px-4 py-2">
+                                  {item.id} — {item.sourceType}
+                                </td>
+                                <td className="px-4 py-2">{item.correctRank}</td>
+                                <td className={`px-4 py-2 ${correct ? "text-green-700" : "text-red-700"}`}>{yourRank}</td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
       </section>

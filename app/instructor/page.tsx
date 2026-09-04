@@ -52,10 +52,16 @@ export default async function InstructorDashboardPage() {
                     {team.citedCount} / {team.citableCount}
                   </td>
                   <td className="px-4 py-2.5">
-                    {team.quizScore === null ? (
+                    {team.quizBestScore === null ? (
                       <span className="text-neutral-400">not attempted</span>
                     ) : (
-                      `${team.quizScore} / ${team.quizMaxScore}`
+                      <>
+                        {team.quizBestScore} / {team.quizMaxScore}
+                        <span className="text-neutral-400">
+                          {" "}
+                          ({team.quizAttemptsUsed}/{team.quizMaxAttempts} attempts)
+                        </span>
+                      </>
                     )}
                   </td>
                   <td className="px-4 py-2.5">{team.totalActionsSpent}</td>

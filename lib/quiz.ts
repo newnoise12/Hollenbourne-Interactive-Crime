@@ -1,7 +1,16 @@
 import { db } from "@/db/client";
 import { quizAttempts } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { QUIZ_ID, QUIZ_WEEK, MAX_SCORE, STAGE_1_ITEMS, STAGE_2_ITEMS, scoreAttempt, isValidOrder } from "./quiz-catalog";
+import { eq, and, asc } from "drizzle-orm";
+import {
+  QUIZ_ID,
+  QUIZ_WEEK,
+  MAX_SCORE,
+  MAX_ATTEMPTS,
+  STAGE_1_ITEMS,
+  STAGE_2_ITEMS,
+  scoreAttempt,
+  isValidOrder,
+} from "./quiz-catalog";
 import { setTrustBonus } from "./actions";
 
 export class QuizError extends Error {}
@@ -15,31 +24,33 @@ export type QuizAttempt = {
   completedAt: Date;
 };
 
-/** Returns a team's attempt at the Week 2 quiz, or null if they haven't taken it. */
-export async function getQuizAttempt(teamId: string): Promise<QuizAttempt | null> {
-  const row = await db.query.quizAttempts.findFirst({
+/** Returns every attempt a team has made at the Week 2 quiz, oldest first. Empty if none yet. */
+export async function getQuizAttempts(teamId: string): Promise<QuizAttempt[]> {
+  const rows = await db.query.quizAttempts.findMany({
     where: and(eq(quizAttempts.teamId, teamId), eq(quizAttempts.quizId, QUIZ_ID)),
+    orderBy: asc(quizAttempts.completedAt),
   });
-  if (!row) return null;
 
-  return {
+  return rows.map((row) => ({
     score: row.score,
     maxScore: row.maxScore,
     answers: JSON.parse(row.answers) as QuizAnswers,
     completedAt: row.completedAt,
-  };
+  }));
 }
 
 /**
- * Scores and records a team's one and only attempt at the Week 2 quiz, then
- * grants the resulting score (0-3) as that week's trust bonus — this quiz
- * *is* the "institutional insight task" the action economy's trust bonus
- * refers to. Rejects a second attempt: this is a one-shot task, not a
- * retry-until-correct one, since the score directly grants a game resource.
+ * Scores and records one attempt at the Week 2 quiz (up to MAX_ATTEMPTS per
+ * team), then grants the *best* score across all attempts so far as that
+ * week's trust bonus — this quiz *is* the "institutional insight task" the
+ * action economy's trust bonus refers to. A later, worse attempt never
+ * lowers a trust bonus already earned by a better one.
  */
 export async function submitQuizAttempt(teamId: string, stage1Order: string[], stage2Order: string[]): Promise<QuizAttempt> {
-  const existing = await getQuizAttempt(teamId);
-  if (existing) throw new QuizError("This quiz has already been completed.");
+  const existing = await getQuizAttempts(teamId);
+  if (existing.length >= MAX_ATTEMPTS) {
+    throw new QuizError(`This quiz has already been attempted ${MAX_ATTEMPTS} times — no attempts left.`);
+  }
 
   if (!isValidOrder(stage1Order, STAGE_1_ITEMS) || !isValidOrder(stage2Order, STAGE_2_ITEMS)) {
     throw new QuizError("Invalid ranking submitted.");
@@ -60,7 +71,8 @@ export async function submitQuizAttempt(teamId: string, stage1Order: string[], s
     })
     .returning();
 
-  await setTrustBonus(teamId, QUIZ_WEEK, score);
+  const bestScore = Math.max(score, ...existing.map((a) => a.score));
+  await setTrustBonus(teamId, QUIZ_WEEK, bestScore);
 
   return { score: row.score, maxScore: row.maxScore, answers, completedAt: row.completedAt };
 }

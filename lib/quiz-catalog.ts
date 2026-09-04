@@ -30,6 +30,7 @@ export const QUIZ_ID = "week2-trustworthiness";
 export const QUIZ_WEEK = 2;
 export const QUIZ_TITLE = "Week 2 Trust Activity: Ranking Sources by Trustworthiness";
 export const MAX_SCORE = 3;
+export const MAX_ATTEMPTS = 3;
 
 export const STAGE_1_ITEMS: QuizItem[] = [
   {
