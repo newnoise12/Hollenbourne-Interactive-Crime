@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getAllWeekState, getActionLog } from "@/lib/actions";
+import { getTeamQuizAverage } from "@/lib/quiz";
 import { ACTIONS } from "@/lib/actions-catalog";
+import { QUIZ_WEEK } from "@/lib/quiz-catalog";
 import ActionEconomy from "./ActionEconomy";
 
 export default async function ActionsPage() {
@@ -14,7 +16,18 @@ export default async function ActionsPage() {
     redirect("/login");
   }
 
-  const [weekState, log] = await Promise.all([getAllWeekState(team.id), getActionLog(team.id)]);
+  const [weekState, log, quiz] = await Promise.all([
+    getAllWeekState(team.id),
+    getActionLog(team.id),
+    getTeamQuizAverage(team.id, QUIZ_WEEK),
+  ]);
 
-  return <ActionEconomy actions={ACTIONS} initialWeekState={weekState} initialLog={log} />;
+  return (
+    <ActionEconomy
+      actions={ACTIONS}
+      initialWeekState={weekState}
+      initialLog={log}
+      quizStudentsAttempted={quiz.studentsAttempted}
+    />
+  );
 }

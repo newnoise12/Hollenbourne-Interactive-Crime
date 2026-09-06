@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { CATEGORY_META, BASELINE_ACTIONS, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
+import { QUIZ_WEEK } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
 
 function Pips({ total, used }: { total: number; used: number }) {
@@ -66,10 +67,12 @@ export default function ActionEconomy({
   actions,
   initialWeekState,
   initialLog,
+  quizStudentsAttempted,
 }: {
   actions: ActionItem[];
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
+  quizStudentsAttempted: number;
 }) {
   const [week, setWeek] = useState(1);
   const [weekStateMap, setWeekStateMap] = useState<WeekStateMap>(initialWeekState);
@@ -80,6 +83,7 @@ export default function ActionEconomy({
   const current: WeekState = weekStateMap[week] ?? { trustBonus: 0, actionsSpent: 0 };
   const totalAvailable = BASELINE_ACTIONS + current.trustBonus;
   const remaining = totalAvailable - current.actionsSpent;
+  const isQuizWeek = week === QUIZ_WEEK;
 
   const changeWeek = (delta: number) => {
     setWeek((w) => Math.min(MAX_WEEK, Math.max(1, w + delta)));
@@ -160,27 +164,33 @@ export default function ActionEconomy({
 
           <div className="flex justify-between items-center mb-2.5 flex-wrap gap-2.5">
             <span className="font-mono text-xs text-[#5B5A4E]">
-              Trust bonus this week (from the institutional insight task)
+              {isQuizWeek
+                ? `Trust bonus this week (average of ${quizStudentsAttempted} student${quizStudentsAttempted === 1 ? "" : "s"}' quiz scores)`
+                : "Trust bonus this week (from the institutional insight task)"}
             </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => changeTrust(-1)}
-                disabled={current.trustBonus <= 0}
-                aria-label="Decrease trust bonus"
-                className={iconBtnClass(current.trustBonus <= 0)}
-              >
-                <MinusIcon size={14} />
-              </button>
+            {isQuizWeek ? (
               <span className="font-mono text-[13px] text-[#2A2F27] min-w-4 text-center">+{current.trustBonus}</span>
-              <button
-                onClick={() => changeTrust(1)}
-                disabled={current.trustBonus >= MAX_TRUST_BONUS}
-                aria-label="Increase trust bonus"
-                className={iconBtnClass(current.trustBonus >= MAX_TRUST_BONUS)}
-              >
-                <PlusIcon size={14} />
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => changeTrust(-1)}
+                  disabled={current.trustBonus <= 0}
+                  aria-label="Decrease trust bonus"
+                  className={iconBtnClass(current.trustBonus <= 0)}
+                >
+                  <MinusIcon size={14} />
+                </button>
+                <span className="font-mono text-[13px] text-[#2A2F27] min-w-4 text-center">+{current.trustBonus}</span>
+                <button
+                  onClick={() => changeTrust(1)}
+                  disabled={current.trustBonus >= MAX_TRUST_BONUS}
+                  aria-label="Increase trust bonus"
+                  className={iconBtnClass(current.trustBonus >= MAX_TRUST_BONUS)}
+                >
+                  <PlusIcon size={14} />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="border-t border-dotted border-[#A6764A] pt-3 flex justify-between items-center flex-wrap gap-2.5">

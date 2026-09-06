@@ -2,8 +2,33 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MAX_ATTEMPTS, type QuizItem } from "@/lib/quiz-catalog";
 import type { QuizAttempt } from "@/lib/quiz";
+
+function SwitchStudentLink({ studentName }: { studentName: string }) {
+  const router = useRouter();
+  const [switching, setSwitching] = useState(false);
+
+  const handleSwitch = async () => {
+    setSwitching(true);
+    await fetch("/api/students/forget", { method: "POST" });
+    router.refresh();
+  };
+
+  return (
+    <p className="font-mono text-[11px] text-[#8A8A80] mb-6 mt-0">
+      Answering as <span className="text-[#E8E1D0]">{studentName}</span> &mdash;{" "}
+      <button
+        onClick={handleSwitch}
+        disabled={switching}
+        className="underline bg-transparent border-none p-0 text-[#8A8A80] cursor-pointer disabled:opacity-50"
+      >
+        not you?
+      </button>
+    </p>
+  );
+}
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
@@ -115,10 +140,12 @@ export default function TrustQuiz({
   stage1Items,
   stage2Items,
   initialAttempts,
+  studentName,
 }: {
   stage1Items: QuizItem[];
   stage2Items: QuizItem[];
   initialAttempts: QuizAttempt[];
+  studentName: string;
 }) {
   const [attempts, setAttempts] = useState<QuizAttempt[]>(initialAttempts);
   const [mode, setMode] = useState<"ranking" | "result">(initialAttempts.length > 0 ? "result" : "ranking");
@@ -214,9 +241,10 @@ export default function TrustQuiz({
               back to dashboard
             </Link>
           </div>
-          <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
-            Attempt {attemptsUsed} of {MAX_ATTEMPTS} &mdash; here&apos;s how your team ranked each source, and why.
+          <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
+            Attempt {attemptsUsed} of {MAX_ATTEMPTS} &mdash; here&apos;s how you ranked each source, and why.
           </p>
+          <SwitchStudentLink studentName={studentName} />
 
           <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4 mb-2 flex justify-between items-center">
             <span className="font-mono text-sm text-[#2A2F27]">This attempt&apos;s score</span>
@@ -225,8 +253,8 @@ export default function TrustQuiz({
             </span>
           </div>
           <p className="font-mono text-xs text-[#8A8A80] mb-6">
-            Best score so far: <span className="text-[#E8E1D0]">{bestScore} / {latestAttempt.maxScore}</span> &mdash; this
-            has been applied as your team&apos;s trust bonus for{" "}
+            Your best score so far: <span className="text-[#E8E1D0]">{bestScore} / {latestAttempt.maxScore}</span> &mdash;
+            this is averaged with your teammates&apos; best scores to set the team&apos;s trust bonus for{" "}
             <Link href="/dashboard/actions" className="underline text-[#A6764A]">
               Week 2 investigation actions
             </Link>
@@ -268,10 +296,11 @@ export default function TrustQuiz({
           Ranking sources by trustworthiness. Click each item below in the order you&apos;d rank it, most trustworthy
           first.
         </p>
-        <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
-          Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS} &mdash; your best score across all attempts (0&ndash;3) becomes
-          your team&apos;s trust bonus for Week 2.
+        <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
+          Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS} &mdash; your best score across all attempts is averaged with
+          your teammates&apos; to set the team&apos;s trust bonus for Week 2.
         </p>
+        <SwitchStudentLink studentName={studentName} />
 
         <div className="mb-8">
           <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-1 mt-0">Stage 1 of 2</h2>

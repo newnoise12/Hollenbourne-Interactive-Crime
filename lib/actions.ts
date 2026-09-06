@@ -2,6 +2,8 @@ import { db } from "@/db/client";
 import { weekActionState, actionLog } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getActionItem, BASELINE_ACTIONS, MAX_TRUST_BONUS } from "./actions-catalog";
+import { QUIZ_WEEK } from "./quiz-catalog";
+import { getTeamQuizAverage } from "./quiz";
 
 export class ActionsError extends Error {}
 
@@ -16,6 +18,21 @@ export type LogEntry = {
   createdAt: Date;
 };
 
+/**
+ * A week's trust bonus, resolved from whichever source actually governs it:
+ * for the quiz week, that's the live average of the team's quiz scores
+ * (see getTeamQuizAverage, lib/quiz.ts) — never the stored column, which
+ * nothing writes to for that week any more. Every other week still reads
+ * the manually-set stored value.
+ */
+async function resolveTrustBonus(teamId: string, week: number, storedTrustBonus: number): Promise<number> {
+  if (week === QUIZ_WEEK) {
+    const { average } = await getTeamQuizAverage(teamId, week);
+    return average ?? 0;
+  }
+  return storedTrustBonus;
+}
+
 /** Reads every week's trust bonus + spend for a team, keyed by week number. */
 export async function getAllWeekState(teamId: string): Promise<WeekStateMap> {
   const rows = await db.query.weekActionState.findMany({
@@ -24,7 +41,14 @@ export async function getAllWeekState(teamId: string): Promise<WeekStateMap> {
 
   const map: WeekStateMap = {};
   for (const row of rows) {
-    map[row.week] = { trustBonus: row.trustBonus, actionsSpent: row.actionsSpent };
+    map[row.week] = { trustBonus: await resolveTrustBonus(teamId, row.week, row.trustBonus), actionsSpent: row.actionsSpent };
+  }
+  // The quiz week's trust bonus can be live even before any actions have
+  // been taken (and so before any weekActionState row exists) — make sure
+  // it still shows up rather than defaulting to 0 baseline-only.
+  if (!(QUIZ_WEEK in map)) {
+    const trustBonus = await resolveTrustBonus(teamId, QUIZ_WEEK, 0);
+    if (trustBonus > 0) map[QUIZ_WEEK] = { trustBonus, actionsSpent: 0 };
   }
   return map;
 }
@@ -51,8 +75,17 @@ async function getWeekRow(teamId: string, week: number) {
   });
 }
 
-/** Sets a team's trust bonus for a given week (clamped 0-MAX_TRUST_BONUS). */
+/**
+ * Sets a team's trust bonus for a given week (clamped 0-MAX_TRUST_BONUS).
+ * Rejected for the quiz week — that value is computed live from quiz
+ * scores (see resolveTrustBonus above) and manual edits would either be
+ * silently overridden or, worse, visibly ignored.
+ */
 export async function setTrustBonus(teamId: string, week: number, trustBonus: number): Promise<WeekState> {
+  if (week === QUIZ_WEEK) {
+    throw new ActionsError("This week's trust bonus is set automatically from the quiz average and can't be edited manually.");
+  }
+
   const clamped = Math.min(MAX_TRUST_BONUS, Math.max(0, Math.round(trustBonus)));
 
   const [row] = await db
@@ -70,14 +103,15 @@ export async function setTrustBonus(teamId: string, week: number, trustBonus: nu
 /**
  * Spends the given action's cost against a team's weekly budget and records
  * it in the permanent action log. Remaining budget is always recomputed from
- * the current DB row — a client-sent "remaining" is never trusted.
+ * the current DB row (and, for the quiz week, the live quiz average) — a
+ * client-sent "remaining" is never trusted.
  */
 export async function takeAction(teamId: string, week: number, actionId: string): Promise<{ weekState: WeekState; logEntry: LogEntry }> {
   const action = getActionItem(actionId);
   if (!action) throw new ActionsError("Unknown action.");
 
   const existing = await getWeekRow(teamId, week);
-  const trustBonus = existing?.trustBonus ?? 0;
+  const trustBonus = await resolveTrustBonus(teamId, week, existing?.trustBonus ?? 0);
   const actionsSpent = existing?.actionsSpent ?? 0;
   const remaining = BASELINE_ACTIONS + trustBonus - actionsSpent;
 
@@ -102,7 +136,7 @@ export async function takeAction(teamId: string, week: number, actionId: string)
     .returning();
 
   return {
-    weekState: { trustBonus: weekRow.trustBonus, actionsSpent: weekRow.actionsSpent },
+    weekState: { trustBonus, actionsSpent: weekRow.actionsSpent },
     logEntry: {
       week: logRow.week,
       actionId: logRow.actionId,

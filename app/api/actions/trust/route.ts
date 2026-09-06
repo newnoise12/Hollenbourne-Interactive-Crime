@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
-import { setTrustBonus } from "@/lib/actions";
+import { setTrustBonus, ActionsError } from "@/lib/actions";
 import { MAX_WEEK } from "@/lib/actions-catalog";
 
 export async function PATCH(req: NextRequest) {
@@ -24,6 +24,14 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "A valid week and trustBonus are required." }, { status: 400 });
   }
 
-  const weekState = await setTrustBonus(team.id, week, trustBonus);
-  return NextResponse.json({ weekState });
+  try {
+    const weekState = await setTrustBonus(team.id, week, trustBonus);
+    return NextResponse.json({ weekState });
+  } catch (e) {
+    if (e instanceof ActionsError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    console.error("Unexpected error in /api/actions/trust:", e);
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+  }
 }

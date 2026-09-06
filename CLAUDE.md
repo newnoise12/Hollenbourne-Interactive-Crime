@@ -26,6 +26,15 @@ npx drizzle-kit generate  # after changing db/schema.ts, generates SQL migration
 npx drizzle-kit migrate   # applies migrations to the local dev.db
 ```
 
+**`drizzle-kit generate` needs a real TTY the moment a schema change looks
+like a rename** (dropping a column while adding others in the same table)
+— it tries to interactively ask "did you rename X to Y?" and, with no TTY
+available, fails outright rather than falling back to a default. Workaround:
+split the change into two `generate`/`migrate` cycles — first a pure
+addition (new columns alongside the old one), then a second pass that
+drops the old column alone. Neither step alone is a rename candidate, so
+neither prompts.
+
 ## Architecture
 
 - **Next.js (App Router)** + TypeScript + Tailwind
@@ -35,8 +44,9 @@ npx drizzle-kit migrate   # applies migrations to the local dev.db
   team (bcrypt-hashed passcode), session via HTTP-only cookie, 30-day expiry.
 - **Data model** (`db/schema.ts`): teams, sessions, weekly action-point state
   (resets each week — this is deliberate, matches the game's trust mechanic),
-  a permanent action log (does NOT reset), evidence citations per team, quiz
-  attempts.
+  a permanent action log (does NOT reset), evidence citations per team,
+  students (named individuals within a team, no auth of their own — see
+  below), quiz attempts (per student, not per team).
 
 ## Current state (as of last session)
 
@@ -53,30 +63,57 @@ npx drizzle-kit migrate   # applies migrations to the local dev.db
   feedback) and server-side (`lib/evidence.ts`, defense in depth).
 - The Week 2 trustworthiness-ranking quiz (`app/dashboard/quiz`), content
   from `Reference/week2-trustworthiness-quiz (1).md`, backed by
-  `quizAttempts`. Up to `MAX_ATTEMPTS` (3, `lib/quiz-catalog.ts`) attempts
-  per team — `lib/quiz.ts` rejects a submission past that. Submitting shows
-  an in-page confirmation panel first (not `window.confirm` — that gets
-  silently suppressed by some automated/controlled browsers, confirmed
-  during testing) naming which attempt this is and how many are left.
-  **This quiz is the institutional-review activity**: the *best* score
-  across all attempts (not just the latest) is written as that team's Week
-  2 trust bonus via `setTrustBonus` in `lib/actions.ts` — confirmed
-  end-to-end, including that a worse later attempt doesn't lower an
-  already-earned trust bonus. The manual trust-bonus +/- control on the actions
-  page still exists for weeks without a quiz behind them yet.
-- The instructor dashboard (`app/instructor`) — read-only cross-team view,
-  gated by a single shared passcode (`INSTRUCTOR_PASSCODE_HASH` env var,
-  bcrypt-hashed, checked in `lib/instructor-auth.ts`) rather than per-team
-  accounts, since there's no real "instructor" entity to attach a passcode
-  to. Sessions use a separate table/cookie (`instructorSessions`,
-  `INSTRUCTOR_SESSION_COOKIE_NAME`) from team sessions, so an instructor and
-  a team can be logged in in the same browser without clobbering each other
-  — confirmed. `/instructor` lists every team with a summary (exhibits
-  cited, quiz score, actions taken); `/instructor/teams/[teamId]` shows full
-  detail by reusing the same query functions the team-facing pages already
-  use (`getCitationsForTeam`, `getAllWeekState`/`getActionLog`,
-  `getQuizAttempt`) — no parallel data layer. Read-only by design; no
-  grading/override UI.
+  `quizAttempts` — **attributed to individual students, not the team**.
+  Evidence board and action economy stay team-shared (unchanged, one login
+  per team); only the quiz needs to know who's answering, since the trust
+  bonus is now the average of the team's members' scores, not one shared
+  score. `app/dashboard/quiz/WhoAreYou.tsx` handles this: a lightweight
+  dropdown-of-existing-names-or-add-a-new-one, no passwords, backed by
+  `lib/students.ts`'s `students` table and a plain (non-auth)
+  `STUDENT_COOKIE_NAME` cookie that's re-validated against the
+  *currently-logged-in team* on every read — this is what makes it safe on
+  a shared classroom computer (logging into a different team doesn't
+  inherit the previous team's student identity; `app/api/auth/logout`
+  also clears it directly).
+  Up to `MAX_ATTEMPTS` (3, `lib/quiz-catalog.ts`) attempts **per student**
+  — `lib/quiz.ts`'s `submitQuizAttempt` rejects a submission past that.
+  Submitting shows an in-page confirmation panel first (not
+  `window.confirm` — that gets silently suppressed by some
+  automated/controlled browsers, confirmed during testing) naming which
+  attempt this is and how many are left.
+  **This quiz is the institutional-review activity**: a team's trust bonus
+  for the quiz week is *derived live*, not stored — `lib/actions.ts`'s
+  `resolveTrustBonus` computes it on every read as the rounded average of
+  each contributing student's *best* score (`getTeamQuizAverage`,
+  `lib/quiz.ts`), so nothing ever writes a stale value and the manual
+  trust-bonus +/- control on the actions page is rejected server-side
+  (`setTrustBonus` throws) for that week — confirmed end-to-end, including
+  that the control disappears from the UI too. Every `quizAttempts` row
+  also stores `teamIdAtAttempt` (the student's team *at submission time*,
+  captured once, never updated) separately from the student's *current*
+  team (`students.teamId`) — averages are grouped by `teamIdAtAttempt`, so
+  an instructor moving a student to a different team later never changes a
+  past week's average for either team. Confirmed end-to-end: moved a
+  student mid-session and verified both teams' Week 2 averages were
+  untouched.
+- The instructor dashboard (`app/instructor`) — read-only cross-team view
+  plus one write action (student reassignment), gated by a single shared
+  passcode (`INSTRUCTOR_PASSCODE_HASH` env var, bcrypt-hashed, checked in
+  `lib/instructor-auth.ts`) rather than per-team accounts, since there's no
+  real "instructor" entity to attach a passcode to. Sessions use a separate
+  table/cookie (`instructorSessions`, `INSTRUCTOR_SESSION_COOKIE_NAME`)
+  from team sessions, so an instructor and a team can be logged in in the
+  same browser without clobbering each other — confirmed. `/instructor`
+  lists every team with a summary (exhibits cited, quiz average, actions
+  taken) plus a Students section for moving a student between teams
+  (`app/instructor/StudentsPanel.tsx` → `app/api/instructor/reassign-student`
+  → `lib/students.ts`'s `reassignStudentTeam`, which touches only
+  `students.teamId`, never `quizAttempts`); `/instructor/teams/[teamId]`
+  shows full detail by reusing the same query functions the team-facing
+  pages already use (`getCitationsForTeam`, `getAllWeekState`/
+  `getActionLog`, `getTeamQuizAverage`/`getTeamQuizBreakdown`) — no
+  parallel data layer. Otherwise read-only by design; no grading/override
+  UI beyond the one reassignment control.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
@@ -109,16 +146,17 @@ unescaped bcrypt hash (every `$2b`, `$10`, and the `$<salt+hash>` segment
 each get eaten). This cost real debugging time once already — don't
 re-introduce an unescaped hash in an env file.
 
-## Windows/OneDrive dev note
+## Repo location
 
-This repo lives inside a synced OneDrive folder. Turbopack's persistent
-cache (`.next/cache`) has been seen to corrupt here (`Failed to restore
-meta for task...` panics) — most likely `next build` and `next dev` fighting
-over the same `.next` directory, or OneDrive syncing mid-write. If the dev
-server or build starts throwing Turbopack `TurbopackInternalError`s: stop
-the dev server first, `rm -rf .next node_modules/.cache`, then restart.
-Never run `next build` while `next dev` is running against the same
-`.next` directory.
+Lives at `C:\dev\hollenbourne-app`, tracked with a local git repo (no
+remote yet) — moved out of the OneDrive-synced Documents folder it started
+in, because OneDrive's file sync was intermittently corrupting Turbopack's
+persistent cache (`Failed to restore meta for task...` panics) and, more
+importantly, there was no real version control at all before this. Still
+good practice never to run `next build` while `next dev` is running
+against the same `.next` directory (stop the dev server first) — if a
+Turbopack `TurbopackInternalError` ever shows up again, `rm -rf .next
+node_modules/.cache` and restart.
 
 ## Decisions worth knowing (so they don't get re-litigated)
 

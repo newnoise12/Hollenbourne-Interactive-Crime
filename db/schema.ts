@@ -84,11 +84,40 @@ export const evidenceCitations = sqliteTable(
   (table) => [uniqueIndex("team_exhibit_idx").on(table.teamId, table.exhibitId)]
 );
 
-// One row per quiz a team has completed — answers kept as JSON text rather
-// than a full normalised answers table, to keep this simple for now.
+// A named individual within a team. Teams share one login (evidence board,
+// action economy stay team-shared, no individual auth there) — students
+// exist only so quiz attempts can be attributed to a person rather than
+// the whole team. No passwords: picking/typing a name is enough.
+export const students = sqliteTable(
+  "students",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [uniqueIndex("team_student_name_idx").on(table.teamId, table.name)]
+);
+
+// One row per quiz attempt by one student — answers kept as JSON text
+// rather than a full normalised answers table, to keep this simple for now.
+//
+// teamIdAtAttempt captures the student's team *at the moment they
+// submitted*, and is never updated after the fact. This is deliberate: an
+// instructor can move a student to a different team later (see
+// reassignStudentTeam in lib/students.ts), but a past week's team average
+// must never change as a result — grouping by teamIdAtAttempt rather than
+// the student's current team makes that automatic.
 export const quizAttempts = sqliteTable("quiz_attempts", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  teamId: text("team_id")
+  studentId: text("student_id")
+    .notNull()
+    .references(() => students.id, { onDelete: "cascade" }),
+  teamIdAtAttempt: text("team_id_at_attempt")
     .notNull()
     .references(() => teams.id, { onDelete: "cascade" }),
   quizId: text("quiz_id").notNull(),

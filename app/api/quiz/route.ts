@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getTeamForSession } from "@/lib/auth";
-import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
+import { SESSION_COOKIE_NAME, STUDENT_COOKIE_NAME } from "@/lib/session-cookie";
+import { getStudentById } from "@/lib/students";
 import { submitQuizAttempt, QuizError } from "@/lib/quiz";
 
 export async function POST(req: NextRequest) {
-  const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const team = await getTeamForSession(sessionId);
   if (!team) {
     return NextResponse.json({ error: "Not logged in." }, { status: 401 });
+  }
+
+  const studentId = cookieStore.get(STUDENT_COOKIE_NAME)?.value;
+  const student = studentId ? await getStudentById(studentId) : null;
+  if (!student || student.teamId !== team.id) {
+    return NextResponse.json({ error: "Select who you are first." }, { status: 400 });
   }
 
   let body: { stage1Order?: string[]; stage2Order?: string[] };
@@ -24,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const attempt = await submitQuizAttempt(team.id, stage1Order, stage2Order);
+    const attempt = await submitQuizAttempt(student.id, team.id, stage1Order, stage2Order);
     return NextResponse.json({ attempt });
   } catch (e) {
     if (e instanceof QuizError) {

@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { isValidInstructorSession } from "@/lib/instructor-auth";
 import { INSTRUCTOR_SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getAllTeamsSummary } from "@/lib/instructor-data";
+import { getAllStudentsWithTeams } from "@/lib/students";
 import LogoutButton from "./LogoutButton";
+import StudentsPanel from "./StudentsPanel";
 
 export default async function InstructorDashboardPage() {
   const sessionId = (await cookies()).get(INSTRUCTOR_SESSION_COOKIE_NAME)?.value;
@@ -12,7 +14,7 @@ export default async function InstructorDashboardPage() {
     redirect("/instructor/login");
   }
 
-  const teams = await getAllTeamsSummary();
+  const [teams, students] = await Promise.all([getAllTeamsSummary(), getAllStudentsWithTeams()]);
 
   return (
     <main className="flex-1 px-4 py-10 max-w-4xl mx-auto w-full">
@@ -52,14 +54,14 @@ export default async function InstructorDashboardPage() {
                     {team.citedCount} / {team.citableCount}
                   </td>
                   <td className="px-4 py-2.5">
-                    {team.quizBestScore === null ? (
+                    {team.quizAverage === null ? (
                       <span className="text-neutral-400">not attempted</span>
                     ) : (
                       <>
-                        {team.quizBestScore} / {team.quizMaxScore}
+                        avg {team.quizAverage} / 3
                         <span className="text-neutral-400">
                           {" "}
-                          ({team.quizAttemptsUsed}/{team.quizMaxAttempts} attempts)
+                          ({team.quizStudentsAttempted} student{team.quizStudentsAttempted === 1 ? "" : "s"})
                         </span>
                       </>
                     )}
@@ -76,6 +78,16 @@ export default async function InstructorDashboardPage() {
           </table>
         </div>
       )}
+
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-1">Students</h2>
+        <p className="text-sm text-neutral-500 mb-4">
+          Move a student to a different team. This only changes where they show up going forward — past quiz
+          attempts stay attributed to whichever team they were on when they took them, so moving someone doesn&apos;t
+          change any earlier week&apos;s trust bonus for either team.
+        </p>
+        <StudentsPanel students={students} teams={teams.map((t) => ({ id: t.id, name: t.name }))} />
+      </div>
     </main>
   );
 }

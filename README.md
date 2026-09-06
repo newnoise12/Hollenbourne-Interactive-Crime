@@ -37,9 +37,10 @@ reference).
   individual student logins. Passcodes are hashed, never stored in plain text.
 - **Sessions** — cookie-based, 30-day expiry (a term shouldn't log anyone out
   mid-week).
-- **Database** — six tables: teams, sessions, weekly action-point state
+- **Database** — seven tables: teams, sessions, weekly action-point state
   (resets each week), a permanent action log (doesn't reset), evidence
-  citations per team, and quiz attempts.
+  citations per team, students (named individuals within a team, no login
+  of their own), and quiz attempts (per student).
 - **Case log (evidence board)** — `/dashboard/case-log`, backed by the
   `evidenceCitations` table. Citation validation (assisted-fields and
   free-text paths) runs both client- and server-side.
@@ -47,12 +48,19 @@ reference).
   `weekActionState`/`actionLog`. Trust bonus is a manual per-team control
   for weeks without a quiz driving it (see below).
 - **Week 2 trust activity (quiz)** — `/dashboard/quiz`, backed by
-  `quizAttempts`. One attempt per team; the score becomes that team's Week 2
-  trust bonus automatically.
+  `quizAttempts`, attributed to individual students (a lightweight "who's
+  answering" step, no passwords — evidence board and action economy stay
+  team-shared). Up to 3 attempts per student; a team's Week 2 trust bonus
+  is the live average of its members' best scores, so it updates
+  automatically as more students answer and never needs manual editing.
 - **Instructor dashboard** — `/instructor`, gated by a single shared
-  passcode (see setup above, not per-team accounts). Read-only: a summary
-  table of every team plus a per-team detail view (citations, week-by-week
-  action state, quiz answers).
+  passcode (see setup above, not per-team accounts). Mostly read-only — a
+  summary table of every team plus a per-team detail view (citations,
+  week-by-week action state, per-student quiz breakdown) — plus one write
+  action: moving a student to a different team. A move only changes where
+  they show up going forward; their past quiz attempts stay attributed to
+  whichever team they were on when they took them, so it never changes an
+  already-recorded week's trust bonus for either team.
 
 ## What's not built yet
 
