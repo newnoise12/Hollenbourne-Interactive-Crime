@@ -24,34 +24,55 @@ function Pips({ total, used }: { total: number; used: number }) {
   return <div className="flex gap-1.5">{pips}</div>;
 }
 
-function ActionCard({ action, canAfford, onTake }: { action: ActionItem; canAfford: boolean; onTake: () => void }) {
+function ActionCard({
+  action,
+  canAfford,
+  locked,
+  prerequisiteLabel,
+  onTake,
+}: {
+  action: ActionItem;
+  canAfford: boolean;
+  locked: boolean;
+  prerequisiteLabel: string | null;
+  onTake: () => void;
+}) {
   const meta = CATEGORY_META[action.category];
+  const disabled = locked || !canAfford;
   return (
     <div
       className="bg-[#E8E1D0] border border-[#D6CDB4] border-l-4 px-4 py-3.5 mb-3"
-      style={{ borderLeftColor: meta.color }}
+      style={{ borderLeftColor: locked ? "#8A8A80" : meta.color, opacity: locked ? 0.6 : 1 }}
     >
       <div className="flex justify-between items-baseline mb-1.5 flex-wrap gap-2">
-        <span className="font-mono text-[11px]" style={{ color: meta.color }}>
+        <span className="font-mono text-[11px]" style={{ color: locked ? "#8A8A80" : meta.color }}>
           {meta.label}
         </span>
-        <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#D6CDB4] px-2 py-0.5">
-          cost: {action.cost}
-        </span>
+        <div className="flex gap-2">
+          {locked && (
+            <span className="font-mono text-[11px] text-[#8A8A80] border border-[#8A8A80] px-2 py-0.5">LOCKED</span>
+          )}
+          <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#D6CDB4] px-2 py-0.5">
+            cost: {action.cost}
+          </span>
+        </div>
       </div>
       <h4 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-1 mt-0">{action.label}</h4>
       <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{action.description}</p>
+      {locked && prerequisiteLabel && (
+        <p className="font-mono text-xs text-[#8B3226] mb-2.5 mt-0">requires: {prerequisiteLabel}</p>
+      )}
       <button
         onClick={onTake}
-        disabled={!canAfford}
+        disabled={disabled}
         className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
         style={{
-          borderColor: canAfford ? "#2A2F27" : "#D6CDB4",
-          color: canAfford ? "#2A2F27" : "#D6CDB4",
-          cursor: canAfford ? "pointer" : "not-allowed",
+          borderColor: disabled ? "#D6CDB4" : "#2A2F27",
+          color: disabled ? "#D6CDB4" : "#2A2F27",
+          cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
-        {canAfford ? "TAKE ACTION" : "NOT ENOUGH ACTIONS"}
+        {locked ? "LOCKED" : canAfford ? "TAKE ACTION" : "NOT ENOUGH ACTIONS"}
       </button>
     </div>
   );
@@ -85,6 +106,13 @@ export default function ActionEconomy({
   const remaining = totalAvailable - current.actionsSpent;
   const isQuizWeek = week === QUIZ_WEEK;
 
+  // Prerequisites are permanent, not weekly — completed in any week, on any
+  // team's own timeline, they stay completed. Derived from the live log
+  // state so a just-taken prerequisite unlocks its follow-up immediately,
+  // without needing a reload.
+  const completedActionIds = new Set(log.map((entry) => entry.actionId));
+  const actionsById = new Map(actions.map((a) => [a.id, a]));
+
   const changeWeek = (delta: number) => {
     setWeek((w) => Math.min(MAX_WEEK, Math.max(1, w + delta)));
   };
@@ -111,7 +139,8 @@ export default function ActionEconomy({
   };
 
   const takeAction = async (action: ActionItem) => {
-    if (remaining < action.cost || pending) return;
+    const locked = !!action.prerequisiteActionId && !completedActionIds.has(action.prerequisiteActionId);
+    if (locked || remaining < action.cost || pending) return;
     setSaveError(false);
     setPending(true);
     try {
@@ -201,9 +230,21 @@ export default function ActionEconomy({
           </div>
         </div>
 
-        {actions.map((action) => (
-          <ActionCard key={action.id} action={action} canAfford={remaining >= action.cost && !pending} onTake={() => takeAction(action)} />
-        ))}
+        {actions.map((action) => {
+          const locked = !!action.prerequisiteActionId && !completedActionIds.has(action.prerequisiteActionId);
+          const prerequisite = action.prerequisiteActionId ? actionsById.get(action.prerequisiteActionId) : undefined;
+          const prerequisiteLabel = prerequisite ? prerequisite.shortLabel ?? prerequisite.label : null;
+          return (
+            <ActionCard
+              key={action.id}
+              action={action}
+              canAfford={remaining >= action.cost && !pending}
+              locked={locked}
+              prerequisiteLabel={prerequisiteLabel}
+              onTake={() => takeAction(action)}
+            />
+          );
+        })}
 
         <div className="mt-7">
           <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-3 mt-0">Case action log</h2>

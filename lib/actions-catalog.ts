@@ -8,9 +8,18 @@ export type ActionItem = {
   id: string;
   category: ActionCategory;
   label: string;
+  // Short human-readable form used only in "requires: X" hints when this
+  // action is referenced as another action's prerequisite. Falls back to
+  // the full label if not set — only worth setting when label is long.
+  shortLabel?: string;
   description: string;
   cost: number;
   outcome: string;
+  // If set, this action can't be taken until the team's permanent action
+  // log already contains a completed entry for this other action's id —
+  // any week, not just the current one (see lib/actions.ts's takeAction).
+  // A generic, reusable mechanic: not tied to any one chain of actions.
+  prerequisiteActionId?: string;
 };
 
 export const CATEGORY_META: Record<ActionCategory, { label: string; color: string }> = {
@@ -105,6 +114,33 @@ export const ACTIONS: ActionItem[] = [
     description: "Door-to-door follow-up for anyone who saw something unreported at the time.",
     cost: 1,
     outcome: "A resident recalls 'a big bloke in a puffer coat' near the tenements — vague, but consistent with earlier descriptions.",
+  },
+  {
+    id: "traffic-cam-hollen-marsh",
+    category: "visual",
+    label: "Request local authority traffic camera footage, Hollen Marsh access roads",
+    shortLabel: "traffic camera footage",
+    description: "Pull traffic-camera footage from the roads leading into and out of Hollen Marsh around the estimated time of death.",
+    cost: 2,
+    outcome: "A council camera shows a dark 4x4 travelling toward Hollen Marsh at 9:14pm, and returning the other way at 9:52pm. The plate is clearly readable.",
+  },
+  {
+    id: "canvass-doorbell-mason",
+    category: "visual",
+    label: "Canvass the residential street for doorbell/ring camera footage",
+    shortLabel: "doorbell camera footage",
+    description: "Door-to-door canvass of the residential street nearest the car park, checking doorbell and home-security cameras for anything unreported.",
+    cost: 1,
+    outcome: "One homeowner's doorbell camera catches a heavy-set man on foot at 9:47pm, carrying something bulky, moving without any obvious reason to be on that particular street. Not identifiable with certainty — but the timing sits precisely inside the window the vehicle was parked at Hollen Marsh.",
+  },
+  {
+    id: "vehicle-reg-lookup",
+    category: "forensic",
+    label: "Run the vehicle registration",
+    description: "Cross-reference the plate read from the traffic-camera footage against DVLA records.",
+    cost: 1,
+    prerequisiteActionId: "traffic-cam-hollen-marsh",
+    outcome: "Registered keeper: Mrs [P.] Burgess. No other flags on file.",
   },
 ];
 

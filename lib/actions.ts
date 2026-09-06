@@ -110,6 +110,15 @@ export async function takeAction(teamId: string, week: number, actionId: string)
   const action = getActionItem(actionId);
   if (!action) throw new ActionsError("Unknown action.");
 
+  if (action.prerequisiteActionId) {
+    const prereqDone = await db.query.actionLog.findFirst({
+      where: and(eq(actionLog.teamId, teamId), eq(actionLog.actionId, action.prerequisiteActionId)),
+    });
+    if (!prereqDone) {
+      throw new ActionsError("This action's prerequisite hasn't been completed yet.");
+    }
+  }
+
   const existing = await getWeekRow(teamId, week);
   const trustBonus = await resolveTrustBonus(teamId, week, existing?.trustBonus ?? 0);
   const actionsSpent = existing?.actionsSpent ?? 0;
