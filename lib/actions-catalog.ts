@@ -38,7 +38,6 @@ export const CATEGORY_META: Record<ActionCategory, { label: string; color: strin
   witness: { label: "Witness", color: "#3C3489" },
 };
 
-export const BASELINE_ACTIONS = 2;
 export const MAX_TRUST_BONUS = 3;
 export const MAX_WEEK = 11;
 

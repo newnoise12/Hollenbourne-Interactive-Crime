@@ -10,10 +10,16 @@ import { sql } from "drizzle-orm";
 
 // A team is the unit everything else hangs off — one shared login per team,
 // not per student, matching the game's team-based trust mechanic.
+//
+// reservePoints: the permanently-accumulating case reserve (see
+// lib/actions.ts's bankReservePoint) — converts 2 unspent weekly points
+// into 1 reserve point. Team-wide, never resets, spendable by anyone on
+// the team once non-zero, independent of any single week's budget.
 export const teams = sqliteTable("teams", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull().unique(),
   passcodeHash: text("passcode_hash").notNull(),
+  reservePoints: integer("reserve_points").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -126,6 +132,51 @@ export const quizAttempts = sqliteTable("quiz_attempts", {
   maxScore: integer("max_score").notNull(),
   answers: text("answers").notNull(),
   completedAt: integer("completed_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// The evidence board's corkboard zone — a pin is a *reference* to an
+// evidence-catalog.ts exhibit plus a board position, never a copy of its
+// content, so edits to the underlying evidence data never need to
+// propagate to N stored copies. One pin per team per exhibit: unpinning
+// deletes the row; re-pinning creates a fresh one. Team-scoped throughout,
+// one board per team, not shared globally.
+export const evidencePins = sqliteTable(
+  "evidence_pins",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    exhibitId: text("exhibit_id").notNull(),
+    x: integer("x").notNull(),
+    y: integer("y").notNull(),
+    note: text("note"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [uniqueIndex("team_pin_exhibit_idx").on(table.teamId, table.exhibitId)]
+);
+
+// A labelled connection between two pinned cards — the annotation belongs
+// to the relationship, not floating text on the board. Both ends reference
+// evidencePins (not raw exhibit ids), so a connection only ever exists
+// between two cards already on this team's board.
+export const evidenceConnections = sqliteTable("evidence_connections", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  teamId: text("team_id")
+    .notNull()
+    .references(() => teams.id, { onDelete: "cascade" }),
+  fromPinId: text("from_pin_id")
+    .notNull()
+    .references(() => evidencePins.id, { onDelete: "cascade" }),
+  toPinId: text("to_pin_id")
+    .notNull()
+    .references(() => evidencePins.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
 });

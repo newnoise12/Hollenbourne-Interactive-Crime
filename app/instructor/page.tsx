@@ -40,6 +40,7 @@ export default async function InstructorDashboardPage() {
                 <th className="px-4 py-2.5 font-medium">Exhibits cited</th>
                 <th className="px-4 py-2.5 font-medium">Week 2 quiz</th>
                 <th className="px-4 py-2.5 font-medium">Actions taken</th>
+                <th className="px-4 py-2.5 font-medium">Reserve</th>
                 <th className="px-4 py-2.5 font-medium"></th>
               </tr>
             </thead>
@@ -67,6 +68,7 @@ export default async function InstructorDashboardPage() {
                     )}
                   </td>
                   <td className="px-4 py-2.5">{team.totalActionsSpent}</td>
+                  <td className="px-4 py-2.5">{team.reservePoints}</td>
                   <td className="px-4 py-2.5 text-right">
                     <Link href={`/instructor/teams/${team.id}`} className="text-neutral-900 underline">
                       view details

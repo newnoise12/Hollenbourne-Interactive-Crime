@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
-import { getAllWeekState, getActionLog } from "@/lib/actions";
+import { getAllWeekState, getActionLog, getTeamBaselineActions, getTeamReserve } from "@/lib/actions";
 import { getTeamQuizAverage } from "@/lib/quiz";
 import { ACTIONS } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
@@ -16,10 +16,12 @@ export default async function ActionsPage() {
     redirect("/login");
   }
 
-  const [weekState, log, quizzesByWeek] = await Promise.all([
+  const [weekState, log, quizzesByWeek, baselineActions, reservePoints] = await Promise.all([
     getAllWeekState(team.id),
     getActionLog(team.id),
     Promise.all(ALL_QUIZ_WEEKS.map((week) => getTeamQuizAverage(team.id, week))),
+    getTeamBaselineActions(team.id),
+    getTeamReserve(team.id),
   ]);
 
   const quizStudentsAttemptedByWeek = Object.fromEntries(
@@ -32,6 +34,8 @@ export default async function ActionsPage() {
       initialWeekState={weekState}
       initialLog={log}
       quizStudentsAttemptedByWeek={quizStudentsAttemptedByWeek}
+      baselineActions={baselineActions}
+      initialReservePoints={reservePoints}
     />
   );
 }

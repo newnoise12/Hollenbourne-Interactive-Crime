@@ -201,6 +201,53 @@ neither prompts.
   score 2/3, matching the net-correct-minus-wrong-picked formula), with the
   Week 6 pooling visible live on the actions page after just one of the two
   quizzes was attempted.
+- **The per-student weekly action budget, fixed to match the spec.** The
+  budget was a flat `BASELINE_ACTIONS = 2` per team regardless of size —
+  contradicting `hollenbourne-action-economy.md`'s "1 action point per
+  student, per week." Replaced with `lib/actions.ts`'s
+  `getTeamBaselineActions(teamId)`, computed live from the `students` table
+  (`Math.max(1, roster.length)` — floored so a team with nobody recorded
+  yet, i.e. nobody's taken a quiz, isn't locked out entirely). This is a
+  real gameplay-balance change, made deliberately rather than silently: an
+  8-student team now gets 8 baseline points/week instead of 2. Threaded
+  through `ActionEconomy.tsx`, the instructor team-detail page, and
+  `takeAction`/`bankReservePoint`, replacing the removed
+  `actions-catalog.ts` constant everywhere.
+- **The corkboard evidence board and case-reserve banking**, recovered from
+  a *third* disconnected location on top of the two already documented
+  below: a nested, independently-developed Next.js app at
+  `C:\Users\CrisW\dev\hollenbourne-app\app\` (its own git history, DB,
+  migrations — an older branch that never got per-student quiz attribution
+  or the instructor dashboard, but built two things the main lineage never
+  did). Adapted rather than copied wholesale, since that branch's evidence
+  model (`suspect`/`case`/`iconType`) doesn't match this repo's citation-
+  based `EvidenceItem` catalog:
+  - **Corkboard** (`app/dashboard/case-log/Corkboard.tsx`, using
+    `@xyflow/react`) — a pannable/zoomable board where a team pins exhibits
+    from the case log, drags them into position, and drags between two
+    pinned cards to record a labelled relationship. New tables
+    `evidencePins`/`evidenceConnections` (`db/schema.ts`), team-scoped, a
+    pin referencing an exhibit id rather than copying its content. Pinning
+    is gated on having already **cited** that exhibit (`lib/board.ts`'s
+    `pinEvidence`) — the corkboard is for connecting evidence a team has
+    already engaged with through the citation exercise, not a shortcut
+    around it. The source project's `window.prompt`/`window.confirm` for
+    labelling/removing a connection were replaced with in-page panels
+    before porting — those are known to get silently suppressed in some
+    automated/controlled browsers (the same reason `TrustQuiz.tsx` and the
+    take-action/banking flows below use in-page confirmation already).
+  - **Case reserve banking** (`teams.reservePoints`, `lib/actions.ts`'s
+    `canBank`/`bankReservePoint`) — converts 2 unspent weekly points into 1
+    permanent, team-wide reserve point once a team has earned a trust bonus
+    that week. `takeAction` gained a `useReserve` flag so any action can be
+    paid from the reserve instead of the weekly budget (`/api/actions/take`
+    body: `{..., useReserve: true}`) — spending it shows an in-page "do you
+    have your team's agreement?" confirmation on the actions page
+    (`ActionEconomy.tsx`'s `pendingReserveAction`), per the reserve's own
+    spec framing. Confirmed end-to-end: banked 2 of 4 weekly points into 1
+    reserve point, then spent that reserve point on an action with 0
+    weekly points remaining and confirmed the weekly `actionsSpent` count
+    was untouched by the reserve payment.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
@@ -217,7 +264,10 @@ neither prompts.
 - The disconnected OneDrive copy this content was recovered from
   (`C:\Users\CrisW\dev\hollenbourne-app`) still exists and hasn't been
   cleaned up — safe to delete once its content is confirmed fully migrated,
-  but not yet done.
+  but not yet done. This now includes the nested `app\` Next.js project
+  described above (corkboard/banking source) — confirm nothing else useful
+  is left in it before deleting.
+- Deployment — on hold until the user is hands-on for host/account setup.
 
 ## Env vars
 

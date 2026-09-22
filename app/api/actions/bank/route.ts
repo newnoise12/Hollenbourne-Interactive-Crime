@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
-import { takeAction, ActionsError } from "@/lib/actions";
+import { bankReservePoint, ActionsError } from "@/lib/actions";
 import { MAX_WEEK } from "@/lib/actions-catalog";
 
 export async function POST(req: NextRequest) {
@@ -12,26 +12,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not logged in." }, { status: 401 });
   }
 
-  let body: { week?: number; actionId?: string; useReserve?: boolean };
+  let body: { week?: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { week, actionId, useReserve } = body;
-  if (typeof week !== "number" || week < 1 || week > MAX_WEEK || typeof actionId !== "string") {
-    return NextResponse.json({ error: "A valid week and actionId are required." }, { status: 400 });
+  const { week } = body;
+  if (typeof week !== "number" || week < 1 || week > MAX_WEEK) {
+    return NextResponse.json({ error: "A valid week is required." }, { status: 400 });
   }
 
   try {
-    const { weekState, reservePoints, logEntry } = await takeAction(team.id, week, actionId, useReserve === true);
-    return NextResponse.json({ weekState, reservePoints, logEntry });
+    const { weekState, reservePoints } = await bankReservePoint(team.id, week);
+    return NextResponse.json({ weekState, reservePoints });
   } catch (e) {
     if (e instanceof ActionsError) {
       return NextResponse.json({ error: e.message }, { status: 400 });
     }
-    console.error("Unexpected error in /api/actions/take:", e);
+    console.error("Unexpected error in /api/actions/bank:", e);
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

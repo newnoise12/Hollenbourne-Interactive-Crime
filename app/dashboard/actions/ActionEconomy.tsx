@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
-import { CATEGORY_META, BASELINE_ACTIONS, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
+import { CATEGORY_META, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
 
@@ -27,15 +27,17 @@ function Pips({ total, used }: { total: number; used: number }) {
 function ActionCard({
   action,
   canAfford,
+  canAffordFromReserve,
   locked,
   requirementLabel,
   onTake,
 }: {
   action: ActionItem;
   canAfford: boolean;
+  canAffordFromReserve: boolean;
   locked: boolean;
   requirementLabel: string | null;
-  onTake: () => void;
+  onTake: (useReserve: boolean) => void;
 }) {
   const meta = CATEGORY_META[action.category];
   const disabled = locked || !canAfford;
@@ -62,18 +64,29 @@ function ActionCard({
       {locked && requirementLabel && (
         <p className="font-mono text-xs text-[#8B3226] mb-2.5 mt-0">requires: {requirementLabel}</p>
       )}
-      <button
-        onClick={onTake}
-        disabled={disabled}
-        className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
-        style={{
-          borderColor: disabled ? "#D6CDB4" : "#2A2F27",
-          color: disabled ? "#D6CDB4" : "#2A2F27",
-          cursor: disabled ? "not-allowed" : "pointer",
-        }}
-      >
-        {locked ? "LOCKED" : canAfford ? "TAKE ACTION" : "NOT ENOUGH ACTIONS"}
-      </button>
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={() => onTake(false)}
+          disabled={disabled}
+          className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
+          style={{
+            borderColor: disabled ? "#D6CDB4" : "#2A2F27",
+            color: disabled ? "#D6CDB4" : "#2A2F27",
+            cursor: disabled ? "not-allowed" : "pointer",
+          }}
+        >
+          {locked ? "LOCKED" : canAfford ? "TAKE ACTION" : "NOT ENOUGH ACTIONS"}
+        </button>
+        {!locked && !canAfford && canAffordFromReserve && (
+          <button
+            onClick={() => onTake(true)}
+            className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border border-[#93650F] text-[#93650F] cursor-pointer"
+            title="Uses your team's shared, permanent case reserve instead of this week's budget"
+          >
+            PAY WITH RESERVE
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -89,23 +102,30 @@ export default function ActionEconomy({
   initialWeekState,
   initialLog,
   quizStudentsAttemptedByWeek,
+  baselineActions,
+  initialReservePoints,
 }: {
   actions: ActionItem[];
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
   quizStudentsAttemptedByWeek: Record<number, number>;
+  baselineActions: number;
+  initialReservePoints: number;
 }) {
   const [week, setWeek] = useState(1);
   const [weekStateMap, setWeekStateMap] = useState<WeekStateMap>(initialWeekState);
   const [log, setLog] = useState<LogEntry[]>(initialLog);
+  const [reservePoints, setReservePoints] = useState(initialReservePoints);
   const [saveError, setSaveError] = useState(false);
   const [pending, setPending] = useState(false);
+  const [pendingReserveAction, setPendingReserveAction] = useState<ActionItem | null>(null);
 
   const current: WeekState = weekStateMap[week] ?? { trustBonus: 0, actionsSpent: 0 };
-  const totalAvailable = BASELINE_ACTIONS + current.trustBonus;
+  const totalAvailable = baselineActions + current.trustBonus;
   const remaining = totalAvailable - current.actionsSpent;
   const isQuizWeek = (ALL_QUIZ_WEEKS as number[]).includes(week);
   const quizStudentsAttempted = quizStudentsAttemptedByWeek[week] ?? 0;
+  const canBank = current.trustBonus > 0 && remaining >= 2;
 
   // Prerequisites are permanent, not weekly — completed in any week, on any
   // team's own timeline, they stay completed. Derived from the live log
@@ -143,15 +163,25 @@ export default function ActionEconomy({
     (!!action.prerequisiteActionIds?.length && !action.prerequisiteActionIds.every((id) => completedActionIds.has(id))) ||
     (!!action.availableFromWeek && week < action.availableFromWeek);
 
-  const takeAction = async (action: ActionItem) => {
-    if (isLocked(action) || remaining < action.cost || pending) return;
+  const takeAction = async (action: ActionItem, useReserve: boolean) => {
+    if (isLocked(action) || pending) return;
+    if (useReserve) {
+      if (reservePoints < action.cost) return;
+      setPendingReserveAction(action);
+      return;
+    }
+    if (remaining < action.cost) return;
+    await submitTakeAction(action, false);
+  };
+
+  const submitTakeAction = async (action: ActionItem, useReserve: boolean) => {
     setSaveError(false);
     setPending(true);
     try {
       const res = await fetch("/api/actions/take", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ week, actionId: action.id }),
+        body: JSON.stringify({ week, actionId: action.id, useReserve }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -159,7 +189,33 @@ export default function ActionEconomy({
         return;
       }
       setWeekStateMap((prev) => ({ ...prev, [week]: data.weekState }));
+      setReservePoints(data.reservePoints);
       setLog((prev) => [data.logEntry, ...prev]);
+      setPendingReserveAction(null);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const bank = async () => {
+    if (!canBank || pending) return;
+    setSaveError(false);
+    setPending(true);
+    try {
+      const res = await fetch("/api/actions/bank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ week }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(true);
+        return;
+      }
+      setWeekStateMap((prev) => ({ ...prev, [week]: data.weekState }));
+      setReservePoints(data.reservePoints);
     } catch {
       setSaveError(true);
     } finally {
@@ -228,10 +284,30 @@ export default function ActionEconomy({
 
           <div className="border-t border-dotted border-[#A6764A] pt-3 flex justify-between items-center flex-wrap gap-2.5">
             <span className="font-mono text-xs text-[#5B5A4E]">
-              {BASELINE_ACTIONS} baseline + {current.trustBonus} trust = {totalAvailable} available &middot; {remaining} remaining
+              {baselineActions} baseline + {current.trustBonus} trust = {totalAvailable} available &middot; {remaining} remaining
             </span>
             <Pips total={totalAvailable} used={current.actionsSpent} />
           </div>
+        </div>
+
+        <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4.5 mb-5 flex justify-between items-center flex-wrap gap-3">
+          <div>
+            <p className="font-mono text-xs text-[#5B5A4E] m-0">Case reserve (permanent, team-wide)</p>
+            <p className="font-serif font-semibold text-lg text-[#2A2F27] m-0">{reservePoints} pt{reservePoints === 1 ? "" : "s"}</p>
+          </div>
+          <button
+            onClick={bank}
+            disabled={!canBank || pending}
+            className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
+            style={{
+              borderColor: !canBank || pending ? "#D6CDB4" : "#93650F",
+              color: !canBank || pending ? "#D6CDB4" : "#93650F",
+              cursor: !canBank || pending ? "not-allowed" : "pointer",
+            }}
+            title="Convert 2 of this week's unspent points into 1 permanent case-reserve point"
+          >
+            BANK 2 POINTS &rarr; +1 RESERVE
+          </button>
         </div>
 
         {actions.map((action) => {
@@ -250,12 +326,39 @@ export default function ActionEconomy({
               key={action.id}
               action={action}
               canAfford={remaining >= action.cost && !pending}
+              canAffordFromReserve={reservePoints >= action.cost && !pending}
               locked={locked}
               requirementLabel={requirementLabel}
-              onTake={() => takeAction(action)}
+              onTake={(useReserve) => takeAction(action, useReserve)}
             />
           );
         })}
+
+        {pendingReserveAction && (
+          <div className="bg-[#F4EFE1] border border-[#93650F] px-5 py-4 mb-5">
+            <p className="font-mono text-[13px] text-[#2A2F27] mb-1 mt-0">
+              This will use your team&apos;s shared, permanent case reserve ({pendingReserveAction.cost} of {reservePoints}{" "}
+              point{reservePoints === 1 ? "" : "s"}) instead of this week&apos;s budget.
+            </p>
+            <p className="font-mono text-xs text-[#5B5A4E] mb-4 mt-0">Do you have your team&apos;s agreement to spend it?</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => submitTakeAction(pendingReserveAction, true)}
+                disabled={pending}
+                className="font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] px-5 py-2.5 border border-[#2A2F27] disabled:opacity-50"
+              >
+                {pending ? "SUBMITTING…" : "YES, SPEND RESERVE"}
+              </button>
+              <button
+                onClick={() => setPendingReserveAction(null)}
+                disabled={pending}
+                className="font-mono text-xs tracking-wide bg-transparent text-[#5B5A4E] px-5 py-2.5 border border-[#5B5A4E] disabled:opacity-50"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mt-7">
           <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-3 mt-0">Case action log</h2>

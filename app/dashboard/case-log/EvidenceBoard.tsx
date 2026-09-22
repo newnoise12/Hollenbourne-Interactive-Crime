@@ -13,6 +13,9 @@ import {
   type AssistedFields,
 } from "@/lib/citation-validation";
 import type { CitationMap } from "@/lib/evidence";
+import type { Board, BoardPin } from "@/lib/board";
+import Corkboard from "./Corkboard";
+import PinDetailModal from "./PinDetailModal";
 
 function renderCited(text: string, titleSpan: string | null): ReactNode {
   if (!titleSpan) return text;
@@ -163,10 +166,14 @@ function ExhibitCard({
   item,
   citation,
   onCite,
+  pinned,
+  onPin,
 }: {
   item: EvidenceItem;
   citation: { text: string; title: string | null } | undefined;
   onCite: (id: string, payload: { text: string; title: string | null }) => Promise<void>;
+  pinned: boolean;
+  onPin: (exhibitId: string) => void;
 }) {
   const [fields, setFields] = useState<AssistedFields>({ author: "", year: "", title: "", place: "", publisher: "" });
   const [freeText, setFreeText] = useState("");
@@ -243,9 +250,16 @@ function ExhibitCard({
           >
             view document
           </button>
-          <p className="font-mono text-xs text-[#2F6B4F] m-0 border-t border-dotted border-[#D6CDB4] pt-2.5">
+          <p className="font-mono text-xs text-[#2F6B4F] m-0 border-t border-dotted border-[#D6CDB4] pt-2.5 mb-2.5">
             cited: {renderCited(citation!.text, citation!.title)}
           </p>
+          <button
+            onClick={() => onPin(item.id)}
+            disabled={pinned}
+            className="font-mono text-[11px] tracking-wide bg-transparent border border-[#A6764A] text-[#A6764A] px-2.5 py-1 disabled:opacity-40 disabled:cursor-default"
+          >
+            {pinned ? "📌 pinned to corkboard" : "pin to corkboard"}
+          </button>
         </>
       ) : item.assisted ? (
         <>
@@ -301,11 +315,15 @@ function ExhibitCard({
 export default function EvidenceBoard({
   evidence,
   initialCitations,
+  initialBoard,
 }: {
   evidence: EvidenceItem[];
   initialCitations: CitationMap;
+  initialBoard: Board;
 }) {
   const [citations, setCitations] = useState<CitationMap>(initialCitations);
+  const [board, setBoard] = useState<Board>(initialBoard);
+  const [openPin, setOpenPin] = useState<BoardPin | null>(null);
   const [saveError, setSaveError] = useState(false);
 
   const handleCite = async (id: string, payload: { text: string; title: string | null }) => {
@@ -326,6 +344,54 @@ export default function EvidenceBoard({
     }
   };
 
+  const refreshBoard = async (promise: Promise<Response>) => {
+    setSaveError(false);
+    try {
+      const res = await promise;
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(true);
+        return;
+      }
+      setBoard(data);
+      return data as Board;
+    } catch {
+      setSaveError(true);
+    }
+  };
+
+  const pinEvidence = (exhibitId: string) =>
+    refreshBoard(
+      fetch("/api/board", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ exhibitId, x: 40 + Math.random() * 200, y: 40 + Math.random() * 120 }),
+      })
+    );
+
+  const movePin = (pinId: string, x: number, y: number) =>
+    refreshBoard(fetch(`/api/board/pins/${pinId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ x, y }) }));
+
+  const unpinPin = async (pinId: string) => {
+    await refreshBoard(fetch(`/api/board/pins/${pinId}`, { method: "DELETE" }));
+    setOpenPin((p) => (p?.id === pinId ? null : p));
+  };
+
+  const saveNote = async (pinId: string, note: string) => {
+    const data = await refreshBoard(
+      fetch(`/api/board/pins/${pinId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note }) })
+    );
+    if (data) setOpenPin(data.pins.find((p) => p.id === pinId) ?? null);
+  };
+
+  const connectPins = (fromPinId: string, toPinId: string, label: string) =>
+    refreshBoard(
+      fetch("/api/board/connections", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fromPinId, toPinId, label }) })
+    );
+
+  const deleteConnection = (connectionId: string) => refreshBoard(fetch(`/api/board/connections/${connectionId}`, { method: "DELETE" }));
+
+  const pinnedExhibitIds = new Set(board.pins.map((p) => p.evidence.id));
   const unlockedCount = evidence.filter((e) => !e.locked).length;
   const citedCount = Object.keys(citations).length;
 
@@ -348,12 +414,44 @@ export default function EvidenceBoard({
           </Link>
         </div>
         {evidence.map((item) => (
-          <ExhibitCard key={item.id} item={item} citation={citations[item.id]} onCite={handleCite} />
+          <ExhibitCard
+            key={item.id}
+            item={item}
+            citation={citations[item.id]}
+            onCite={handleCite}
+            pinned={pinnedExhibitIds.has(item.id)}
+            onPin={pinEvidence}
+          />
         ))}
         {saveError && (
           <p className="font-mono text-[11px] text-[#8B3226] mt-2">Couldn&apos;t save &mdash; try again.</p>
         )}
+
+        <div className="mt-8">
+          <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-3 mt-0">Corkboard</h2>
+          <p className="font-mono text-xs text-[#8A8A80] mb-3 mt-0">
+            Pin cited exhibits here to lay out the case visually and connect related threads.
+          </p>
+          <Corkboard
+            pins={board.pins}
+            connections={board.connections}
+            onMovePin={movePin}
+            onOpenPin={setOpenPin}
+            onUnpin={unpinPin}
+            onConnect={connectPins}
+            onDeleteConnection={deleteConnection}
+          />
+        </div>
       </div>
+
+      {openPin && (
+        <PinDetailModal
+          evidence={openPin.evidence}
+          note={openPin.note}
+          onClose={() => setOpenPin(null)}
+          onSaveNote={(note) => saveNote(openPin.id, note)}
+        />
+      )}
     </div>
   );
 }

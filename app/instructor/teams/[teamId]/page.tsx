@@ -5,7 +5,7 @@ import { isValidInstructorSession } from "@/lib/instructor-auth";
 import { INSTRUCTOR_SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getTeamDetail } from "@/lib/instructor-data";
 import { getEvidenceItem } from "@/lib/evidence-catalog";
-import { BASELINE_ACTIONS, MAX_WEEK } from "@/lib/actions-catalog";
+import { MAX_WEEK } from "@/lib/actions-catalog";
 import { STAGE_1_ITEMS, STAGE_2_ITEMS, MAX_ATTEMPTS, QUIZ_WEEK } from "@/lib/quiz-catalog";
 import type { TeamQuizWeekDetail } from "@/lib/instructor-data";
 
@@ -21,7 +21,7 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
     notFound();
   }
 
-  const { team, citations, weekState, log, quizWeeks } = detail;
+  const { team, citations, weekState, log, quizWeeks, baselineActions } = detail;
   const weeksWithActivity = Object.keys(weekState)
     .map(Number)
     .sort((a, b) => a - b);
@@ -32,8 +32,11 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
         ← all teams
       </Link>
       <h1 className="text-2xl font-semibold mt-2 mb-1">{team.name}</h1>
-      <p className="text-sm text-neutral-500 mb-8">
+      <p className="text-sm text-neutral-500 mb-1">
         Registered {team.createdAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+      </p>
+      <p className="text-sm text-neutral-500 mb-8">
+        Case reserve: <span className="font-medium text-neutral-700">{team.reservePoints} pt{team.reservePoints === 1 ? "" : "s"}</span>
       </p>
 
       <section className="mb-10">
@@ -80,7 +83,7 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
                       <td className="px-4 py-2">Week {week}</td>
                       <td className="px-4 py-2">+{state.trustBonus}</td>
                       <td className="px-4 py-2">{state.actionsSpent}</td>
-                      <td className="px-4 py-2">{BASELINE_ACTIONS + state.trustBonus}</td>
+                      <td className="px-4 py-2">{baselineActions + state.trustBonus}</td>
                     </tr>
                   );
                 })}
