@@ -5,7 +5,7 @@ import { getCitationsForTeam } from "./evidence";
 import { getAllWeekState, getActionLog } from "./actions";
 import { getTeamQuizAverage, getTeamQuizBreakdown } from "./quiz";
 import { EVIDENCE } from "./evidence-catalog";
-import { QUIZ_WEEK } from "./quiz-catalog";
+import { QUIZ_WEEK, ALL_QUIZ_WEEKS } from "./quiz-catalog";
 
 export type TeamSummary = {
   id: string;
@@ -46,13 +46,21 @@ export async function getAllTeamsSummary(): Promise<TeamSummary[]> {
   );
 }
 
+export type TeamQuizWeekDetail = {
+  week: number;
+  average: number | null;
+  breakdown: Awaited<ReturnType<typeof getTeamQuizBreakdown>>;
+};
+
 export type TeamDetail = {
   team: { id: string; name: string; createdAt: Date };
   citations: Awaited<ReturnType<typeof getCitationsForTeam>>;
   weekState: Awaited<ReturnType<typeof getAllWeekState>>;
   log: Awaited<ReturnType<typeof getActionLog>>;
-  quizAverage: number | null;
-  quizBreakdown: Awaited<ReturnType<typeof getTeamQuizBreakdown>>;
+  // One entry per quiz week (Week 2's ranking quiz, plus every Weeks 4-6
+  // quiz in quiz-catalog.ts's QUIZ_DEFS) — not just Week 2, so the
+  // instructor's full-detail view stays complete as more quizzes land.
+  quizWeeks: TeamQuizWeekDetail[];
 };
 
 /** Full detail for one team — reuses the same queries the team's own dashboard pages use. */
@@ -60,12 +68,16 @@ export async function getTeamDetail(teamId: string): Promise<TeamDetail | null> 
   const team = await db.query.teams.findFirst({ where: eq(teams.id, teamId) });
   if (!team) return null;
 
-  const [citations, weekState, log, quiz, quizBreakdown] = await Promise.all([
+  const [citations, weekState, log, quizWeeks] = await Promise.all([
     getCitationsForTeam(team.id),
     getAllWeekState(team.id),
     getActionLog(team.id),
-    getTeamQuizAverage(team.id, QUIZ_WEEK),
-    getTeamQuizBreakdown(team.id, QUIZ_WEEK),
+    Promise.all(
+      ALL_QUIZ_WEEKS.map(async (week) => {
+        const [average, breakdown] = await Promise.all([getTeamQuizAverage(team.id, week), getTeamQuizBreakdown(team.id, week)]);
+        return { week, average: average.average, breakdown };
+      })
+    ),
   ]);
 
   return {
@@ -73,7 +85,6 @@ export async function getTeamDetail(teamId: string): Promise<TeamDetail | null> 
     citations,
     weekState,
     log,
-    quizAverage: quiz.average,
-    quizBreakdown,
+    quizWeeks,
   };
 }

@@ -12,8 +12,19 @@ authoritative plan for what each week's trust activity should be about when
 building future weeks (Week 2's ranking quiz is already built; Weeks 3-11
 each have a described activity — e.g. Week 3 is referencing/"Cite Them
 Right", Week 4 is a crime-data quiz, Week 5 a PACE quiz — none built yet).
-It also documents a case detail not yet in the app: a fourth victim, Sara
-Butt, not currently modelled in `lib/actions-catalog.ts`.
+
+**`Reference/case-content/`** is a much fuller case-design archive — case
+bible, cell-site/ANPR reports, full interview transcripts, procedural
+documents (policy files, FLO logs, canvass returns), quiz drafts for weeks
+3/5/6/etc., and exhibit images. It was recovered from a second, disconnected
+copy of this project that accumulated in OneDrive independently of this
+repo's own git history (see "Repo location" below) — treat it as the
+authoritative source for case detail and unbuilt-week content, in the same
+way `hollenbourne-activity-plan.md` is authoritative for the week-by-week
+topic table. In particular, `case-content/mechanics/hollenbourne-action-economy.md`
+is the exact spec `lib/actions-catalog.ts` was built from (costs, gating,
+outcome text) — check it before adding or changing any action, rather than
+inventing new cost/gating decisions ad hoc.
 
 ## Commands
 
@@ -114,23 +125,99 @@ neither prompts.
   `getActionLog`, `getTeamQuizAverage`/`getTeamQuizBreakdown`) — no
   parallel data layer. Otherwise read-only by design; no grading/override
   UI beyond the one reassignment control.
-- **Prerequisite-gated actions** (`lib/actions-catalog.ts`'s `ActionItem.prerequisiteActionId`) — an action can require another action to already be completed by the team, checked against the *permanent* `actionLog` with no week restriction (done in any week, on any prior week's budget, stays done forever). This is a generic mechanic, not tied to any one chain: currently used for the Mason "movements" thread (`traffic-cam-hollen-marsh` → `vehicle-reg-lookup`, cost 2 and 1; `canvass-doorbell-mason` is a sibling action with no prerequisite of its own), but `lib/actions.ts`'s `takeAction` enforces it generically for any action carrying the field, and more chains (a forensic tool-mark-match → toolkit-search chain is planned) slot in the same way — just set `prerequisiteActionId` on the new catalog entry. Enforced server-side in `takeAction` (rejects with `ActionsError` if the prerequisite's actionLog entry doesn't exist for that team) and mirrored client-side in `ActionEconomy.tsx`, which derives the locked/unlocked set live from the in-memory action log (so completing a prerequisite unlocks its follow-up immediately, no reload) and renders locked actions greyed-out with a "LOCKED" badge and a "requires: {prerequisite's `shortLabel` or `label`}" line — visible and readable, not hidden, since knowing a locked action exists is deliberately part of the puzzle. Confirmed end-to-end: took the prerequisite in Week 1, confirmed the follow-up unlocked immediately in-session *and* stayed unlocked when switched to Week 2 (proving the check is genuinely week-independent), then completed it there.
+- **Prerequisite-gated and week-gated actions** (`lib/actions-catalog.ts`'s
+  `ActionItem.prerequisiteActionIds` — an array, so an action can require
+  *several* other actions at once, all of them — and `ActionItem.availableFromWeek`).
+  Prerequisites are checked against the *permanent* `actionLog` with no week
+  restriction of their own (done in any week, on any prior week's budget,
+  stays done forever); `availableFromWeek` is a separate, independent check
+  against the week the action is being taken in, for content that's
+  time-gated regardless of points spent (the forensic pathology reports,
+  available from Week 9; Sara Butt's follow-up report specifically from
+  Week 10). Both enforced server-side in `takeAction`
+  (`lib/actions.ts`, throws `ActionsError`) and mirrored client-side in
+  `ActionEconomy.tsx`, which derives the locked/unlocked set live from the
+  in-memory action log (so completing a prerequisite unlocks its follow-up
+  immediately, no reload) and renders locked actions greyed-out with a
+  "LOCKED" badge and a "requires: ..." line listing only the *still-unmet*
+  prerequisites plus any week requirement — visible and readable, not
+  hidden, since knowing a locked action exists is deliberately part of the
+  puzzle. Confirmed end-to-end, including a five-way prerequisite (the
+  endgame arrest interview) and a mixed prerequisite+week case (Butt's
+  follow-up report), and that the "requires" line correctly drops
+  prerequisites as they're completed one at a time rather than needing all
+  of them satisfied before showing anything.
+- **The full action-economy catalog**, built from
+  `Reference/case-content/mechanics/hollenbourne-action-economy.md` — every
+  chain that spec describes now exists in `lib/actions-catalog.ts`: initial-
+  interview pulls gating every re-interview, forensic pathology reports for
+  all four victims, the Mason movements chain, the tool-mark →
+  three-way-property-search → interim-interview chain, the full Sara Butt
+  movements chain (bus/high-street CCTV, Paget Street doorbell canvass),
+  the five-prerequisite endgame arrest interview, the Haddad/Wooley
+  cross-reference, cell-site/ANPR requests, and the two previously-flagged
+  ungated documents (Holly Creagan's statement, Butt's phone data
+  extraction). Three early placeholder actions the spec explicitly called
+  stale were retired (a generic vehicle check and CCTV pull superseded by
+  the properly-gated Mason movements chain, and a generic Burgess
+  re-interview superseded by the interim interview). Sara Butt is now fully
+  represented as the fourth victim.
+- **The evidence board (case log) deepened to match the same spec's
+  Category 1 baseline material** (`lib/evidence-catalog.ts`) — Ferris's
+  opening memo, all four victim biographies (unlocking Week 3, ahead of the
+  rest), a policy-file-and-canvass-summary exhibit per case (Week 9), Sara
+  Butt's missing person report, the town and street maps, and the
+  homicide-rate background, alongside the original six exhibits. Also fixed
+  EX.01's metadata, which incorrectly attributed the crime report to "Kent
+  Police, Maidstone" — left over from before the case's setting was
+  relocated to Essex/Thurrock — to "Hollenbourne Police."
+- **Weeks 4-6 trust activities** — Dark Figure of Crime (Week 4, 3 stages,
+  real ONS chart images plus one illustrative Hollenbourne chart), PACE
+  Quiz (Week 5, 6 questions), and a pair of argument-diagnosis multiselect
+  quizzes (Week 6, "Diagnose the Argument" — council regeneration funding
+  and force structure). Recovered fully-authored *and* fully-built from a
+  third, previously-unknown copy of this project (a standalone artifact,
+  published 2026-09-15, entirely disconnected from both this repo and
+  `Reference/case-content/` — see "Repo location" below) and ported in.
+  Unlike Week 2's bespoke ranking quiz, these share one generic path:
+  `lib/quiz-catalog.ts`'s `QUIZ_DEFS` (mcq/multiselect quiz definitions,
+  `scoreMcqQuiz`/`scoreMultiselectQuiz`) →
+  `lib/quiz.ts`'s `submitGenericQuizAttempt`/`getGenericQuizAttempts` →
+  `app/dashboard/quiz/[quizId]` (one dynamic route rendering `McqQuiz.tsx`
+  or `MultiselectQuiz.tsx` depending on the quiz's `kind`). `score`/
+  `maxScore` are always stored on the same 0-3 trust-bonus scale as Week 2
+  (not the raw question count), which is what lets `getTeamQuizAverage`
+  keep working unchanged for these weeks purely by filtering on `week` —
+  and why Week 6's two quizzes pool into one average, each student's best
+  score across either one counting. `lib/actions.ts`'s trust-bonus
+  resolution generalized from a single hardcoded `QUIZ_WEEK` check to
+  `ALL_QUIZ_WEEKS` (ranking quiz week + every `QUIZ_DEFS` week), so the
+  manual trust-bonus control now correctly disappears for all four weeks,
+  not just Week 2; the instructor team-detail page generalized the same
+  way, showing a per-week breakdown for every quiz week (Week 2 keeps its
+  detailed rank-item table, the others show raw score/attempt summaries).
+  Confirmed end-to-end in the browser: PACE (6/6 correct → trust bonus +3),
+  and the regeneration argument quiz (3 correct + 1 wrong picked → net
+  score 2/3, matching the net-correct-minus-wrong-picked formula), with the
+  Week 6 pooling visible live on the actions page after just one of the two
+  quizzes was attempted.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
 **Not yet built — the next work:**
-- Trust activities for weeks other than Week 2, per the spec in
-  `Reference/hollenbourne-activity-plan.md`'s week-by-week table (Week 3
-  referencing, Week 4 crime-data quiz, Week 5 PACE quiz, Week 6 argument-
-  formation quiz, etc.) — same pattern as Week 2
-  (`lib/quiz-catalog.ts` → `lib/quiz.ts` → `app/dashboard/quiz`), currently
-  hardcoded to the one Week 2 quiz and would need generalizing (or
-  duplicating) once content for another week is written. Actual content
-  (readings, quiz questions, etc.) still needs authoring per week before
-  any of this can be built — the table names the topic/skill, not the
-  content itself.
-- Sara Butt (4th victim, per the activity plan) isn't represented in
-  `lib/actions-catalog.ts`'s re-interview/investigation actions yet.
+- Week 3's referencing/"Cite Them Right" activity — the one week-by-week
+  table entry with no quiz recovered from either content source yet. A
+  `week3-referencing-quiz.md` draft exists in
+  `Reference/case-content/quizzes/`, but per CLAUDE.md's earlier notes this
+  may actually need an AI-graded format (a rotated Anthropic API key), not
+  a scored mcq/multiselect quiz like weeks 4-6 — worth checking that draft
+  before assuming it fits the existing pattern.
+- Further weeks beyond 6 (7-11) have no quiz content recovered from either
+  source yet, beyond what `hollenbourne-activity-plan.md`'s table names.
+- The disconnected OneDrive copy this content was recovered from
+  (`C:\Users\CrisW\dev\hollenbourne-app`) still exists and hasn't been
+  cleaned up — safe to delete once its content is confirmed fully migrated,
+  but not yet done.
 
 ## Env vars
 
@@ -158,6 +245,38 @@ good practice never to run `next build` while `next dev` is running
 against the same `.next` directory (stop the dev server first) — if a
 Turbopack `TurbopackInternalError` ever shows up again, `rm -rf .next
 node_modules/.cache` and restart.
+
+**A second, disconnected copy of this project** independently accumulated
+in OneDrive after this repo's own move — a content-authoring folder with
+its own single-commit git history at `C:\Users\CrisW\dev\hollenbourne-app`,
+containing case content that was never ported into this repo (see
+`Reference/case-content/` above, which is that content, copied in). If a
+future session finds itself confused about "missing" content that other
+sessions seem to remember, check whether it's sitting in that folder rather
+than assuming it was lost — it's the second time this has caused confusion.
+
+**The old OneDrive folder this repo itself was moved out of**
+(`C:\Users\CrisW\OneDrive\Documents\Becoming a Criminologist\hollenbourne-app`)
+has since been deleted, once a stale `next dev` process holding it open was
+killed — don't assume a similar "can't delete, file in use" error means the
+delete is unsafe; check for a leftover dev server first.
+
+**A third, previously-unknown copy existed as a published Claude Artifact**
+(not a filesystem folder) — a fully self-contained HTML build of the whole
+game, complete with its own live database, published 2026-09-15 and found
+only by explicitly listing artifacts (`Artifact` tool, `action: "list"`) —
+neither `git log` nor a filesystem search would ever surface it. It held
+the Weeks 4-6 quiz content ported into `lib/quiz-catalog.ts` (see above),
+plus a leader-controlled "release this quiz to teams now" mechanism the
+current instructor dashboard doesn't have, and full verbatim interview
+transcripts richer than the summarized outcome text in
+`lib/actions-catalog.ts`. Its live database was checked and held only one
+test team from the same day it was published — no real student data was
+ever at risk of being lost. **If a future session is asked to verify
+nothing has been lost, or a user says work feels like it's missing,
+checking `Artifact` with `action: "list"` is a real, necessary step** —
+this exact gap (reassuring the user based on git history alone, without
+checking for a published artifact) already happened once.
 
 ## Decisions worth knowing (so they don't get re-litigated)
 

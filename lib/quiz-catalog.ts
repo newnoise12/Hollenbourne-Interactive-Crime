@@ -143,3 +143,369 @@ export function isValidOrder(order: string[], items: QuizItem[]): boolean {
   }
   return true;
 }
+
+// =====================================================================
+// Weeks 4-6 trust activities — mcq/multiselect quizzes recovered from a
+// standalone prototype build (see CLAUDE.md's "Repo location" section) and
+// ported here. Unlike Week 2's bespoke ranking quiz above, these share one
+// generic scoring + attempt-storage path (lib/quiz.ts's
+// submitGenericQuizAttempt/getGenericQuizAttempts) rather than dedicated
+// functions each.
+// =====================================================================
+
+export type McqQuestion = {
+  q: string;
+  options: string[];
+  correct: number; // index into options
+  explain: string;
+};
+
+export type McqStage = {
+  label?: string;
+  intro?: string;
+  image?: string; // path under public/, e.g. "/quiz-charts/chart-x.png"
+  questions: McqQuestion[];
+};
+
+export type McqQuizDef = {
+  id: string;
+  kind: "mcq";
+  week: number;
+  title: string;
+  intro?: string;
+  // Maps total-correct-across-all-stages to a 0-3 trust bonus. The highest
+  // threshold whose minCorrect the score meets or exceeds wins.
+  bonusThresholds: [minCorrect: number, bonus: number][];
+  stages: McqStage[];
+};
+
+export type MultiselectOption = { id: string; label: string; correct: boolean };
+
+export type MultiselectQuizDef = {
+  id: string;
+  kind: "multiselect";
+  week: number;
+  title: string;
+  intro?: string;
+  passage?: string; // the argument/extract being diagnosed
+  prompt: string;
+  options: MultiselectOption[];
+};
+
+export type QuizDef = McqQuizDef | MultiselectQuizDef;
+
+export const PACE_QUIZ: McqQuizDef = {
+  id: "pace",
+  kind: "mcq",
+  week: 5,
+  title: "PACE Quiz",
+  intro: "A knowledge-check on the Police and Criminal Evidence Act 1984 — core provisions only. Multiple choice, one correct answer each.",
+  bonusThresholds: [
+    [0, 0],
+    [2, 1],
+    [4, 2],
+    [6, 3],
+  ],
+  stages: [
+    {
+      questions: [
+        {
+          q: "Under PACE, what standard must police meet to lawfully arrest someone without a warrant?",
+          options: [
+            "Proof beyond reasonable doubt that they committed the offence",
+            "A balance of probabilities that they committed the offence",
+            "Reasonable grounds to suspect they committed the offence, and that arrest is necessary",
+            "Reasonable grounds to suspect an offence was committed, regardless of necessity",
+          ],
+          correct: 2,
+          explain:
+            "Arrest under PACE s.24 requires both reasonable grounds to suspect (a genuinely low bar) and that arrest is necessary for one of a set of specific reasons — it isn't enough to just suspect someone; the arrest itself has to be justified as necessary.",
+        },
+        {
+          q: "How long can police normally detain a suspect without charge before they must charge or release them?",
+          options: ["12 hours", "24 hours", "48 hours", "72 hours"],
+          correct: 1,
+          explain:
+            "The standard limit is 24 hours from the “relevant time.” This can be extended to 36 hours with authorisation from a superintendent (for indictable offences only), and up to a maximum of 96 hours with a magistrates' court warrant.",
+        },
+        {
+          q: "When is a person entitled to free legal advice from a solicitor under PACE?",
+          options: [
+            "Only if they are formally charged",
+            "Only if they specifically ask for a duty solicitor by name",
+            "At any time they are detained or interviewed under caution",
+            "Only during the first 24 hours of detention",
+          ],
+          correct: 2,
+          explain:
+            "The right to free, independent legal advice (PACE s.58) applies any time someone is detained or being interviewed under caution — not just after charge, and regardless of whether they know a solicitor's name.",
+        },
+        {
+          q: "What is the correct standard caution wording?",
+          options: [
+            "“You have the right to remain silent. Anything you say can be used against you in court.”",
+            "“You do not have to say anything. But it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.”",
+            "“You are required to answer all questions truthfully or face further charges.”",
+            "“You may remain silent until a solicitor arrives, after which you must answer all questions.”",
+          ],
+          correct: 1,
+          explain:
+            "Option A is the American Miranda warning, a common mix-up — the England and Wales caution is different in an important way: staying silent can still count against you later if you rely on something in court you didn't mention at interview. This is the exact wording used throughout the Hollenbourne interview transcripts.",
+        },
+        {
+          q: "What must police have to lawfully stop and search someone under PACE?",
+          options: [
+            "Reasonable suspicion connected to specific, objective factors — never someone's personal characteristics alone",
+            "Any suspicion at all, however vague",
+            "A specific tip-off from a named informant",
+            "Written authorisation from a senior officer for every individual search",
+          ],
+          correct: 0,
+          explain:
+            "PACE Code A explicitly states reasonable suspicion can never be based on personal factors like race, age, or appearance alone — it must rest on objective factors (behaviour, information received, matching a specific description).",
+        },
+        {
+          q: "A suspect is invited to a “voluntary interview under caution” rather than arrested. What does this actually mean for them?",
+          options: [
+            "Nothing — it carries identical legal weight to being arrested",
+            "They are free to leave at any time and cannot be made to stay, even though the caution still applies",
+            "They are not entitled to a solicitor because they haven't been arrested",
+            "Anything they say cannot be used in court since they weren't arrested",
+          ],
+          correct: 1,
+          explain:
+            "Voluntary means free to leave, full stop — a real, meaningful legal distinction, not just a softer tone of voice. Everything else about the caution (the right to legal advice, the adverse-inference risk) still applies exactly as it would under arrest. This is exactly Martin Burgess's interim interview — voluntary, under caution, but genuinely free to leave.",
+        },
+      ],
+    },
+  ],
+};
+
+export const DARK_FIGURE_QUIZ: McqQuizDef = {
+  id: "dark-figure",
+  kind: "mcq",
+  week: 4,
+  title: "Dark Figure of Crime Quiz",
+  intro: "Tests data interpretation directly, using real ONS statistics for Stages 1–2 and illustrative Hollenbourne data for Stage 3.",
+  bonusThresholds: [
+    [0, 0],
+    [4, 1],
+    [7, 2],
+    [9, 3],
+  ],
+  stages: [
+    {
+      label: "Stage 1 — reading a single chart",
+      image: "/quiz-charts/chart-reporting-rates.png",
+      intro:
+        "England and Wales measures crime two main ways. Police recorded crime counts offences that come to police attention. The Crime Survey for England and Wales (CSEW) asks a large, representative sample of people directly about their experiences, whether or not they ever reported them — so it can tell us what share of crimes actually get reported in the first place (Figure 1).",
+      questions: [
+        {
+          q: "According to Figure 1, approximately what percentage of fraud incidents are reported to the police?",
+          options: ["60%", "42%", "12%", "90%"],
+          correct: 2,
+          explain:
+            "A direct read from the chart — worth including even though it's simple, since rushed readers sometimes misread the chart itself even while getting the harder reasoning questions right.",
+        },
+        {
+          q: "Figure 1 shows burglary reported far more often than fraud. What's the most likely reason for the difference?",
+          options: [
+            "Burglary is a more serious crime than fraud, so victims care more",
+            "Burglary victims usually need a police crime reference number to claim on home insurance, giving a practical reason to report that fraud victims often don't have",
+            "Fraud is a newer type of crime that police don't take seriously yet",
+            "There is no real difference — the gap is just random variation in the data",
+          ],
+          correct: 1,
+          explain:
+            "This is the actual explanatory mechanism ONS itself gives — not that burglary is inherently more “reportable,” but that insurance creates a direct practical incentive fraud typically doesn't.",
+        },
+        {
+          q: "The “All CSEW-comparable crime” bar shows an average of 42%. Why might it be misleading to treat this single average as representative of “crime” in general?",
+          options: [
+            "It isn't misleading — 42% is a perfectly accurate figure for all crime",
+            "The average hides real variation — some crime types are reported far more, others far less, and a single number flattens that difference",
+            "Averages are never useful in criminology",
+            "The CSEW doesn't actually calculate averages",
+          ],
+          correct: 1,
+          explain:
+            "A single summary statistic can be technically accurate and still obscure the more important pattern underneath it — exactly the nuance CW2's data-interpretation criterion rewards.",
+        },
+      ],
+    },
+    {
+      label: "Stage 2 — reading a chart over time",
+      image: "/quiz-charts/chart-recording-rate-over-time.png",
+      intro:
+        "The gap between recorded and actual crime isn't fixed — it can shrink or grow as police recording practices change, separately from whether true crime has changed. Figure 2 shows this for violence offences.",
+      questions: [
+        {
+          q: "According to Figure 2, how did the police recording rate for violence offences change between 2014 and 2021?",
+          options: ["It fell from 90% to 67%", "It stayed roughly the same", "It rose from 67% to 90%", "The chart doesn't show a time comparison"],
+          correct: 2,
+          explain: "A direct read — recording rates improved substantially over this period.",
+        },
+        {
+          q: "Recorded violence offences rose substantially between 2014 and 2021. What would a careful analyst say about that rise?",
+          options: [
+            "It proves violent crime in England and Wales nearly doubled in that period",
+            "Some — potentially a large share — of the apparent rise reflects police recording more of the violence that was already happening, not necessarily more violence occurring",
+            "It proves the CSEW is unreliable and should be ignored",
+            "It has no connection to recording practices at all — the rise is entirely real",
+          ],
+          correct: 1,
+          explain:
+            "The single hardest and most important reasoning skill here: a rise in recorded crime is not automatically the same claim as a rise in actual crime, without swinging just as far wrong by claiming the whole rise is fake.",
+        },
+        {
+          q: "Someone claims: “This chart proves the CSEW itself is an unreliable measure of crime, since the police figures kept changing under it.” What's the flaw in that claim?",
+          options: [
+            "There's no flaw — the claim is correct",
+            "The chart shows the police recording rate changing, not the CSEW's own methodology — the CSEW is specifically designed to be unaffected by police recording practices, which is exactly why it can be used to measure the recording rate in the first place",
+            "The CSEW only started in 2014, so the comparison is meaningless",
+            "Recording rates and survey reliability are the same thing",
+          ],
+          correct: 1,
+          explain:
+            "A plausible-sounding but backwards misreading — the CSEW being stable is precisely what makes it useful for catching police recording changes, not evidence that it's the unreliable one.",
+        },
+      ],
+    },
+    {
+      label: "Stage 3 — bringing it home to Hollenbourne",
+      image: "/quiz-charts/chart-hollenbourne-crime-trend.png",
+      intro:
+        "Figures 1 and 2 use real national statistics. Figure 3 is different — illustrative data built for this module, consistent with the Hollenbourne case-study material. It is not real crime data; treat it like Figures 1 and 2 for practising the skill, but don't cite it as an actual statistic.",
+      questions: [
+        {
+          q: "According to Figure 3, in which year is the gap between the two lines at its narrowest?",
+          options: ["2018", "2020", "2022", "2025"],
+          correct: 3,
+          explain: "A direct read — by 2025 the two lines sit closer together than at any other point, even though estimated crime is still clearly above recorded crime.",
+        },
+        {
+          q: "Both lines dip sharply in 2020. What's the most likely explanation?",
+          options: [
+            "Crime genuinely became far less common everywhere that year for no particular reason",
+            "2020 covers the Covid-19 lockdown period, when reduced day-to-day movement and opportunity plausibly reduced many routine crime types",
+            "The police stopped recording crime altogether that year",
+            "This is a data error and should be ignored",
+          ],
+          correct: 1,
+          explain: "This matches a real, well-documented pattern seen nationally during the pandemic — the illustrative data is deliberately built to mirror a genuine effect.",
+        },
+        {
+          q: "Between 2022 and 2025, the recorded-crime line stays roughly flat while the estimated-crime line falls. Using the same reasoning as Figure 2, what's a plausible explanation that does not assume actual crime is rising?",
+          options: [
+            "There is no possible explanation other than crime getting worse",
+            "Recording practices may have continued improving even as true crime fell, meaning police are now capturing a larger share of a shrinking total — two genuine changes happening at once, partly offsetting each other in the recorded figures",
+            "The chart must be wrong, since both lines should always move together",
+            "Recorded crime and estimated crime measure exactly the same thing, so this pattern is impossible",
+          ],
+          correct: 1,
+          explain: "The same reasoning skill as Q5 (Figure 2), now applied to a new chart — deliberately repeated so students transfer the skill rather than just recall the answer.",
+        },
+        {
+          q: "The case-study material elsewhere in this module notes that 2025 “breaks the improving narrative” for one high-profile type of crime, even though Figure 3 shows overall estimated crime continuing to fall that year. What does this illustrate about the relationship between data and public perception?",
+          options: [
+            "The case-study material must be factually wrong, since the chart shows improvement",
+            "A single serious, high-profile case can dominate how safe a place feels or is reported to be, even while the broader statistical picture is genuinely improving — the two things can both be true at once",
+            "Aggregate crime data is always more trustworthy than any individual case",
+            "Individual cases should never be discussed if aggregate data shows improvement",
+          ],
+          correct: 1,
+          explain:
+            "The hardest question in the set, deliberately placed last — it connects to Week 8's material on crime representation, resisting the two easy wrong answers (dismiss the data, or dismiss the case) in favour of holding both as genuinely true at once.",
+        },
+      ],
+    },
+  ],
+};
+
+export const ARGUMENT_REGENERATION_QUIZ: MultiselectQuizDef = {
+  id: "argument-regeneration",
+  kind: "multiselect",
+  week: 6,
+  title: "Diagnose the Argument: Council Regeneration Funding",
+  intro:
+    "Should Hollenbourne council continue investing in Featherton's development, or redirect funds toward regenerating Critchley and Boresfield? Presented as something a (fictional) councillor has written in a local consultation document, arguing for continued Featherton investment:",
+  passage:
+    "“Featherton is clearly working. Property values are up, new families are moving into the estate every month, and the Piazza is thriving with new shops opening all the time. Local government should back what's succeeding, not what's failing. Critchley and Boresfield have had years of council attention and investment, and nothing has changed there — the same problems, the same decline. If money hasn't fixed those estates by now, more of it won't either. We should keep investing where investment is clearly paying off, not throw good money after bad.”",
+  prompt: "Which of these are genuine flaws in the argument above? Select all that apply.",
+  options: [
+    { id: "r1", correct: true, label: "It measures “success” only by property values and new arrivals, without asking who benefits or who might be priced out or left behind" },
+    { id: "r2", correct: true, label: "“Nothing has changed” is treated as proof that investment doesn't work, without checking how much was actually spent, for how long, or how it compares to what Featherton received" },
+    { id: "r3", correct: true, label: "“Throw good money after bad” carries strong emotional weight but provides no actual evidence for the claim it's attached to" },
+    { id: "r4", correct: false, label: "The argument doesn't include exact pound figures" },
+    { id: "r5", correct: false, label: "The argument was written by a councillor rather than an independent expert" },
+  ],
+};
+
+export const ARGUMENT_POLICING_QUIZ: MultiselectQuizDef = {
+  id: "argument-policing",
+  kind: "multiselect",
+  week: 6,
+  title: "Diagnose the Argument: Force Structure",
+  intro:
+    "Should Hollenbourne keep a dedicated local police presence, or be folded into a wider regional Essex force? Presented as an extract from a (fictional) regional policing efficiency review, arguing for merging Hollenbourne into a larger regional force:",
+  passage:
+    "“Crime is crime, wherever it happens. A merged regional force gives officers access to better resources, better technology, and colleagues who've handled a wider range of cases. Small local forces are simply inefficient — duplicating specialist capabilities like forensics or armed response across dozens of small local units wastes taxpayer money that could be spent on frontline policing instead. One larger force means one set of overheads, not fifty. The case for merging is really a case for basic efficiency.”",
+  prompt: "Which of these are genuine flaws in the argument above? Select all that apply.",
+  options: [
+    { id: "p1", correct: true, label: "“Crime is crime, wherever it happens” quietly dismisses the value of local knowledge and community relationships without addressing the point at all" },
+    { id: "p2", correct: true, label: "Treats efficiency as an automatic, unqualified good, without acknowledging anything that might be lost in the process" },
+    { id: "p3", correct: true, label: "Omits response times, community trust, and local accountability entirely, discussing only cost — a one-sided selection of evidence" },
+    { id: "p4", correct: false, label: "The argument mentions saving taxpayer money" },
+    { id: "p5", correct: false, label: "The argument comes from a “regional policing efficiency review”" },
+  ],
+};
+
+export const QUIZ_DEFS: QuizDef[] = [PACE_QUIZ, DARK_FIGURE_QUIZ, ARGUMENT_REGENERATION_QUIZ, ARGUMENT_POLICING_QUIZ];
+
+export function getQuizDef(id: string): QuizDef | undefined {
+  return QUIZ_DEFS.find((q) => q.id === id);
+}
+
+/** Every week with a live, quiz-derived trust bonus — Week 2 plus every QUIZ_DEFS week, deduped and sorted. */
+export const ALL_QUIZ_WEEKS: number[] = Array.from(new Set([QUIZ_WEEK, ...QUIZ_DEFS.map((q) => q.week)])).sort((a, b) => a - b);
+
+function bonusFromThresholds(thresholds: [number, number][], correct: number): number {
+  for (let i = thresholds.length - 1; i >= 0; i--) {
+    if (correct >= thresholds[i][0]) return thresholds[i][1];
+  }
+  return 0;
+}
+
+export function scoreMcqQuiz(quiz: McqQuizDef, answers: number[][]): { correct: number; total: number; bonus: number } {
+  let correct = 0;
+  let total = 0;
+  quiz.stages.forEach((stage, si) => {
+    stage.questions.forEach((q, qi) => {
+      total++;
+      if (answers[si]?.[qi] === q.correct) correct++;
+    });
+  });
+  return { correct, total, bonus: bonusFromThresholds(quiz.bonusThresholds, correct) };
+}
+
+/**
+ * Net-correct scoring: a pick that's actually a flaw scores +1, a pick
+ * that isn't costs -1, floored at 0 and capped at the number of genuine
+ * flaws — so guessing every option nets nothing, matching the source
+ * design (Reference/case-content/mechanics/hollenbourne-action-economy.md's
+ * sibling unlock-tree doc). The result sits directly on the 0-3 trust-bonus
+ * scale since both quizzes have exactly 3 genuine flaws.
+ */
+export function scoreMultiselectQuiz(quiz: MultiselectQuizDef, selected: string[]): { points: number; max: number } {
+  const selectedSet = new Set(selected);
+  const correctCount = quiz.options.filter((o) => o.correct).length;
+  let netCorrect = 0;
+  let wrongPicked = 0;
+  for (const o of quiz.options) {
+    const picked = selectedSet.has(o.id);
+    if (picked && o.correct) netCorrect++;
+    if (picked && !o.correct) wrongPicked++;
+  }
+  const points = Math.max(0, Math.min(correctCount, netCorrect - wrongPicked));
+  return { points, max: correctCount };
+}

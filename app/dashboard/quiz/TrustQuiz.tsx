@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MAX_ATTEMPTS, type QuizItem } from "@/lib/quiz-catalog";
-import type { QuizAttempt } from "@/lib/quiz";
+import type { RankQuizAttempt } from "@/lib/quiz";
 
 function SwitchStudentLink({ studentName }: { studentName: string }) {
   const router = useRouter();
@@ -126,7 +126,7 @@ function StageResults({ items, order, points }: { items: QuizItem[]; order: stri
   );
 }
 
-function stagePoints(stage1Items: QuizItem[], stage2Items: QuizItem[], attempt: QuizAttempt) {
+function stagePoints(stage1Items: QuizItem[], stage2Items: QuizItem[], attempt: RankQuizAttempt) {
   const stage1Correct = stage1Items.every((item) => attempt.answers.stage1Order[item.correctRank - 1] === item.id);
   const anchor2A = stage2Items.find((i) => i.id === "2A")!;
   const anchor2E = stage2Items.find((i) => i.id === "2E")!;
@@ -144,10 +144,10 @@ export default function TrustQuiz({
 }: {
   stage1Items: QuizItem[];
   stage2Items: QuizItem[];
-  initialAttempts: QuizAttempt[];
+  initialAttempts: RankQuizAttempt[];
   studentName: string;
 }) {
-  const [attempts, setAttempts] = useState<QuizAttempt[]>(initialAttempts);
+  const [attempts, setAttempts] = useState<RankQuizAttempt[]>(initialAttempts);
   const [mode, setMode] = useState<"ranking" | "result">(initialAttempts.length > 0 ? "result" : "ranking");
 
   // Shuffled only after mount: shuffling during the initial render would run

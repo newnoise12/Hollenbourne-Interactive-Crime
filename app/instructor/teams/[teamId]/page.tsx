@@ -6,7 +6,8 @@ import { INSTRUCTOR_SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getTeamDetail } from "@/lib/instructor-data";
 import { getEvidenceItem } from "@/lib/evidence-catalog";
 import { BASELINE_ACTIONS, MAX_WEEK } from "@/lib/actions-catalog";
-import { STAGE_1_ITEMS, STAGE_2_ITEMS, MAX_ATTEMPTS } from "@/lib/quiz-catalog";
+import { STAGE_1_ITEMS, STAGE_2_ITEMS, MAX_ATTEMPTS, QUIZ_WEEK } from "@/lib/quiz-catalog";
+import type { TeamQuizWeekDetail } from "@/lib/instructor-data";
 
 export default async function InstructorTeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
   const sessionId = (await cookies()).get(INSTRUCTOR_SESSION_COOKIE_NAME)?.value;
@@ -20,7 +21,7 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
     notFound();
   }
 
-  const { team, citations, weekState, log, quizAverage, quizBreakdown } = detail;
+  const { team, citations, weekState, log, quizWeeks } = detail;
   const weeksWithActivity = Object.keys(weekState)
     .map(Number)
     .sort((a, b) => a - b);
@@ -105,37 +106,51 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
         )}
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Week 2 trust activity</h2>
-        {quizBreakdown.length === 0 ? (
-          <p className="text-sm text-neutral-500">No students have attempted this yet.</p>
-        ) : (
-          <div>
-            <p className="text-sm mb-2">
-              Team average: <span className="font-semibold">{quizAverage} / 3</span> (applied as the Week 2 trust
-              bonus) — {quizBreakdown.length} student{quizBreakdown.length === 1 ? "" : "s"} contributing
-            </p>
-            <p className="text-xs text-neutral-500 mb-5">
-              This reflects who was on the team when they took the quiz, not who&apos;s on it now — a student moved
-              to another team afterwards still counts here, and this average never changes as a result of a later
-              move.
-            </p>
-            {quizBreakdown.map((student) => {
-              const bestScore = Math.max(...student.attempts.map((a) => a.score));
-              return (
-                <div key={student.studentId} className="mb-8 border-t border-neutral-200 pt-4 first:border-0 first:pt-0">
-                  <p className="text-sm font-semibold mb-3">
-                    {student.studentName} — best {bestScore} / {student.attempts[0].maxScore} (
-                    {student.attempts.length} of {MAX_ATTEMPTS} attempts used)
-                  </p>
-                  {student.attempts.map((attempt, attemptIdx) => (
+      {quizWeeks.map((qw) => (
+        <QuizWeekSection key={qw.week} quizWeek={qw} />
+      ))}
+    </main>
+  );
+}
+
+function QuizWeekSection({ quizWeek }: { quizWeek: TeamQuizWeekDetail }) {
+  const { week, average, breakdown } = quizWeek;
+  const isRankingWeek = week === QUIZ_WEEK;
+  const quizTitle = isRankingWeek ? "Week 2 ranking activity" : `Week ${week} quiz`;
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-lg font-semibold mb-3">{quizTitle}</h2>
+      {breakdown.length === 0 ? (
+        <p className="text-sm text-neutral-500">No students have attempted this yet.</p>
+      ) : (
+        <div>
+          <p className="text-sm mb-2">
+            Team average: <span className="font-semibold">{average} / 3</span> (applied as the Week {week} trust
+            bonus) — {breakdown.length} student{breakdown.length === 1 ? "" : "s"} contributing
+          </p>
+          <p className="text-xs text-neutral-500 mb-5">
+            This reflects who was on the team when they took it, not who&apos;s on it now — a student moved to
+            another team afterwards still counts here, and this average never changes as a result of a later move.
+          </p>
+          {breakdown.map((student) => {
+            const bestScore = Math.max(...student.attempts.map((a) => a.score));
+            return (
+              <div key={student.studentId} className="mb-8 border-t border-neutral-200 pt-4 first:border-0 first:pt-0">
+                <p className="text-sm font-semibold mb-3">
+                  {student.studentName} — best {bestScore} / {student.attempts[0].maxScore} ({student.attempts.length}{" "}
+                  of {MAX_ATTEMPTS} attempts used)
+                </p>
+                {student.attempts.map((attempt, attemptIdx) =>
+                  isRankingWeek ? (
                     <div key={attemptIdx} className="mb-4">
                       <p className="text-xs text-neutral-600 mb-2">
                         Attempt {attemptIdx + 1}: {attempt.score} / {attempt.maxScore} — completed{" "}
                         {attempt.completedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                       {[STAGE_1_ITEMS, STAGE_2_ITEMS].map((items, stageIdx) => {
-                        const order = stageIdx === 0 ? attempt.answers.stage1Order : attempt.answers.stage2Order;
+                        const rankAnswers = attempt.answers as { stage1Order: string[]; stage2Order: string[] };
+                        const order = stageIdx === 0 ? rankAnswers.stage1Order : rankAnswers.stage2Order;
                         return (
                           <table key={stageIdx} className="w-full text-sm mb-3 border border-neutral-200 rounded-lg overflow-hidden">
                             <thead>
@@ -166,13 +181,24 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
                         );
                       })}
                     </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    </main>
+                  ) : (
+                    (() => {
+                      const generic = attempt.answers as { correct: number; total: number };
+                      return (
+                        <p key={attemptIdx} className="text-xs text-neutral-600 mb-2">
+                          Attempt {attemptIdx + 1}: {attempt.score} / {attempt.maxScore} (raw {generic.correct} /{" "}
+                          {generic.total}) — completed{" "}
+                          {attempt.completedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                      );
+                    })()
+                  )
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

@@ -2,8 +2,10 @@ import { db } from "@/db/client";
 import { weekActionState, actionLog } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getActionItem, BASELINE_ACTIONS, MAX_TRUST_BONUS } from "./actions-catalog";
-import { QUIZ_WEEK } from "./quiz-catalog";
+import { ALL_QUIZ_WEEKS } from "./quiz-catalog";
 import { getTeamQuizAverage } from "./quiz";
+
+const QUIZ_WEEK_SET = new Set(ALL_QUIZ_WEEKS);
 
 export class ActionsError extends Error {}
 
@@ -20,13 +22,17 @@ export type LogEntry = {
 
 /**
  * A week's trust bonus, resolved from whichever source actually governs it:
- * for the quiz week, that's the live average of the team's quiz scores
- * (see getTeamQuizAverage, lib/quiz.ts) — never the stored column, which
- * nothing writes to for that week any more. Every other week still reads
- * the manually-set stored value.
+ * for any quiz week (ALL_QUIZ_WEEKS — Week 2's ranking quiz, plus every
+ * quiz in quiz-catalog.ts's QUIZ_DEFS), that's the live average of the
+ * team's quiz scores (see getTeamQuizAverage, lib/quiz.ts) — never the
+ * stored column, which nothing writes to for those weeks any more. Every
+ * other week still reads the manually-set stored value. Two quizzes can
+ * share a week (Week 6's pair of argument quizzes) — getTeamQuizAverage
+ * pools every attempt tagged with that week regardless of which quiz it
+ * came from, taking each student's best score across either one.
  */
 async function resolveTrustBonus(teamId: string, week: number, storedTrustBonus: number): Promise<number> {
-  if (week === QUIZ_WEEK) {
+  if (QUIZ_WEEK_SET.has(week)) {
     const { average } = await getTeamQuizAverage(teamId, week);
     return average ?? 0;
   }
@@ -43,12 +49,15 @@ export async function getAllWeekState(teamId: string): Promise<WeekStateMap> {
   for (const row of rows) {
     map[row.week] = { trustBonus: await resolveTrustBonus(teamId, row.week, row.trustBonus), actionsSpent: row.actionsSpent };
   }
-  // The quiz week's trust bonus can be live even before any actions have
-  // been taken (and so before any weekActionState row exists) — make sure
-  // it still shows up rather than defaulting to 0 baseline-only.
-  if (!(QUIZ_WEEK in map)) {
-    const trustBonus = await resolveTrustBonus(teamId, QUIZ_WEEK, 0);
-    if (trustBonus > 0) map[QUIZ_WEEK] = { trustBonus, actionsSpent: 0 };
+  // A quiz week's trust bonus can be live even before any actions have been
+  // taken (and so before any weekActionState row exists) — make sure it
+  // still shows up rather than defaulting to 0 baseline-only, for every
+  // quiz week, not just Week 2.
+  for (const week of ALL_QUIZ_WEEKS) {
+    if (!(week in map)) {
+      const trustBonus = await resolveTrustBonus(teamId, week, 0);
+      if (trustBonus > 0) map[week] = { trustBonus, actionsSpent: 0 };
+    }
   }
   return map;
 }
@@ -82,7 +91,7 @@ async function getWeekRow(teamId: string, week: number) {
  * silently overridden or, worse, visibly ignored.
  */
 export async function setTrustBonus(teamId: string, week: number, trustBonus: number): Promise<WeekState> {
-  if (week === QUIZ_WEEK) {
+  if (QUIZ_WEEK_SET.has(week)) {
     throw new ActionsError("This week's trust bonus is set automatically from the quiz average and can't be edited manually.");
   }
 
@@ -110,12 +119,18 @@ export async function takeAction(teamId: string, week: number, actionId: string)
   const action = getActionItem(actionId);
   if (!action) throw new ActionsError("Unknown action.");
 
-  if (action.prerequisiteActionId) {
-    const prereqDone = await db.query.actionLog.findFirst({
-      where: and(eq(actionLog.teamId, teamId), eq(actionLog.actionId, action.prerequisiteActionId)),
-    });
-    if (!prereqDone) {
-      throw new ActionsError("This action's prerequisite hasn't been completed yet.");
+  if (action.availableFromWeek && week < action.availableFromWeek) {
+    throw new ActionsError(`This action isn't available until Week ${action.availableFromWeek}.`);
+  }
+
+  if (action.prerequisiteActionIds?.length) {
+    for (const prereqId of action.prerequisiteActionIds) {
+      const prereqDone = await db.query.actionLog.findFirst({
+        where: and(eq(actionLog.teamId, teamId), eq(actionLog.actionId, prereqId)),
+      });
+      if (!prereqDone) {
+        throw new ActionsError("This action's prerequisites haven't all been completed yet.");
+      }
     }
   }
 

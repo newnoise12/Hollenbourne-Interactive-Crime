@@ -5,7 +5,7 @@ import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getAllWeekState, getActionLog } from "@/lib/actions";
 import { getTeamQuizAverage } from "@/lib/quiz";
 import { ACTIONS } from "@/lib/actions-catalog";
-import { QUIZ_WEEK } from "@/lib/quiz-catalog";
+import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import ActionEconomy from "./ActionEconomy";
 
 export default async function ActionsPage() {
@@ -16,18 +16,22 @@ export default async function ActionsPage() {
     redirect("/login");
   }
 
-  const [weekState, log, quiz] = await Promise.all([
+  const [weekState, log, quizzesByWeek] = await Promise.all([
     getAllWeekState(team.id),
     getActionLog(team.id),
-    getTeamQuizAverage(team.id, QUIZ_WEEK),
+    Promise.all(ALL_QUIZ_WEEKS.map((week) => getTeamQuizAverage(team.id, week))),
   ]);
+
+  const quizStudentsAttemptedByWeek = Object.fromEntries(
+    ALL_QUIZ_WEEKS.map((week, i) => [week, quizzesByWeek[i].studentsAttempted])
+  );
 
   return (
     <ActionEconomy
       actions={ACTIONS}
       initialWeekState={weekState}
       initialLog={log}
-      quizStudentsAttempted={quiz.studentsAttempted}
+      quizStudentsAttemptedByWeek={quizStudentsAttemptedByWeek}
     />
   );
 }

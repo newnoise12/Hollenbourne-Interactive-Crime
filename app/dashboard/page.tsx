@@ -53,6 +53,40 @@ export default async function DashboardPage() {
             Rank sources by trustworthiness &mdash; your score sets this week&apos;s trust bonus.
           </p>
         </Link>
+
+        <Link
+          href="/dashboard/quiz/dark-figure"
+          className="block rounded-lg border border-neutral-300 p-6 hover:border-neutral-900 transition-colors"
+        >
+          <h2 className="font-semibold mb-1">Week 4 trust activity</h2>
+          <p className="text-sm text-neutral-500">
+            Dark Figure of Crime &mdash; reading real crime statistics.
+          </p>
+        </Link>
+
+        <Link
+          href="/dashboard/quiz/pace"
+          className="block rounded-lg border border-neutral-300 p-6 hover:border-neutral-900 transition-colors"
+        >
+          <h2 className="font-semibold mb-1">Week 5 trust activity</h2>
+          <p className="text-sm text-neutral-500">PACE Quiz &mdash; police powers under the Police and Criminal Evidence Act.</p>
+        </Link>
+
+        <Link
+          href="/dashboard/quiz/argument-regeneration"
+          className="block rounded-lg border border-neutral-300 p-6 hover:border-neutral-900 transition-colors"
+        >
+          <h2 className="font-semibold mb-1">Week 6 trust activity (1 of 2)</h2>
+          <p className="text-sm text-neutral-500">Diagnose the Argument: Council Regeneration Funding.</p>
+        </Link>
+
+        <Link
+          href="/dashboard/quiz/argument-policing"
+          className="block rounded-lg border border-neutral-300 p-6 hover:border-neutral-900 transition-colors"
+        >
+          <h2 className="font-semibold mb-1">Week 6 trust activity (2 of 2)</h2>
+          <p className="text-sm text-neutral-500">Diagnose the Argument: Force Structure. Both contribute to the same Week 6 trust bonus.</p>
+        </Link>
       </div>
     </main>
   );

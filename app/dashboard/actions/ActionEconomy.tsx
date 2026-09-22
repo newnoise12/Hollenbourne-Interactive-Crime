@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { CATEGORY_META, BASELINE_ACTIONS, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
-import { QUIZ_WEEK } from "@/lib/quiz-catalog";
+import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
 
 function Pips({ total, used }: { total: number; used: number }) {
@@ -28,13 +28,13 @@ function ActionCard({
   action,
   canAfford,
   locked,
-  prerequisiteLabel,
+  requirementLabel,
   onTake,
 }: {
   action: ActionItem;
   canAfford: boolean;
   locked: boolean;
-  prerequisiteLabel: string | null;
+  requirementLabel: string | null;
   onTake: () => void;
 }) {
   const meta = CATEGORY_META[action.category];
@@ -59,8 +59,8 @@ function ActionCard({
       </div>
       <h4 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-1 mt-0">{action.label}</h4>
       <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{action.description}</p>
-      {locked && prerequisiteLabel && (
-        <p className="font-mono text-xs text-[#8B3226] mb-2.5 mt-0">requires: {prerequisiteLabel}</p>
+      {locked && requirementLabel && (
+        <p className="font-mono text-xs text-[#8B3226] mb-2.5 mt-0">requires: {requirementLabel}</p>
       )}
       <button
         onClick={onTake}
@@ -88,12 +88,12 @@ export default function ActionEconomy({
   actions,
   initialWeekState,
   initialLog,
-  quizStudentsAttempted,
+  quizStudentsAttemptedByWeek,
 }: {
   actions: ActionItem[];
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
-  quizStudentsAttempted: number;
+  quizStudentsAttemptedByWeek: Record<number, number>;
 }) {
   const [week, setWeek] = useState(1);
   const [weekStateMap, setWeekStateMap] = useState<WeekStateMap>(initialWeekState);
@@ -104,7 +104,8 @@ export default function ActionEconomy({
   const current: WeekState = weekStateMap[week] ?? { trustBonus: 0, actionsSpent: 0 };
   const totalAvailable = BASELINE_ACTIONS + current.trustBonus;
   const remaining = totalAvailable - current.actionsSpent;
-  const isQuizWeek = week === QUIZ_WEEK;
+  const isQuizWeek = (ALL_QUIZ_WEEKS as number[]).includes(week);
+  const quizStudentsAttempted = quizStudentsAttemptedByWeek[week] ?? 0;
 
   // Prerequisites are permanent, not weekly — completed in any week, on any
   // team's own timeline, they stay completed. Derived from the live log
@@ -138,9 +139,12 @@ export default function ActionEconomy({
     }
   };
 
+  const isLocked = (action: ActionItem) =>
+    (!!action.prerequisiteActionIds?.length && !action.prerequisiteActionIds.every((id) => completedActionIds.has(id))) ||
+    (!!action.availableFromWeek && week < action.availableFromWeek);
+
   const takeAction = async (action: ActionItem) => {
-    const locked = !!action.prerequisiteActionId && !completedActionIds.has(action.prerequisiteActionId);
-    if (locked || remaining < action.cost || pending) return;
+    if (isLocked(action) || remaining < action.cost || pending) return;
     setSaveError(false);
     setPending(true);
     try {
@@ -194,7 +198,7 @@ export default function ActionEconomy({
           <div className="flex justify-between items-center mb-2.5 flex-wrap gap-2.5">
             <span className="font-mono text-xs text-[#5B5A4E]">
               {isQuizWeek
-                ? `Trust bonus this week (average of ${quizStudentsAttempted} student${quizStudentsAttempted === 1 ? "" : "s"}' quiz scores)`
+                ? `Trust bonus this week (average of ${quizStudentsAttempted} student${quizStudentsAttempted === 1 ? "'s" : "s'"} quiz scores)`
                 : "Trust bonus this week (from the institutional insight task)"}
             </span>
             {isQuizWeek ? (
@@ -231,16 +235,23 @@ export default function ActionEconomy({
         </div>
 
         {actions.map((action) => {
-          const locked = !!action.prerequisiteActionId && !completedActionIds.has(action.prerequisiteActionId);
-          const prerequisite = action.prerequisiteActionId ? actionsById.get(action.prerequisiteActionId) : undefined;
-          const prerequisiteLabel = prerequisite ? prerequisite.shortLabel ?? prerequisite.label : null;
+          const locked = isLocked(action);
+          const missingPrereqLabels = (action.prerequisiteActionIds ?? [])
+            .filter((id) => !completedActionIds.has(id))
+            .map((id) => {
+              const prerequisite = actionsById.get(id);
+              return prerequisite ? prerequisite.shortLabel ?? prerequisite.label : id;
+            });
+          const weekLabel =
+            action.availableFromWeek && week < action.availableFromWeek ? `Week ${action.availableFromWeek}` : null;
+          const requirementLabel = [...missingPrereqLabels, ...(weekLabel ? [weekLabel] : [])].join(", ") || null;
           return (
             <ActionCard
               key={action.id}
               action={action}
               canAfford={remaining >= action.cost && !pending}
               locked={locked}
-              prerequisiteLabel={prerequisiteLabel}
+              requirementLabel={requirementLabel}
               onTake={() => takeAction(action)}
             />
           );

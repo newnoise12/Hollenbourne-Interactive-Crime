@@ -10,21 +10,45 @@ import {
   STAGE_2_ITEMS,
   scoreAttempt,
   isValidOrder,
+  getQuizDef,
+  scoreMcqQuiz,
+  scoreMultiselectQuiz,
 } from "./quiz-catalog";
 
 export class QuizError extends Error {}
 
 export type QuizAnswers = { stage1Order: string[]; stage2Order: string[] };
 
-export type QuizAttempt = {
+// The shape submitGenericQuizAttempt (below) stores for every Weeks 4-6
+// quiz. Exported so callers that read across multiple quiz weeks at once
+// (getTeamQuizBreakdown) can narrow QuizAttempt.answers correctly by
+// checking which quiz produced a given row.
+export type GenericStoredAnswers = { raw: number[][] | string[]; correct: number; total: number };
+
+// The Week 2 ranking quiz's own attempt shape — guaranteed by
+// getQuizAttempts/submitQuizAttempt's quizId filter below, so callers
+// working with those two functions specifically can rely on `answers`
+// always being QuizAnswers, no narrowing needed.
+export type RankQuizAttempt = {
   score: number;
   maxScore: number;
   answers: QuizAnswers;
   completedAt: Date;
 };
 
+export type QuizAttempt = {
+  score: number;
+  maxScore: number;
+  // QuizAnswers for the Week 2 ranking quiz; GenericStoredAnswers for any
+  // other quiz — getTeamQuizBreakdown (the only place this general type is
+  // used) pools rows across quizzes sharing a week, so its callers must
+  // narrow by week/quizId before reading this.
+  answers: QuizAnswers | GenericStoredAnswers;
+  completedAt: Date;
+};
+
 /** Returns every attempt one student has made at the Week 2 quiz, oldest first. Empty if none yet. */
-export async function getQuizAttempts(studentId: string): Promise<QuizAttempt[]> {
+export async function getQuizAttempts(studentId: string): Promise<RankQuizAttempt[]> {
   const rows = await db.query.quizAttempts.findMany({
     where: and(eq(quizAttempts.studentId, studentId), eq(quizAttempts.quizId, QUIZ_ID)),
     orderBy: asc(quizAttempts.completedAt),
@@ -53,7 +77,7 @@ export async function submitQuizAttempt(
   teamIdAtAttempt: string,
   stage1Order: string[],
   stage2Order: string[]
-): Promise<QuizAttempt> {
+): Promise<RankQuizAttempt> {
   const existing = await getQuizAttempts(studentId);
   if (existing.length >= MAX_ATTEMPTS) {
     throw new QuizError(`This quiz has already been attempted ${MAX_ATTEMPTS} times — no attempts left.`);
@@ -147,11 +171,111 @@ export async function getTeamQuizBreakdown(teamId: string, week: number): Promis
     entry.attempts.push({
       score: row.score,
       maxScore: row.maxScore,
-      answers: JSON.parse(row.answers) as QuizAnswers,
+      // Rows here can come from any quiz sharing this week (e.g. Week 6's
+      // argument pair) — narrow by week/quizId before reading this field.
+      answers: JSON.parse(row.answers) as QuizAnswers | GenericStoredAnswers,
       completedAt: row.completedAt,
     });
     byStudent.set(row.studentId, entry);
   }
 
   return [...byStudent.values()];
+}
+
+// =====================================================================
+// Generic path for the Weeks 4-6 mcq/multiselect quizzes (quiz-catalog.ts's
+// QUIZ_DEFS). Unlike the Week 2 functions above, these are parameterized by
+// quizId rather than hardcoded to one quiz — every quiz in QUIZ_DEFS shares
+// this same storage shape in quizAttempts: `score`/`maxScore` stay on the
+// same 0-3 trust-bonus scale as Week 2 (not the raw question count), so
+// getTeamQuizAverage above works unchanged for these weeks too, purely by
+// filtering on `week` — which is also why two quizzes sharing a week (the
+// Week 6 argument pair) pool together into one average, each student's
+// best score across either one counting.
+// =====================================================================
+
+export type GenericQuizAnswers = number[][] | string[];
+
+export type GenericQuizAttempt = {
+  score: number; // 0-3, same scale as the stored trust bonus
+  maxScore: number;
+  correct: number; // raw correct-question count (mcq) or points (multiselect) — for feedback display, not the trust bonus itself
+  total: number; // raw question count (mcq) or genuine-flaw count (multiselect)
+  answers: GenericQuizAnswers;
+  completedAt: Date;
+};
+
+/** Every attempt one student has made at a given Weeks 4-6 quiz, oldest first. */
+export async function getGenericQuizAttempts(studentId: string, quizId: string): Promise<GenericQuizAttempt[]> {
+  const rows = await db.query.quizAttempts.findMany({
+    where: and(eq(quizAttempts.studentId, studentId), eq(quizAttempts.quizId, quizId)),
+    orderBy: asc(quizAttempts.completedAt),
+  });
+
+  return rows.map((row) => {
+    const stored = JSON.parse(row.answers) as GenericStoredAnswers;
+    return {
+      score: row.score,
+      maxScore: row.maxScore,
+      correct: stored.correct,
+      total: stored.total,
+      answers: stored.raw,
+      completedAt: row.completedAt,
+    };
+  });
+}
+
+/** Scores and records one student's attempt at a Weeks 4-6 quiz (up to MAX_ATTEMPTS, same cap as Week 2). */
+export async function submitGenericQuizAttempt(
+  studentId: string,
+  teamIdAtAttempt: string,
+  quizId: string,
+  rawAnswers: GenericQuizAnswers
+): Promise<GenericQuizAttempt> {
+  const quiz = getQuizDef(quizId);
+  if (!quiz) throw new QuizError("Unknown quiz.");
+
+  const existing = await getGenericQuizAttempts(studentId, quizId);
+  if (existing.length >= MAX_ATTEMPTS) {
+    throw new QuizError(`This quiz has already been attempted ${MAX_ATTEMPTS} times — no attempts left.`);
+  }
+
+  let score: number;
+  let correct: number;
+  let total: number;
+
+  if (quiz.kind === "mcq") {
+    if (!Array.isArray(rawAnswers) || rawAnswers.some((stage) => !Array.isArray(stage))) {
+      throw new QuizError("Invalid answers submitted.");
+    }
+    const result = scoreMcqQuiz(quiz, rawAnswers as number[][]);
+    score = result.bonus;
+    correct = result.correct;
+    total = result.total;
+  } else {
+    if (!Array.isArray(rawAnswers) || rawAnswers.some((id) => typeof id !== "string")) {
+      throw new QuizError("Invalid answers submitted.");
+    }
+    const result = scoreMultiselectQuiz(quiz, rawAnswers as string[]);
+    score = result.points;
+    correct = result.points;
+    total = result.max;
+  }
+
+  const stored: GenericStoredAnswers = { raw: rawAnswers, correct, total };
+
+  const [row] = await db
+    .insert(quizAttempts)
+    .values({
+      studentId,
+      teamIdAtAttempt,
+      quizId: quiz.id,
+      week: quiz.week,
+      score,
+      maxScore: MAX_SCORE,
+      answers: JSON.stringify(stored),
+    })
+    .returning();
+
+  return { score: row.score, maxScore: row.maxScore, correct, total, answers: rawAnswers, completedAt: row.completedAt };
 }
