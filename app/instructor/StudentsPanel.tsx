@@ -37,18 +37,18 @@ function StudentRow({ student, teams }: { student: StudentWithTeam; teams: TeamO
   };
 
   return (
-    <tr className="border-b border-neutral-100 last:border-0">
-      <td className="px-4 py-2.5 font-medium">{student.name}</td>
-      <td className="px-4 py-2.5 text-neutral-500">{student.teamName}</td>
+    <tr className="border-b border-[#D6CDB4] last:border-0 text-[#2A2F27]">
+      <td className="px-4 py-2.5 font-semibold">{student.name}</td>
+      <td className="px-4 py-2.5 text-[#5B5A4E]">{student.teamName}</td>
       <td className="px-4 py-2.5">
         {otherTeams.length === 0 ? (
-          <span className="text-neutral-400">no other teams</span>
+          <span className="text-[#8A8A80]">no other teams</span>
         ) : (
           <div className="flex items-center gap-2">
             <select
               value={targetTeamId}
               onChange={(e) => setTargetTeamId(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1 text-sm"
+              className="font-mono text-[13px] bg-[#FBF8F0] border border-[#D6CDB4] px-2 py-1 text-[#2A2F27]"
             >
               {otherTeams.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -59,13 +59,13 @@ function StudentRow({ student, teams }: { student: StudentWithTeam; teams: TeamO
             <button
               onClick={move}
               disabled={moving}
-              className="rounded bg-neutral-900 text-white px-3 py-1 text-sm disabled:opacity-50"
+              className="font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] px-3 py-1 border border-[#2A2F27] disabled:opacity-50"
             >
-              {moving ? "Moving…" : "Move"}
+              {moving ? "MOVING…" : "MOVE"}
             </button>
           </div>
         )}
-        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+        {error && <p className="font-mono text-[11px] text-[#8B3226] mt-1">{error}</p>}
       </td>
     </tr>
   );
@@ -74,18 +74,18 @@ function StudentRow({ student, teams }: { student: StudentWithTeam; teams: TeamO
 export default function StudentsPanel({ students, teams }: { students: StudentWithTeam[]; teams: TeamOption[] }) {
   if (students.length === 0) {
     return (
-      <p className="text-sm text-neutral-500 border border-dashed border-neutral-300 rounded-lg p-8 text-center">
-        No students have identified themselves yet — that happens the first time someone on a team answers the Week
-        2 quiz.
+      <p className="font-mono text-xs text-[#8A8A80] bg-[#E8E1D0] border border-dashed border-[#A6764A] px-8 py-8 text-center">
+        No students have identified themselves yet &mdash; that happens the first time someone on a team answers a
+        quiz.
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto border border-neutral-200 rounded-lg">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto bg-[#E8E1D0] border border-[#A6764A]">
+      <table className="w-full font-mono text-[13px]">
         <thead>
-          <tr className="bg-neutral-50 text-left text-neutral-500 border-b border-neutral-200">
+          <tr className="text-left text-[#5B5A4E] border-b border-[#D6CDB4]">
             <th className="px-4 py-2.5 font-medium">Name</th>
             <th className="px-4 py-2.5 font-medium">Current team</th>
             <th className="px-4 py-2.5 font-medium">Move to</th>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { CATEGORY_META, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
@@ -224,18 +223,7 @@ export default function ActionEconomy({
   };
 
   return (
-    <div className="bg-[#23262B] min-h-full px-6 py-8">
-      <div className="max-w-[640px] mx-auto">
-        <div className="flex justify-between items-end mb-1.5">
-          <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">Investigation resources</h1>
-          <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-            back to dashboard
-          </Link>
-        </div>
-        <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
-          Boresfield review &mdash; allocate your team&apos;s actions each week.
-        </p>
-
+    <div>
         <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4.5 mb-5">
           <div className="flex justify-between items-center mb-3.5">
             <div className="flex items-center gap-2.5">
@@ -379,7 +367,6 @@ export default function ActionEconomy({
         {saveError && (
           <p className="font-mono text-[11px] text-[#8B3226] mt-4">Couldn&apos;t save &mdash; try again.</p>
         )}
-      </div>
     </div>
   );
 }

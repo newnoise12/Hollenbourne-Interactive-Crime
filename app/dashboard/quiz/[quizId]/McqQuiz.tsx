@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MAX_ATTEMPTS, type McqQuizDef } from "@/lib/quiz-catalog";
 import type { GenericQuizAttempt } from "@/lib/quiz";
@@ -120,14 +119,7 @@ export default function McqQuiz({
   if (mode === "result" && latestAttempt) {
     const resultAnswers = latestAttempt.answers as (number | undefined)[][];
     return (
-      <div className="bg-[#23262B] min-h-full px-6 py-8">
-        <div className="max-w-[640px] mx-auto">
-          <div className="flex justify-between items-end mb-1.5">
-            <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">{quiz.title}</h1>
-            <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-              back to dashboard
-            </Link>
-          </div>
+      <div>
           <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
             Attempt {attemptsUsed} of {MAX_ATTEMPTS} &mdash; here&apos;s how you answered.
           </p>
@@ -154,6 +146,11 @@ export default function McqQuiz({
                 const ok = picked === q.correct;
                 return (
                   <div key={qi} className="bg-[#E8E1D0] border border-[#D6CDB4] border-l-4 px-5 py-4 mb-3" style={{ borderLeftColor: ok ? "#2F6B4F" : "#8B3226" }}>
+                    {q.context && (
+                      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed italic border-l-2 border-[#A6764A] pl-2.5 mb-2.5 mt-0">
+                        {q.context}
+                      </p>
+                    )}
                     <p className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-2 mt-0">
                       {qi + 1}. {q.q}
                     </p>
@@ -177,20 +174,12 @@ export default function McqQuiz({
           ) : (
             <p className="font-mono text-xs text-[#8A8A80] mt-2">No attempts remaining &mdash; your best score is locked in as the trust bonus.</p>
           )}
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#23262B] min-h-full px-6 py-8">
-      <div className="max-w-[640px] mx-auto">
-        <div className="flex justify-between items-end mb-1.5">
-          <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">{quiz.title}</h1>
-          <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-            back to dashboard
-          </Link>
-        </div>
+    <div>
         {quiz.intro && <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0">{quiz.intro}</p>}
         <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
           Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS} &mdash; your best score across all attempts is averaged with your
@@ -220,6 +209,11 @@ export default function McqQuiz({
               className="bg-[#E8E1D0] border border-[#D6CDB4] border-l-4 px-5 py-4 mb-3"
               style={{ borderLeftColor: revealed ? (ok ? "#2F6B4F" : "#8B3226") : "#D6CDB4" }}
             >
+              {q.context && (
+                <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed italic border-l-2 border-[#A6764A] pl-2.5 mb-2.5 mt-0">
+                  {q.context}
+                </p>
+              )}
               <p className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-2 mt-0">
                 {qi + 1}. {q.q}
               </p>
@@ -290,7 +284,6 @@ export default function McqQuiz({
           </button>
         )}
         {error && <p className="font-mono text-xs text-[#8B3226] mt-3">{error}</p>}
-      </div>
     </div>
   );
 }

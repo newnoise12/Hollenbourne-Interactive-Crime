@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { Student } from "@/lib/students";
 
 export default function WhoAreYou({ students }: { students: Student[] }) {
@@ -35,16 +34,10 @@ export default function WhoAreYou({ students }: { students: Student[] }) {
   };
 
   return (
-    <div className="bg-[#23262B] min-h-full px-6 py-8">
-      <div className="max-w-[480px] mx-auto">
-        <div className="flex justify-between items-end mb-1.5">
-          <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">Who&apos;s answering?</h1>
-          <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-            back to dashboard
-          </Link>
-        </div>
+    <div className="max-w-[480px]">
+        <h3 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-1.5 mt-0">Who&apos;s answering?</h3>
         <p className="font-mono text-xs text-[#8A8A80] mb-6 mt-0 border-b border-[#A6764A55] pb-4">
-          The Week 2 quiz is scored per student &mdash; your team&apos;s trust bonus is the average of everyone&apos;s
+          Quizzes are scored per student &mdash; your team&apos;s trust bonus is the average of everyone&apos;s
           best score. Pick your name, or add it if this is your first time.
         </p>
 
@@ -98,7 +91,6 @@ export default function WhoAreYou({ students }: { students: Student[] }) {
         </div>
 
         {error && <p className="font-mono text-xs text-[#8B3226] mt-2">{error}</p>}
-      </div>
     </div>
   );
 }

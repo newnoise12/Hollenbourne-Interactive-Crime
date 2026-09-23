@@ -59,20 +59,60 @@ neither prompts.
   students (named individuals within a team, no auth of their own — see
   below), quiz attempts (per student, not per team).
 
+## Page structure
+
+**`/dashboard` is a single-page tabbed app, not separate routes per
+feature.** `app/dashboard/page.tsx` is the only server component — it fetches
+everything every tab needs in parallel and hands it all to
+`DashboardShell.tsx` (client), which renders the masthead, the tab bar
+(Briefing / Investigation / Case Log / Quizzes), and every tab's content in
+one page, toggling visibility with a plain `hidden` attribute rather than
+mounting/unmounting — so switching tabs never loses in-progress state (a
+half-answered quiz, an unsaved corkboard drag) the way a route change would.
+This mirrors a recovered standalone prototype's structure (see "A third,
+previously-unknown copy" below) more closely than the app's own earlier
+multi-page layout did — deliberately: the routes `/dashboard/case-log`,
+`/dashboard/actions`, `/dashboard/quiz`, and `/dashboard/quiz/[quizId]` no
+longer exist. Their former `page.tsx` files are gone; the actual feature
+components they used to render (`ActionEconomy.tsx`, `EvidenceBoard.tsx`,
+`TrustQuiz.tsx`, `McqQuiz.tsx`, `MultiselectQuiz.tsx`, `WhoAreYou.tsx`)
+still live at their same paths and are unchanged in substance — only
+stripped of their own page-level chrome (title, back-link, full-bleed
+background) since `DashboardShell` now supplies that once, consistently,
+for every tab. `QuizzesTab.tsx` is the one genuinely new piece: it lists
+every quiz (Week 2's ranking activity plus every `quiz-catalog.ts` entry)
+as a collapsible card and embeds the relevant quiz component inside,
+gating the whole tab on `WhoAreYou` once, rather than each quiz checking
+identity separately.
+
+**This was a deliberate, explicitly-approved rebuild**, not an incidental
+refactor — the user asked to match the recovered artifact's *structure*,
+not just its visual look, understanding this meant redoing the page shell
+around already-working backend logic. Nothing in `lib/*.ts` or `app/api/*`
+changed: auth, per-student quiz attribution, prerequisite gating, the
+corkboard, and reserve banking are all exactly as documented below, just
+reachable through tabs instead of URLs now. `/login` and `/instructor/*`
+were restyled (not restructured) to match the same parchment/masthead
+visual language, since they were still plain Tailwind and looked
+inconsistent with everything else.
+
 ## Current state (as of last session)
 
 **Built and verified working end-to-end:**
 - Team registration, login, logout, session handling — all API routes
   (`app/api/auth/*`) and pages (`app/login`, `app/dashboard`) tested both as
   unit tests and over real HTTP.
-- The case log (evidence board, `app/dashboard/case-log`) and weekly action
-  economy (`app/dashboard/actions`) — ported from the earlier
+- The case log (evidence board, `app/dashboard/case-log/EvidenceBoard.tsx`)
+  and weekly action economy (`app/dashboard/actions/ActionEconomy.tsx`) —
+  both rendered as tabs in the unified `/dashboard` shell (see "Page
+  structure" above), not standalone routes — ported from the earlier
   browser-local-storage prototypes (kept for reference in `Reference/`),
   now backed by the real database (`evidenceCitations`,
   `weekActionState`/`actionLog`). Citation validation lives in
   `lib/citation-validation.ts` and runs both client-side (live field
   feedback) and server-side (`lib/evidence.ts`, defense in depth).
-- The Week 2 trustworthiness-ranking quiz (`app/dashboard/quiz`), content
+- The Week 2 trustworthiness-ranking quiz (`app/dashboard/quiz/TrustQuiz.tsx`,
+  rendered as a tab in `QuizzesTab.tsx` — see "Page structure" above), content
   from `Reference/week2-trustworthiness-quiz (1).md`, backed by
   `quizAttempts` — **attributed to individual students, not the team**.
   Evidence board and action economy stay team-shared (unchanged, one login
@@ -183,8 +223,11 @@ neither prompts.
   `lib/quiz-catalog.ts`'s `QUIZ_DEFS` (mcq/multiselect quiz definitions,
   `scoreMcqQuiz`/`scoreMultiselectQuiz`) →
   `lib/quiz.ts`'s `submitGenericQuizAttempt`/`getGenericQuizAttempts` →
-  `app/dashboard/quiz/[quizId]` (one dynamic route rendering `McqQuiz.tsx`
-  or `MultiselectQuiz.tsx` depending on the quiz's `kind`). `score`/
+  `app/dashboard/quiz/[quizId]/McqQuiz.tsx` or `MultiselectQuiz.tsx`
+  depending on the quiz's `kind`, rendered inside `QuizzesTab.tsx` (see
+  "Page structure" above — this was a dynamic route before the single-page
+  restructure; the folder name is now just where the component files live).
+  `score`/
   `maxScore` are always stored on the same 0-3 trust-bonus scale as Week 2
   (not the raw question count), which is what lets `getTeamQuizAverage`
   keep working unchanged for these weeks purely by filtering on `week` —
@@ -248,19 +291,53 @@ neither prompts.
     reserve point, then spent that reserve point on an action with 0
     weekly points remaining and confirmed the weekly `actionsSpent` count
     was untouched by the reserve payment.
+- **Weeks 7 and 8 quizzes** (CPS Quiz, Reoffending and Sentencing Quiz) —
+  same generic mcq path as weeks 4/5, ported from fully-written content in
+  `Reference/case-content/quizzes/hollenbourne-cps-quiz.md` and
+  `hollenbourne-prisons-quiz.md`. Week 8 needed one small architecture
+  addition: `McqQuestion` gained an optional `context` field (a passage
+  shown immediately before one specific question, not the whole stage) —
+  for the selection-effects reveal in Part 1 and the source text in Part 3
+  — rendered in both the answering and result views of `McqQuiz.tsx`.
+  These were found via a **full audit of every file** in
+  `Reference/case-content/` (prompted by the user explicitly asking for
+  one) rather than only the files a specific feature happened to need —
+  worth repeating that audit before declaring any week's content "not
+  recovered," since three separate rounds of building from this archive so
+  far each turned up more than the previous round checked for.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
-**Not yet built — the next work:**
-- Week 3's referencing/"Cite Them Right" activity — the one week-by-week
-  table entry with no quiz recovered from either content source yet. A
-  `week3-referencing-quiz.md` draft exists in
-  `Reference/case-content/quizzes/`, but per CLAUDE.md's earlier notes this
-  may actually need an AI-graded format (a rotated Anthropic API key), not
-  a scored mcq/multiselect quiz like weeks 4-6 — worth checking that draft
-  before assuming it fits the existing pattern.
-- Further weeks beyond 6 (7-11) have no quiz content recovered from either
-  source yet, beyond what `hollenbourne-activity-plan.md`'s table names.
+**Found in the full content audit above, not yet built:**
+- **Week 3's referencing activity has a complete, ready-to-build spec** —
+  `hollenbourne-week3-referencing-quiz.md` (4 mcq + 3 free-text tasks) plus
+  `technical-briefs/hollenbourne-claude-code-referencing-brief.md`, a full
+  technical brief for AI-graded free-text citation checking: exact
+  Anthropic Messages API call structure, a structured JSON grading schema
+  (per-element correct/flawed/missing plus notes), and a ready prompt
+  template. **Blocked on the user**, not on missing spec: needs a fresh
+  Anthropic API key in `.env.local` (the one used earlier was pasted in
+  chat and should be treated as burned) — not something to generate or
+  paste into a session.
+- **The corkboard deviates from its own design brief**
+  (`Reference/case-content/hollenbourne-evidence-board-design.md`, which
+  wasn't read before building it) in two ways: (1) it specifies
+  **colour-by-suspect** (Burgess red, Nigel blue, Swayne amber, Haddad a
+  fourth muted colour, neutral grey for non-suspect-specific evidence) —
+  built as colour-by-evidence-*type* instead, and `EvidenceItem` has no
+  `suspect` field to do this properly; (2) it specifies a permanent
+  **"filing cabinet" zone organised by case** (Mason/Wooley/Porterhouse/
+  Butt) sitting above the corkboard, distinct from the citation-practice
+  list — not built; only the flat exhibit list exists.
+- The endgame submission form (`hollenbourne-endgame-form.md`) is
+  confirmed **not** a gap — it's explicit in its own header that it's
+  offline and hand-graded, no app integration intended.
+- A minor content inconsistency, not yet reconciled: the recovered
+  artifact prototype has the Haddad/Swayne Porterhouse interviews
+  conducted by a "DS Fenwick," not DS Ferris — not established anywhere in
+  the case bible. Worth a deliberate decision if those interviews' outcome
+  text ever gets expanded, rather than letting the two sources diverge
+  silently.
 - The disconnected OneDrive copy this content was recovered from
   (`C:\Users\CrisW\dev\hollenbourne-app`) still exists and hasn't been
   cleaned up — safe to delete once its content is confirmed fully migrated,

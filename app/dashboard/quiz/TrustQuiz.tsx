@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MAX_ATTEMPTS, type QuizItem } from "@/lib/quiz-catalog";
 import type { RankQuizAttempt } from "@/lib/quiz";
@@ -233,14 +232,7 @@ export default function TrustQuiz({
     const { stage1Points, stage2Points } = stagePoints(stage1Items, stage2Items, latestAttempt);
 
     return (
-      <div className="bg-[#23262B] min-h-full px-6 py-8">
-        <div className="max-w-[640px] mx-auto">
-          <div className="flex justify-between items-end mb-1.5">
-            <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">Week 2 trust activity</h1>
-            <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-              back to dashboard
-            </Link>
-          </div>
+      <div>
           <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
             Attempt {attemptsUsed} of {MAX_ATTEMPTS} &mdash; here&apos;s how you ranked each source, and why.
           </p>
@@ -254,11 +246,8 @@ export default function TrustQuiz({
           </div>
           <p className="font-mono text-xs text-[#8A8A80] mb-6">
             Your best score so far: <span className="text-[#E8E1D0]">{bestScore} / {latestAttempt.maxScore}</span> &mdash;
-            this is averaged with your teammates&apos; best scores to set the team&apos;s trust bonus for{" "}
-            <Link href="/dashboard/actions" className="underline text-[#A6764A]">
-              Week 2 investigation actions
-            </Link>
-            .
+            this is averaged with your teammates&apos; best scores to set the team&apos;s Week 2 trust bonus on the
+            Investigation tab.
           </p>
 
           <StageResults items={stage1Items} order={latestAttempt.answers.stage1Order} points={stage1Points} />
@@ -278,20 +267,12 @@ export default function TrustQuiz({
               No attempts remaining &mdash; your best score is locked in as the trust bonus.
             </p>
           )}
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#23262B] min-h-full px-6 py-8">
-      <div className="max-w-[640px] mx-auto">
-        <div className="flex justify-between items-end mb-1.5">
-          <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">Week 2 trust activity</h1>
-          <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-            back to dashboard
-          </Link>
-        </div>
+    <div>
         <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0">
           Ranking sources by trustworthiness. Click each item below in the order you&apos;d rank it, most trustworthy
           first.
@@ -378,7 +359,6 @@ export default function TrustQuiz({
           </>
         )}
         {error && <p className="font-mono text-xs text-[#8B3226] mt-3">{error}</p>}
-      </div>
     </div>
   );
 }

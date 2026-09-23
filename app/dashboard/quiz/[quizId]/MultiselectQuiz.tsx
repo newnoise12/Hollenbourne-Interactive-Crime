@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MAX_ATTEMPTS, type MultiselectQuizDef } from "@/lib/quiz-catalog";
 import type { GenericQuizAttempt } from "@/lib/quiz";
@@ -92,14 +91,7 @@ export default function MultiselectQuiz({
   if (mode === "result" && latestAttempt) {
     const resultSelected = new Set(latestAttempt.answers as string[]);
     return (
-      <div className="bg-[#23262B] min-h-full px-6 py-8">
-        <div className="max-w-[640px] mx-auto">
-          <div className="flex justify-between items-end mb-1.5">
-            <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">{quiz.title}</h1>
-            <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-              back to dashboard
-            </Link>
-          </div>
+      <div>
           <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
             Attempt {attemptsUsed} of {MAX_ATTEMPTS}
           </p>
@@ -138,20 +130,12 @@ export default function MultiselectQuiz({
           ) : (
             <p className="font-mono text-xs text-[#8A8A80] mt-4">No attempts remaining &mdash; your best score is locked in as the trust bonus.</p>
           )}
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#23262B] min-h-full px-6 py-8">
-      <div className="max-w-[640px] mx-auto">
-        <div className="flex justify-between items-end mb-1.5">
-          <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">{quiz.title}</h1>
-          <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-            back to dashboard
-          </Link>
-        </div>
+    <div>
         {quiz.intro && <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0">{quiz.intro}</p>}
         <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
           Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS} &mdash; your best score across all attempts is averaged with your
@@ -227,7 +211,6 @@ export default function MultiselectQuiz({
           </button>
         )}
         {error && <p className="font-mono text-xs text-[#8B3226] mt-3">{error}</p>}
-      </div>
     </div>
   );
 }

@@ -37,9 +37,9 @@ export default function InstructorLoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto space-y-4">
+    <form onSubmit={handleSubmit} className="w-full bg-[#E8E1D0] border border-[#D6CDB4] px-6 py-6 space-y-4">
       <div>
-        <label htmlFor="passcode" className="block text-sm font-medium text-neutral-700 mb-1">
+        <label htmlFor="passcode" className="block font-mono text-[11px] text-[#5B5A4E] mb-1">
           Passcode
         </label>
         <input
@@ -48,12 +48,12 @@ export default function InstructorLoginForm() {
           required
           value={passcode}
           onChange={(e) => setPasscode(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+          className="w-full font-mono text-[13px] bg-[#FBF8F0] border border-[#D6CDB4] px-2.5 py-2 text-[#2A2F27] outline-none"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="font-mono text-xs text-[#8B3226]" role="alert">
           {error}
         </p>
       )}
@@ -61,9 +61,9 @@ export default function InstructorLoginForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-md bg-neutral-900 text-white py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] py-2.5 border border-[#2A2F27] disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {submitting ? "Please wait…" : "Enter"}
+        {submitting ? "PLEASE WAIT…" : "ENTER"}
       </button>
     </form>
   );

@@ -158,6 +158,11 @@ export type McqQuestion = {
   options: string[];
   correct: number; // index into options
   explain: string;
+  // A short passage shown immediately before this question, distinct from
+  // the stage's own intro — for a mid-stage reveal (e.g. a confound
+  // explained only once the "tempting" earlier questions are answered) or
+  // a source text the question is directly about.
+  context?: string;
 };
 
 export type McqStage = {
@@ -460,7 +465,225 @@ export const ARGUMENT_POLICING_QUIZ: MultiselectQuizDef = {
   ],
 };
 
-export const QUIZ_DEFS: QuizDef[] = [PACE_QUIZ, DARK_FIGURE_QUIZ, ARGUMENT_REGENERATION_QUIZ, ARGUMENT_POLICING_QUIZ];
+export const CPS_QUIZ: McqQuizDef = {
+  id: "cps",
+  kind: "mcq",
+  week: 7,
+  title: "CPS Quiz",
+  intro:
+    "The Full Code Test's evidential stage is the real-world version of the “strong case vs. thin case” distinction the endgame already runs on. Facts checked against the CPS's own Code for Crown Prosecutors.",
+  bonusThresholds: [
+    [0, 0],
+    [2, 1],
+    [3, 2],
+    [5, 3],
+  ],
+  stages: [
+    {
+      questions: [
+        {
+          q: "What are the two stages of the CPS's “Full Code Test,” used to decide whether to charge a suspect?",
+          options: [
+            "The arrest stage and the trial stage",
+            "The evidential stage and the public interest stage",
+            "The reasonable suspicion stage and the beyond reasonable doubt stage",
+            "The police stage and the court stage",
+          ],
+          correct: 1,
+          explain:
+            "Every charging decision — whether made by the CPS or, for many offences, by the police directly — is meant to apply both stages in order: evidential first, then public interest.",
+        },
+        {
+          q: "What does “a realistic prospect of conviction” actually mean, in the CPS's own definition?",
+          options: [
+            "The same as the standard a jury applies — being sure of guilt",
+            "A more likely than not standard: an objective, properly-directed jury or magistrates' court would be more likely than not to convict",
+            "Any evidence that could plausibly support a conviction, however unlikely",
+            "Certainty that the suspect is guilty",
+          ],
+          correct: 1,
+          explain:
+            "A genuinely important distinction, and a common mix-up: the CPS's own charging threshold is lower than the standard a criminal court applies at trial. A prosecutor doesn't need to be sure of guilt to charge — only that conviction is more likely than not. The court itself still has to be sure beyond reasonable doubt to actually convict.",
+        },
+        {
+          q: "If a case does not pass the evidential stage, what happens?",
+          options: [
+            "It can still proceed if the offence is serious enough",
+            "It must not proceed, regardless of how serious or high-profile the case is",
+            "It automatically moves to the Threshold Test instead",
+            "The police can override the decision and charge anyway",
+          ],
+          correct: 1,
+          explain:
+            "The Code is explicit and absolute on this point — evidential insufficiency ends the case there, with no seriousness-based exception. A genuinely shocking crime with weak evidence still doesn't get charged.",
+        },
+        {
+          q: "Once the evidential stage is passed, what's the default position at the public interest stage?",
+          options: [
+            "Prosecution will usually go ahead unless public interest factors against it clearly outweigh those in favour",
+            "Prosecution only goes ahead if the victim specifically requests it",
+            "The public interest stage exists mainly to stop prosecutions in low-level cases",
+            "Public interest is considered before the evidential stage, not after",
+          ],
+          correct: 0,
+          explain:
+            "Passing the evidential stage is necessary but not sufficient — but the default, once it's passed, leans toward prosecuting. Public interest factors (offence seriousness, culpability, harm to the victim, and others) have to clearly outweigh that default to stop a case that already has enough evidence behind it.",
+        },
+        {
+          q: "What is the Threshold Test, and when is it used?",
+          options: [
+            "It's used in every case, as an easier alternative to the Full Code Test",
+            "It's a rare exception, used only when a suspect poses a substantial bail risk and not all evidence is available yet — allowing a charge on reasonable suspicion, with the expectation the Full Code Test will be met later as more evidence comes in",
+            "It's the test applied by the court, not by police or the CPS",
+            "It replaced the Full Code Test in recent years",
+          ],
+          correct: 1,
+          explain:
+            "A real but narrow exception — it exists specifically to avoid releasing a genuinely dangerous suspect back onto bail before an investigation is complete, not as a general shortcut around the evidential stage.",
+        },
+      ],
+    },
+  ],
+};
+
+export const PRISONS_QUIZ: McqQuizDef = {
+  id: "prisons",
+  kind: "mcq",
+  week: 8,
+  title: "Reoffending and Sentencing Quiz",
+  intro:
+    "Three parts, three different skills: resisting a tempting but wrong causal conclusion (a real selection-effects trap), reading a chart's construction rather than just its data, and referencing practice — including correctly refusing to cite a source that was never real.",
+  bonusThresholds: [
+    [0, 0],
+    [4, 1],
+    [7, 2],
+    [9, 3],
+  ],
+  stages: [
+    {
+      label: "Part 1 — reoffending by sentence type",
+      image: "/quiz-charts/chart-reoffending-by-sentence.png",
+      questions: [
+        {
+          q: "According to Figure 1, what is the one-year proven reoffending rate for those given a court order (community or suspended sentence)?",
+          options: ["62%", "34%", "47%", "4%"],
+          correct: 1,
+          explain: "A direct read from the chart.",
+        },
+        {
+          q: "Based only on Figure 1, which of these is the most defensible conclusion?",
+          options: [
+            "Court orders cause a lower reoffending rate than short custodial sentences",
+            "People given court orders reoffend less often than people given short custodial sentences, but the chart alone doesn't tell us why",
+            "Short custodial sentences have no effect on reoffending at all",
+            "The two groups are not really comparable, so this chart is worthless",
+          ],
+          correct: 1,
+          explain:
+            "The honest reading — the chart shows a real, large gap in outcomes, but a bar chart comparing two group averages can't by itself tell you why that gap exists. Both the causal claim and the “worthless” dismissal go too far in opposite directions.",
+        },
+        {
+          q: "Given this, what's the most accurate way to describe what Figure 1 actually demonstrates?",
+          context:
+            "Courts don't hand out community orders and short custodial sentences at random. People sentenced to custody are, on average, more likely to have prior convictions, active drug or alcohol problems, or unemployment — the same factors independently linked to reoffending regardless of sentence type. The Ministry of Justice has run its own analysis on exactly this question: using a matched comparison group (people with similar offending history, drug use, and employment status, split across sentence types), the actual difference in reoffending attributable to sentence type was around 4 percentage points — not the 28-point gap Figure 1 shows.",
+          options: [
+            "Figure 1 is wrong and should be ignored",
+            "Figure 1 shows a real difference in outcomes, but most of that gap likely reflects who ends up with each sentence type, not the sentence itself — the matched analysis suggests the sentence's own effect is much smaller (~4 points), though still real and in the same direction",
+            "The matched analysis proves sentence type makes no difference at all",
+            "Since experts disagree, no conclusion can be drawn either way",
+          ],
+          correct: 1,
+          explain:
+            "Neither dismissing the raw chart as meaningless nor taking it at face value is correct. The matched analysis doesn't erase the raw finding — it explains how much of it is real sentence effect versus pre-existing group differences, and there's still a genuine, if much smaller, effect in the same direction.",
+        },
+      ],
+    },
+    {
+      label: "Part 2 — reading a chart's construction",
+      image: "/quiz-charts/chart-dual-axis-illustrative.png",
+      intro:
+        "Figure 2 is a constructed illustration, not a real combined MOJ/ONS publication — built specifically to demonstrate a common chart-construction issue: two different variables, each on its own independently-scaled axis, shown on the same chart.",
+      questions: [
+        {
+          q: "Look carefully at the two axis scales in Figure 2, not just the line shapes. What do you notice?",
+          options: [
+            "Both axes use the same scale, so the comparison is fair",
+            "The crime estimate axis covers a much narrower proportional range relative to how much the actual value changes (nearly halving) than the prison population axis does (changing by under 10%) — yet both lines are drawn to look similarly steep",
+            "The chart proves prison population and crime are unrelated",
+            "Nothing unusual — this is a standard, safe way to compare two variables",
+          ],
+          correct: 1,
+          explain:
+            "Crime (right axis) falls from 9.5 to 4.6 million — roughly halved — while prison population (left axis) only falls from 85,000 to 79,000 — under 10%. Because each axis is scaled to fill the same vertical space, both lines look like they're declining at a similar rate. Reading the line shapes alone, without checking what each axis represents, would badly mislead you about the true scale of change in each variable.",
+        },
+        {
+          q: "What's the safest general approach when you encounter a chart with two independently-scaled y-axes?",
+          options: [
+            "Trust the visual impression — if two lines look similar, they probably are",
+            "Ignore the chart entirely — dual-axis charts are always wrong",
+            "Check both axis labels and ranges specifically before drawing any conclusion about how the two variables relate, since axis scaling is a choice that can create a misleading visual impression even with genuine data",
+            "Only look at the left axis, since it's usually the more important one",
+          ],
+          correct: 2,
+          explain:
+            "Dual-axis charts aren't inherently dishonest — sometimes they're a genuinely useful way to show two related time series together — but the axis scaling is always a choice, and a different choice could tell a visually different story from the same real numbers. The habit worth building is checking the axes before trusting the shape.",
+        },
+      ],
+    },
+    {
+      label: "Part 3 — referencing these sources",
+      questions: [
+        {
+          q: "Which of these is a genuine, immediate observation about Source 3 that a chart couldn't show as directly?",
+          context:
+            "Source 3 — a government bulletin, presented as text: “In the 12 months to December 2025, there were 394 deaths in prison custody in England and Wales, an increase of 15% on the previous 12-month period. Of these, 79 were self-inflicted, a decrease of 12% on the previous year's total. Over the same period, the self-harm rate stood at 859 incidents per 1,000 prisoners, a fall of 3.6% year-on-year, while the assault rate rose by 6% to 364 assaults per 1,000 prisoners.” (Adapted from: Ministry of Justice/HM Prison and Probation Service, Safety in Custody Statistics, England and Wales: Deaths in Prison Custody to December 2025, Self-harm and Assaults to September 2025, published 29 January 2026.)",
+          options: [
+            "It contains four different statistics in a single paragraph, each with its own comparison point and direction of change, without needing four separate visual elements",
+            "It proves prisons are becoming less safe overall",
+            "It's less trustworthy than a chart because it doesn't have an image",
+            "It can't contain real government statistics, since it's written as prose",
+          ],
+          correct: 0,
+          explain:
+            "Text and charts aren't ranked by trustworthiness, they're just different formats suited to different amounts and kinds of information — a genuinely mixed picture (some measures up, some down) is often easier to hold precisely in a short paragraph than in a single chart trying to show four trends at once.",
+        },
+        {
+          q: "Which of the following is the correctly formatted Harvard reference for Source 3?",
+          options: [
+            "Gov.uk (2026) Prison Safety Report. Available online.",
+            "Ministry of Justice and HM Prison and Probation Service (2026) Safety in Custody Statistics, England and Wales: Deaths in Prison Custody to December 2025, Self-harm and Assaults to September 2025. Available at: [URL] (Accessed: [date]).",
+            "HMPPS Safety in Custody Statistics, seen online, 2026.",
+            "Ministry of Justice (no date) Safety in Custody.",
+          ],
+          correct: 1,
+          explain:
+            "“Gov.uk” is the website, not the publishing body, and “Available online” isn't a usable locator. The third option is missing almost every required element. The fourth drops the actual publication date and the full title. The correct answer has all five things a Harvard web reference needs: correct organisational author, year, full italicised title, “Available at” with a real URL, and an access date.",
+        },
+        {
+          q: "Figure 2 (the prison population/crime dual-axis chart from Part 2) is explicitly labelled as illustrative, not a genuine combined publication. If you were writing an assignment and wanted to reference where Figure 2 came from, what should you do?",
+          options: [
+            "Reference it the same way as Figure 1 and Source 3, since it's a chart with real-looking numbers on it",
+            "Don't cite it as an external source at all — since it isn't one, the honest thing is to label it as your own illustrative construction (or your tutor's, if given to you that way), not attribute it to a body that never published it",
+            "Attribute it to the Ministry of Justice, since the chart is about prisons",
+            "Leave the source unclear, since it doesn't really matter for a chart",
+          ],
+          correct: 1,
+          explain:
+            "Citation mechanics are useless if applied to the wrong judgement. Getting the Harvard format perfect for a source that was never real is worse than getting a real source's format slightly wrong — the first mistake is invisible to the exact skill this quiz is teaching, and the second is exactly what practice is for.",
+        },
+      ],
+    },
+  ],
+};
+
+export const QUIZ_DEFS: QuizDef[] = [
+  PACE_QUIZ,
+  DARK_FIGURE_QUIZ,
+  ARGUMENT_REGENERATION_QUIZ,
+  ARGUMENT_POLICING_QUIZ,
+  CPS_QUIZ,
+  PRISONS_QUIZ,
+];
 
 export function getQuizDef(id: string): QuizDef | undefined {
   return QUIZ_DEFS.find((q) => q.id === id);

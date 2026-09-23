@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import Link from "next/link";
 import { XIcon, FileTextIcon } from "@/components/icons";
 import { TYPE_META, type EvidenceItem } from "@/lib/evidence-catalog";
 import {
@@ -396,22 +395,15 @@ export default function EvidenceBoard({
   const citedCount = Object.keys(citations).length;
 
   return (
-    <div className="bg-[#23262B] min-h-full px-6 py-8">
+    <div>
       <style>{`@keyframes stampIn { 0% { transform: scale(1.5) rotate(-3deg); opacity: 0; } 100% { transform: scale(1) rotate(-3deg); opacity: 1; } }`}</style>
-      <div className="max-w-[640px] mx-auto">
-        <div className="flex justify-between items-end mb-1.5 flex-wrap gap-2">
-          <h1 className="font-serif font-semibold text-2xl text-[#E8E1D0] m-0">Hollenbourne case log</h1>
-          <span className="font-mono text-xs text-[#A6764A]">
-            {citedCount} of {unlockedCount} accessed
-          </span>
-        </div>
         <div className="flex justify-between items-center mb-6 border-b border-[#A6764A55] pb-4">
           <p className="font-mono text-xs text-[#8A8A80] m-0">
             Evidentiary register &mdash; Boresfield review. Open each document, then cite it correctly to unlock it.
           </p>
-          <Link href="/dashboard" className="font-mono text-[11px] text-[#8A8A80] underline shrink-0 ml-4">
-            back to dashboard
-          </Link>
+          <span className="font-mono text-xs text-[#A6764A] shrink-0 ml-4">
+            {citedCount} of {unlockedCount} accessed
+          </span>
         </div>
         {evidence.map((item) => (
           <ExhibitCard
@@ -442,7 +434,6 @@ export default function EvidenceBoard({
             onDeleteConnection={deleteConnection}
           />
         </div>
-      </div>
 
       {openPin && (
         <PinDetailModal
