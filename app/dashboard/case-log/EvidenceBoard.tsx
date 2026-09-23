@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { XIcon, FileTextIcon } from "@/components/icons";
-import { TYPE_META, type EvidenceItem } from "@/lib/evidence-catalog";
+import { TYPE_META, SUSPECT_META, CASE_META, type EvidenceItem, type CaseName } from "@/lib/evidence-catalog";
 import {
   checkAssistedFields,
   checkFreeText,
@@ -161,24 +161,104 @@ const btnClass =
   "font-mono text-xs tracking-wide bg-transparent border border-[#2A2F27] text-[#2A2F27] px-4 py-2 cursor-pointer";
 const errClass = "font-mono text-xs text-[#8B3226] mt-2 mb-0";
 
-function ExhibitCard({
+const CASE_ORDER: CaseName[] = ["general", "mason", "wooley", "porterhouse", "butt"];
+
+// The reader-dialog overlay pattern from the recovered artifact prototype
+// (see CLAUDE.md's "Repo location") — a small backdrop-centred sheet, not an
+// inline expanded card. Exhibits sit as compact tiles in a grid; opening one
+// shows the full citation exercise or the cited document inside this.
+function Overlay({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <div onClick={onClose} className="fixed inset-0 bg-[rgba(20,18,14,0.72)] flex items-center justify-center p-5 z-50">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#E8E1D0] border border-[#D6CDB4] max-w-[440px] w-full max-h-[85vh] overflow-y-auto relative"
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3.5 right-3.5 bg-transparent border-none cursor-pointer text-[#5B5A4E] z-10"
+        >
+          <XIcon size={20} />
+        </button>
+        <div className="px-5 py-4.5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function ExhibitTile({
+  item,
+  citation,
+  pinned,
+  onOpen,
+}: {
+  item: EvidenceItem;
+  citation: { text: string; title: string | null } | undefined;
+  pinned: boolean;
+  onOpen: () => void;
+}) {
+  const meta = TYPE_META[item.type];
+  const suspectMeta = item.suspect ? SUSPECT_META[item.suspect] : null;
+  const isCited = !!citation;
+
+  if (item.locked) {
+    return (
+      <div className="bg-[#3A3D3E] border border-dashed border-[#A6764A55] px-4 py-3.5 opacity-75">
+        <div className="flex justify-between items-baseline mb-2">
+          <span className="font-mono text-[11px] text-[#A6764A] tracking-wide">{item.exhibit}</span>
+          <span className="font-mono text-[10px] text-[#8A8A80] border border-[#55554E] px-1.5 py-0.5">LOCKED</span>
+        </div>
+        <p className="font-mono text-[13px] text-[#6E6D64] tracking-[1.5px] mb-1.5 mt-0">{redact(item.title)}</p>
+        <p className="font-mono text-[11px] text-[#8A8A80] m-0">Unlocks in week {item.unlocksWeek}</p>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onOpen}
+      className="text-left w-full bg-[#E8E1D0] border border-[#D6CDB4] border-l-4 px-4 py-3.5 cursor-pointer hover:border-[#A6764A] transition-colors"
+      style={{ borderLeftColor: isCited ? "#2F6B4F" : "#8B3226" }}
+    >
+      <div className="flex justify-between items-baseline mb-1.5 gap-2">
+        <span className="font-mono text-[11px] text-[#5B5A4E] tracking-wide">{item.exhibit}</span>
+        <span className="font-mono text-[10px] font-bold tracking-wide" style={{ color: isCited ? "#2F6B4F" : "#8B3226" }}>
+          {isCited ? "VERIFIED" : "OPEN"}
+        </span>
+      </div>
+      <h4 className="font-serif font-semibold text-[14px] leading-snug text-[#2A2F27] mb-1.5 mt-0">{item.title}</h4>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="font-mono text-[10px]" style={{ color: suspectMeta ? suspectMeta.color : meta.color }}>
+          {suspectMeta ? suspectMeta.label : meta.label}
+        </span>
+        {pinned && <span className="font-mono text-[10px] text-[#A6764A]">&middot; pinned</span>}
+      </div>
+    </button>
+  );
+}
+
+function ExhibitDetail({
   item,
   citation,
   onCite,
   pinned,
   onPin,
+  onClose,
 }: {
   item: EvidenceItem;
   citation: { text: string; title: string | null } | undefined;
   onCite: (id: string, payload: { text: string; title: string | null }) => Promise<void>;
   pinned: boolean;
   onPin: (exhibitId: string) => void;
+  onClose: () => void;
 }) {
   const [fields, setFields] = useState<AssistedFields>({ author: "", year: "", title: "", place: "", publisher: "" });
   const [freeText, setFreeText] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const meta = TYPE_META[item.type];
+  const suspectMeta = item.suspect ? SUSPECT_META[item.suspect] : null;
   const isCited = !!citation;
 
   const setField = (key: keyof AssistedFields) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -210,30 +290,19 @@ function ExhibitCard({
 
   const showItalicHint = item.citeType === "report";
 
-  if (item.locked) {
-    return (
-      <div className="bg-[#3A3D3E] border border-dashed border-[#A6764A55] px-5 py-4.5 mb-4.5 opacity-75">
-        <div className="flex justify-between items-baseline mb-2.5">
-          <span className="font-mono text-[13px] text-[#A6764A] tracking-wide">{item.exhibit}</span>
-          <span className="font-mono text-[11px] text-[#8A8A80] border border-[#55554E] px-2 py-0.5">LOCKED</span>
-        </div>
-        <p className="font-mono text-[15px] text-[#6E6D64] tracking-[2px] mb-2 mt-0">{redact(item.title)}</p>
-        <p className="font-mono text-xs text-[#8A8A80] m-0">Unlocks in week {item.unlocksWeek}</p>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="bg-[#E8E1D0] border border-[#D6CDB4] border-l-4 px-5 py-4.5 mb-4.5"
-      style={{ borderLeftColor: isCited ? "#2F6B4F" : "#8B3226" }}
-    >
-      <div className="flex justify-between items-baseline mb-2.5 flex-wrap gap-2">
+    <Overlay onClose={onClose}>
+      <div className="flex justify-between items-baseline mb-2.5 flex-wrap gap-2 pr-6">
         <div className="flex items-baseline gap-3">
           <span className="font-mono text-[13px] text-[#5B5A4E] tracking-wide">{item.exhibit}</span>
           <span className="font-mono text-xs" style={{ color: meta.color }}>
             {meta.label}
           </span>
+          {suspectMeta && (
+            <span className="font-mono text-[11px] border px-1.5 py-0.5" style={{ color: suspectMeta.color, borderColor: suspectMeta.color }}>
+              {suspectMeta.label}
+            </span>
+          )}
         </div>
         <StampBadge verified={isCited} />
       </div>
@@ -307,7 +376,7 @@ function ExhibitCard({
       )}
 
       {modalOpen && <DocumentModal item={item} onClose={() => setModalOpen(false)} />}
-    </div>
+    </Overlay>
   );
 }
 
@@ -323,6 +392,7 @@ export default function EvidenceBoard({
   const [citations, setCitations] = useState<CitationMap>(initialCitations);
   const [board, setBoard] = useState<Board>(initialBoard);
   const [openPin, setOpenPin] = useState<BoardPin | null>(null);
+  const [openExhibitId, setOpenExhibitId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
 
   const handleCite = async (id: string, payload: { text: string; title: string | null }) => {
@@ -393,6 +463,15 @@ export default function EvidenceBoard({
   const pinnedExhibitIds = new Set(board.pins.map((p) => p.evidence.id));
   const unlockedCount = evidence.filter((e) => !e.locked).length;
   const citedCount = Object.keys(citations).length;
+  const openItem = openExhibitId ? evidence.find((e) => e.id === openExhibitId) ?? null : null;
+
+  // The "filing cabinet": every unlocked-or-not item lives permanently in
+  // its case's section, per Reference/case-content's evidence-board-design
+  // spec — general/force-wide material first, then one section per victim.
+  const groups = CASE_ORDER.map((caseName) => ({
+    caseName,
+    items: evidence.filter((e) => e.case === caseName),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <div>
@@ -405,18 +484,36 @@ export default function EvidenceBoard({
             {citedCount} of {unlockedCount} accessed
           </span>
         </div>
-        {evidence.map((item) => (
-          <ExhibitCard
-            key={item.id}
-            item={item}
-            citation={citations[item.id]}
-            onCite={handleCite}
-            pinned={pinnedExhibitIds.has(item.id)}
-            onPin={pinEvidence}
-          />
+        {groups.map(({ caseName, items }) => (
+          <div key={caseName} className="mb-8">
+            <h3 className="font-mono text-[11px] tracking-[0.1em] uppercase text-[#A6764A] mb-3 mt-0">
+              {CASE_META[caseName].label}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {items.map((item) => (
+                <ExhibitTile
+                  key={item.id}
+                  item={item}
+                  citation={citations[item.id]}
+                  pinned={pinnedExhibitIds.has(item.id)}
+                  onOpen={() => setOpenExhibitId(item.id)}
+                />
+              ))}
+            </div>
+          </div>
         ))}
         {saveError && (
           <p className="font-mono text-[11px] text-[#8B3226] mt-2">Couldn&apos;t save &mdash; try again.</p>
+        )}
+        {openItem && !openItem.locked && (
+          <ExhibitDetail
+            item={openItem}
+            citation={citations[openItem.id]}
+            onCite={handleCite}
+            pinned={pinnedExhibitIds.has(openItem.id)}
+            onPin={pinEvidence}
+            onClose={() => setOpenExhibitId(null)}
+          />
         )}
 
         <div className="mt-8">

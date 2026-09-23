@@ -17,7 +17,7 @@ import {
   Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { TYPE_META, type EvidenceItem } from "@/lib/evidence-catalog";
+import { SUSPECT_META, getEvidenceColor, type EvidenceItem } from "@/lib/evidence-catalog";
 
 export interface BoardPin {
   id: string;
@@ -43,7 +43,8 @@ function EvidenceCardNode({ data }: NodeProps) {
     note: string | null;
     onOpen: () => void;
   };
-  const color = TYPE_META[evidence.type].color;
+  const color = getEvidenceColor(evidence);
+  const suspectLabel = evidence.suspect ? SUSPECT_META[evidence.suspect].label : null;
 
   return (
     <div className="group relative">
@@ -57,6 +58,11 @@ function EvidenceCardNode({ data }: NodeProps) {
           <span className="text-[10px] font-mono uppercase tracking-wide" style={{ color }}>
             {evidence.exhibit}
           </span>
+          {suspectLabel && (
+            <span className="text-[9px] font-mono uppercase tracking-wide" style={{ color }}>
+              {suspectLabel}
+            </span>
+          )}
         </div>
         <span className="text-xs font-medium leading-snug text-[#2A2F27]">{evidence.title}</span>
         {note && <p className="mt-1 text-[10px] text-amber-700 italic line-clamp-2">📌 {note}</p>}

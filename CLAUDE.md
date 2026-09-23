@@ -305,6 +305,65 @@ inconsistent with everything else.
   worth repeating that audit before declaring any week's content "not
   recovered," since three separate rounds of building from this archive so
   far each turned up more than the previous round checked for.
+- **Fixed: the corkboard's two deviations from its own design brief**
+  (`Reference/case-content/hollenbourne-evidence-board-design.md`). (1)
+  **Colour-by-suspect**: `EvidenceItem` gained `case` (`CaseName` —
+  mason/wooley/porterhouse/butt/general) and optional `suspect` fields;
+  `lib/evidence-catalog.ts`'s `SUSPECT_META`/`getEvidenceColor` reuse hexes
+  already established elsewhere in the app (witness-indigo for Nigel,
+  reserve-gold for Swayne, visual-teal for Haddad, the existing
+  inadmissible-red for Burgess) rather than a second palette. Of the 19
+  existing exhibits, only two are genuinely suspect-specific and got tagged
+  — EX.17 (Wooley policy file, `suspect: "nigel"` — the tunnel-vision
+  thread) and EX.18 (Porterhouse policy file, `suspect: "swayne"` — the
+  convenient-suspect thread); everything else stays neutral grey
+  deliberately, since the brief itself allows that for non-suspect-specific
+  material and the other 17 items are victim/force-wide documents, not
+  suspect interviews. **Deliberately did not** invent a `suspect` tag for
+  items that only circumstantially implicate Burgess without naming him
+  (e.g. EX.03's "heavy-set man in a dark puffer jacket") — colouring those
+  Burgess-red would hand students the answer via the UI, against the
+  game's own no-spoiler design principle. (2) **Filing cabinet**:
+  `EvidenceBoard.tsx` now groups the citation list into permanent
+  per-case sections (General/force-wide first, then Mason, Wooley,
+  Porterhouse, Butt) instead of one flat list — Corkboard.tsx unchanged
+  structurally, just reads colour from `getEvidenceColor` instead of
+  `TYPE_META`. Confirmed in-browser: cited and pinned EX.01, corkboard card
+  renders with the neutral grey border instead of the old type colour.
+  Real suspect-interview content (richer than these 19 items) exists only
+  as prose in `Reference/case-content/case/hollenbourne-interviews.md` and
+  as action-economy outcome text — pulling it into the evidence catalog as
+  new citable exhibits was considered and deliberately deferred as a
+  separate, larger content decision, not bundled into this fix.
+- **Recovered and ported the visual design system from the standalone
+  artifact prototype** (see "A third, previously-unknown copy" below) —
+  previously only its Weeks 4-6 quiz *content* had been extracted; its
+  actual look had never been carried over, which is what prompted the user
+  to say a session felt like it had regressed to an earlier, cruder design
+  than one they remembered. It hadn't — the polished version was just
+  sitting unused in that artifact. Ported: (1) its type system, Special
+  Elite (case-file typewriter display face) and IBM Plex Sans/Mono, loaded
+  via a plain `<link>` to the Google Fonts CDN in `app/layout.tsx` — a
+  runtime stylesheet request, NOT `next/font/google`, so it doesn't
+  reintroduce the build-time fragility that decision was about; wired in
+  through the `--font-serif`/`--font-sans`/`--font-mono` tokens in
+  `app/globals.css` rather than touching every component, so every existing
+  `font-serif`/`font-mono`/`font-sans` Tailwind class across the whole app
+  picked it up for free. (2) The evidence board's card-grid +
+  reader-dialog interaction pattern: exhibits now render as compact
+  `ExhibitTile`s in a grid (`EvidenceBoard.tsx`) rather than full-width
+  stacked cards; clicking one opens `ExhibitDetail` in a centred `Overlay`
+  (styled after the artifact's `dialog#reader`) containing the *same*
+  citation-exercise logic as before (assisted fields / free-text / the
+  existing `DocumentModal` letterhead view) — a reskin of the container,
+  not a rewrite of the mechanic. Deliberately did NOT adopt the artifact's
+  color palette wholesale (already close to this app's own) or its
+  simpler game logic (no per-student attribution, gating, or instructor
+  dashboard — this app's mechanics are ahead of that prototype, not behind
+  it) — only its typography and evidence-display pattern were missing.
+  Confirmed end-to-end in-browser: cited EX.13, saw the VERIFIED stamp and
+  pin button render correctly, opened the letterhead document view — all
+  in the new type system.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
@@ -319,25 +378,13 @@ inconsistent with everything else.
   Anthropic API key in `.env.local` (the one used earlier was pasted in
   chat and should be treated as burned) — not something to generate or
   paste into a session.
-- **The corkboard deviates from its own design brief**
-  (`Reference/case-content/hollenbourne-evidence-board-design.md`, which
-  wasn't read before building it) in two ways: (1) it specifies
-  **colour-by-suspect** (Burgess red, Nigel blue, Swayne amber, Haddad a
-  fourth muted colour, neutral grey for non-suspect-specific evidence) —
-  built as colour-by-evidence-*type* instead, and `EvidenceItem` has no
-  `suspect` field to do this properly; (2) it specifies a permanent
-  **"filing cabinet" zone organised by case** (Mason/Wooley/Porterhouse/
-  Butt) sitting above the corkboard, distinct from the citation-practice
-  list — not built; only the flat exhibit list exists.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.
-- A minor content inconsistency, not yet reconciled: the recovered
-  artifact prototype has the Haddad/Swayne Porterhouse interviews
-  conducted by a "DS Fenwick," not DS Ferris — not established anywhere in
-  the case bible. Worth a deliberate decision if those interviews' outcome
-  text ever gets expanded, rather than letting the two sources diverge
-  silently.
+- **Resolved, not a bug**: DS Fenwick (Haddad/Swayne Porterhouse interviews)
+  and DS Ferris (the cross-case memo, Week 9) are deliberately two different
+  detectives on the force, not a naming drift between sources — confirmed
+  with the user. No reconciliation needed if this ever comes up again.
 - The disconnected OneDrive copy this content was recovered from
   (`C:\Users\CrisW\dev\hollenbourne-app`) still exists and hasn't been
   cleaned up — safe to delete once its content is confirmed fully migrated,
@@ -403,7 +450,14 @@ ever at risk of being lost. **If a future session is asked to verify
 nothing has been lost, or a user says work feels like it's missing,
 checking `Artifact` with `action: "list"` is a real, necessary step** —
 this exact gap (reassuring the user based on git history alone, without
-checking for a published artifact) already happened once.
+checking for a published artifact) has now happened twice: once when this
+artifact's quiz content wasn't known about at all, and again later when
+its content had been ported but its actual visual design (fonts,
+evidence-card layout) had not, and the user experienced that gap as the
+live app having regressed to a cruder, earlier design. Porting *some* of
+a recovered source's content is not the same as fully reconciling against
+it — worth explicitly checking what was and wasn't carried over, not just
+whether the source has been found at all.
 
 ## Decisions worth knowing (so they don't get re-litigated)
 
