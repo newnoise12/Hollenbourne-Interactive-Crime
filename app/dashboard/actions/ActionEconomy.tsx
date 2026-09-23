@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
-import { CATEGORY_META, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
+import { CATEGORY_META, THREAD_META, THREAD_ORDER, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
 
@@ -298,27 +298,43 @@ export default function ActionEconomy({
           </button>
         </div>
 
-        {actions.map((action) => {
-          const locked = isLocked(action);
-          const missingPrereqLabels = (action.prerequisiteActionIds ?? [])
-            .filter((id) => !completedActionIds.has(id))
-            .map((id) => {
-              const prerequisite = actionsById.get(id);
-              return prerequisite ? prerequisite.shortLabel ?? prerequisite.label : id;
-            });
-          const weekLabel =
-            action.availableFromWeek && week < action.availableFromWeek ? `Week ${action.availableFromWeek}` : null;
-          const requirementLabel = [...missingPrereqLabels, ...(weekLabel ? [weekLabel] : [])].join(", ") || null;
+        {THREAD_ORDER.map((thread) => {
+          const threadActions = actions.filter((a) => a.thread === thread);
+          if (threadActions.length === 0) return null;
+          const meta = THREAD_META[thread];
           return (
-            <ActionCard
-              key={action.id}
-              action={action}
-              canAfford={remaining >= action.cost && !pending}
-              canAffordFromReserve={reservePoints >= action.cost && !pending}
-              locked={locked}
-              requirementLabel={requirementLabel}
-              onTake={(useReserve) => takeAction(action, useReserve)}
-            />
+            <div key={thread} className="mb-7">
+              <div className="flex items-baseline gap-2.5 mb-1">
+                <h3 className="font-serif font-semibold text-base text-[#E8E1D0] m-0">{meta.label}</h3>
+                <span className="font-mono text-[11px] text-[#8A8A80]">
+                  {threadActions.length} action{threadActions.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <p className="font-mono text-xs text-[#8A8A80] mb-3 mt-0 max-w-[56ch]">{meta.note}</p>
+              {threadActions.map((action) => {
+                const locked = isLocked(action);
+                const missingPrereqLabels = (action.prerequisiteActionIds ?? [])
+                  .filter((id) => !completedActionIds.has(id))
+                  .map((id) => {
+                    const prerequisite = actionsById.get(id);
+                    return prerequisite ? prerequisite.shortLabel ?? prerequisite.label : id;
+                  });
+                const weekLabel =
+                  action.availableFromWeek && week < action.availableFromWeek ? `Week ${action.availableFromWeek}` : null;
+                const requirementLabel = [...missingPrereqLabels, ...(weekLabel ? [weekLabel] : [])].join(", ") || null;
+                return (
+                  <ActionCard
+                    key={action.id}
+                    action={action}
+                    canAfford={remaining >= action.cost && !pending}
+                    canAffordFromReserve={reservePoints >= action.cost && !pending}
+                    locked={locked}
+                    requirementLabel={requirementLabel}
+                    onTake={(useReserve) => takeAction(action, useReserve)}
+                  />
+                );
+              })}
+            </div>
           );
         })}
 

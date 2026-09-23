@@ -6,9 +6,26 @@
 
 export type ActionCategory = "interview" | "forensic" | "documentary" | "visual" | "witness";
 
+// Which narrative chain an action belongs to, for the Investigation tab's
+// grouping — recovered from the standalone artifact prototype (see
+// CLAUDE.md's "Repo location"), which grouped its "Unlock Tree" this way
+// with an explanatory note per group, rather than listing all ~45 actions
+// flat. That framing (what's unlocked, and why a given chain costs what it
+// does) is what a prior session's flat list was missing.
+export type ActionThread =
+  | "general"
+  | "mason"
+  | "toolmark"
+  | "butt"
+  | "endgame"
+  | "haddad"
+  | "records"
+  | "anpr";
+
 export type ActionItem = {
   id: string;
   category: ActionCategory;
+  thread: ActionThread;
   label: string;
   // Short human-readable form used only in "requires: X" hints when this
   // action is referenced as another action's prerequisite. Falls back to
@@ -38,6 +55,56 @@ export const CATEGORY_META: Record<ActionCategory, { label: string; color: strin
   witness: { label: "Witness", color: "#3C3489" },
 };
 
+// Order here is the display order on the Investigation tab: open enquiries
+// first, then the two chains that build toward naming a suspect, then the
+// records work that only makes sense once someone's already a person of
+// interest, ending on the endgame.
+export const THREAD_META: Record<ActionThread, { label: string; note: string }> = {
+  general: {
+    label: "General enquiries",
+    note: "Open from week one — routine institutional friction, no real investigative gating.",
+  },
+  mason: {
+    label: "The Mason movements chain",
+    note: "Two steps, triangulating a vehicle sighting against a registration check.",
+  },
+  toolmark: {
+    label: "The tool-mark chain",
+    note: "The most expensive single action available from week one — and the one that can actually name a suspect.",
+  },
+  butt: {
+    label: "The Butt movements chain",
+    note: "Three fragmented sightings — bus, high street, doorbell — building one route home on foot.",
+  },
+  haddad: {
+    label: "Haddad / Wooley cross-reference",
+    note: "Only reachable once Haddad is already known to the case through Porterhouse.",
+  },
+  records: {
+    label: "Cell site & historical records",
+    note: "Confirming rather than discovering — most of this is only worth requesting once someone's already a named suspect or person of interest.",
+  },
+  anpr: {
+    label: "ANPR sweeps",
+    note: "Wide, unfiltered searches across every vehicle in a camera window — real signal, mixed with real noise that has to be individually ruled out.",
+  },
+  endgame: {
+    label: "The endgame",
+    note: "The arrest interview — reachable only once every independent thread above converges on the same person.",
+  },
+};
+
+export const THREAD_ORDER: ActionThread[] = [
+  "general",
+  "mason",
+  "toolmark",
+  "butt",
+  "haddad",
+  "records",
+  "anpr",
+  "endgame",
+];
+
 export const MAX_TRUST_BONUS = 3;
 export const MAX_WEEK = 11;
 
@@ -48,6 +115,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "pull-interview-burgess-mason",
     category: "documentary",
+    thread: "general",
     label: "Pull initial interview — Martin Burgess (2019, Mason case)",
     shortLabel: "Burgess's 2019 interview",
     description: "Retrieve the original file before pushing for anything further with him.",
@@ -57,6 +125,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "pull-interview-wooley",
     category: "documentary",
+    thread: "general",
     label: "Pull initial interview — Nigel Wooley (2022, Wooley case)",
     shortLabel: "Nigel Wooley's 2022 interview",
     description: "Retrieve the original file before pushing for anything further with him.",
@@ -66,6 +135,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "pull-interview-haddad",
     category: "documentary",
+    thread: "general",
     label: "Pull initial interview — Khalid Haddad (2023, Porterhouse case)",
     shortLabel: "Haddad's 2023 interview",
     description: "Retrieve the original file before pushing for anything further with him.",
@@ -75,6 +145,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "pull-interview-swayne",
     category: "documentary",
+    thread: "general",
     label: "Pull initial interview — Colin Swayne (2023, Porterhouse case)",
     shortLabel: "Swayne's 2023 interview",
     description: "Retrieve the original file before pushing for anything further with him.",
@@ -88,6 +159,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "forensic-report-mason",
     category: "forensic",
+    thread: "general",
     label: "Pull forensic pathology report — Geoff Mason",
     shortLabel: "Mason's pathology report",
     description: "Request the formal post-mortem examination report. A records office reluctant to hand sensitive material to outside consultants, even years on.",
@@ -98,6 +170,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "forensic-report-wooley",
     category: "forensic",
+    thread: "general",
     label: "Pull forensic pathology report — Susan Wooley",
     shortLabel: "Wooley's pathology report",
     description: "Request the formal post-mortem examination report. A records office reluctant to hand sensitive material to outside consultants, even years on.",
@@ -108,6 +181,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "forensic-report-porterhouse",
     category: "forensic",
+    thread: "general",
     label: "Pull forensic pathology report — Carl Porterhouse",
     shortLabel: "Porterhouse's pathology report",
     description: "Request the formal post-mortem examination report. A records office reluctant to hand sensitive material to outside consultants, even years on.",
@@ -118,6 +192,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "forensic-report-butt-initial",
     category: "forensic",
+    thread: "general",
     label: "Pull forensic pathology report — Sara Butt (initial)",
     shortLabel: "Butt's initial pathology report",
     description: "Request the formal post-mortem examination report. A records office reluctant to hand sensitive material to outside consultants, even years on.",
@@ -128,6 +203,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "forensic-report-butt-followup",
     category: "forensic",
+    thread: "general",
     label: "Pull Sara Butt's follow-up forensic report",
     shortLabel: "Butt's follow-up report",
     description: "A senior pathologist's fuller review, assigned given the case's public profile. Not available until the review has had time to complete.",
@@ -143,6 +219,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "reint-wooley",
     category: "interview",
+    thread: "general",
     label: "Re-interview Nigel Wooley",
     description: "Already flagged in the original investigation. Press on his account of the evening.",
     cost: 1,
@@ -152,6 +229,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "reint-swayne",
     category: "interview",
+    thread: "general",
     label: "Re-interview Colin Swayne",
     description: "Known to police already. Follow up on his movements around Porterhouse's death.",
     cost: 1,
@@ -161,6 +239,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "reint-haddad",
     category: "interview",
+    thread: "general",
     label: "Re-interview Khalid Haddad",
     shortLabel: "re-interviewing Haddad",
     description: "Cleared of suspicion early on. Reopening this line goes against the existing file.",
@@ -171,6 +250,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "forensic-dna",
     category: "forensic",
+    thread: "general",
     label: "Retest DNA — Wooley scene",
     description: "Establish whether recovered DNA can be dated to the day of her death.",
     cost: 2,
@@ -179,6 +259,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "phone-data",
     category: "documentary",
+    thread: "general",
     label: "Pull phone data",
     description: "Request historic cell tower records for a named individual.",
     cost: 1,
@@ -187,6 +268,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "doc-memo",
     category: "documentary",
+    thread: "general",
     label: "Pull the case-prioritisation memo",
     description: "Request the internal paperwork behind the original investigation's resourcing decisions.",
     cost: 2,
@@ -195,6 +277,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "canvas",
     category: "witness",
+    thread: "general",
     label: "Witness canvas — Boresfield / Featherton",
     description: "Door-to-door follow-up for anyone who saw something unreported at the time.",
     cost: 1,
@@ -203,6 +286,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "homeowner-witness-wooley",
     category: "witness",
+    thread: "general",
     label: "Re-interview the homeowner Burgess visited after leaving Wooley's street, 6 January 2022",
     shortLabel: "the Wooley-night homeowner witness",
     description: "This appointment was never followed up on at the time — cold, unprompted, against the grain of the original investigation's focus.",
@@ -212,6 +296,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "reint-nigel-butt-evening",
     category: "interview",
+    thread: "general",
     label: "Re-interview Nigel Wooley regarding the evening of 22 May",
     shortLabel: "Nigel's Butt-evening interview",
     description: "He's already a known quantity to the review, not a fresh lead — but he was in the general vicinity that night too.",
@@ -222,6 +307,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "holly-creagan-statement",
     category: "witness",
+    thread: "general",
     label: "Request Holly Creagan's statement, re: Swayne's whereabouts",
     shortLabel: "Holly Creagan's statement",
     description: "Swayne names her, in passing, as who he uses drugs with. Worth a formal statement on the Butt evening specifically.",
@@ -231,6 +317,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "phone-data-butt",
     category: "documentary",
+    thread: "general",
     label: "Request Sara Butt's phone data extraction",
     shortLabel: "Butt's phone data extraction",
     description: "Standard digital forensic extraction from her recovered device.",
@@ -244,6 +331,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "traffic-cam-hollen-marsh",
     category: "visual",
+    thread: "mason",
     label: "Request local authority traffic camera footage, Hollen Marsh access roads",
     shortLabel: "traffic camera footage",
     description: "Pull traffic-camera footage from the roads leading into and out of Hollen Marsh around the estimated time of death.",
@@ -253,6 +341,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "canvass-doorbell-mason",
     category: "visual",
+    thread: "mason",
     label: "Canvass the residential street for doorbell/ring camera footage",
     shortLabel: "doorbell camera footage",
     description: "Door-to-door canvass of the residential street nearest the car park, checking doorbell and home-security cameras for anything unreported.",
@@ -262,6 +351,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "vehicle-reg-lookup",
     category: "forensic",
+    thread: "mason",
     label: "Run the vehicle registration",
     description: "Cross-reference the plate read from the traffic-camera footage against DVLA records.",
     cost: 1,
@@ -275,6 +365,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "toolmark-review-mason-wooley",
     category: "forensic",
+    thread: "toolmark",
     label: "Request a comparative forensic review of wound patterns — Mason and Wooley",
     shortLabel: "the Mason/Wooley tool-mark review",
     description: "The single most expensive action in the review — a genuine cross-case comparison neither original examination ever made.",
@@ -284,6 +375,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "property-search-burgess",
     category: "forensic",
+    thread: "toolmark",
     label: "Request a property search — Martin Burgess (home and workplace)",
     shortLabel: "the Burgess property search",
     description: "A search warrant, executed on the strength of the tool-mark match, his trade, and his 2019 interview.",
@@ -294,6 +386,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "property-search-wooley",
     category: "forensic",
+    thread: "toolmark",
     label: "Request a property search — Nigel Wooley (home and workplace)",
     shortLabel: "the Nigel Wooley property search",
     description: "A search warrant, executed on the strength of the tool-mark match. Applies identically across any suspect worth ruling in or out.",
@@ -304,6 +397,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "property-search-swayne",
     category: "forensic",
+    thread: "toolmark",
     label: "Request a property search — Colin Swayne (home and workplace)",
     shortLabel: "the Swayne property search",
     description: "A search warrant, executed on the strength of the tool-mark match. Applies identically across any suspect worth ruling in or out.",
@@ -314,6 +408,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "interim-interview-burgess",
     category: "interview",
+    thread: "toolmark",
     label: "Interim interview — Martin Burgess, voluntary under caution",
     shortLabel: "Burgess's interim interview",
     description: "Reachable well before a full case for arrest — his van has just been searched, and he knows why.",
@@ -328,6 +423,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "bus-cctv-butt",
     category: "visual",
+    thread: "butt",
     label: "Request bus operator CCTV/payment records, routes serving Critchley estate, evening of 22 May",
     shortLabel: "bus operator CCTV/payment records",
     description: "Check the routes into Hollenbourne from Critchley for the evening of Sara Butt's death.",
@@ -337,6 +433,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "highstreet-cctv-butt",
     category: "visual",
+    thread: "butt",
     label: "Request Hollenbourne high street CCTV, evening of 22 May",
     shortLabel: "high street CCTV",
     description: "Follow the same evening's movements onto the high street.",
@@ -346,6 +443,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "doorbell-paget-street-butt",
     category: "visual",
+    thread: "butt",
     label: "Canvass Paget Street, North Hollenbourne, for doorbell/ring camera footage",
     shortLabel: "the Paget Street doorbell canvass",
     description: "Door-to-door canvass of the residential route away from the high street.",
@@ -359,6 +457,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "endgame-arrest-burgess-butt",
     category: "interview",
+    thread: "endgame",
     label: "Arrest and interview Burgess — Butt case",
     shortLabel: "Burgess's arrest interview",
     description: "The full confrontation. Only reachable once every independent thread has already converged on him.",
@@ -379,6 +478,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "haddad-wooley-crossref",
     category: "documentary",
+    thread: "haddad",
     label: "Cross-reference Haddad's known movement data against the Wooley case timeframe",
     shortLabel: "the Haddad/Wooley cross-reference",
     description: "Only makes sense once Haddad is already known to the case through Porterhouse.",
@@ -389,6 +489,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "haddad-wooley-further-interview",
     category: "interview",
+    thread: "haddad",
     label: "Further interview — Haddad, re: Wooley",
     shortLabel: "Haddad's Wooley-case interview",
     description: "Voluntary, not an arrest — a real tonal shift from his Porterhouse interview.",
@@ -398,42 +499,46 @@ export const ACTIONS: ActionItem[] = [
   },
 
   // ---------------------------------------------------------------------
-  // Cell site data, historical records, and cross-agency liaison
-  // (gated on the subject already being a named suspect/person of interest)
+  // Cell site data & historical records (gated on the subject already
+  // being a named suspect/person of interest)
   // ---------------------------------------------------------------------
   {
     id: "cellsite-burgess-wooley",
     category: "documentary",
+    thread: "records",
     label: "Request historic cell site data — Martin Burgess, 6 January 2022 (Wooley)",
     shortLabel: "Burgess's Wooley-night cell site data",
     description: "The single most valuable report in the set — the only one of Burgess's three killings with no independent movement evidence until now.",
     cost: 3,
-    prerequisiteActionIds: ["pull-interview-burgess-mason"],
+    prerequisiteActionIds: ["property-search-burgess"],
     outcome: "The device connects to the sector covering the booked job's street — which also covers Susan Wooley's address — continuously from 15:14 to 16:51, roughly 45–50 minutes longer than the booked job alone accounts for, with no second job logged to explain the remainder. Consistent with, and independently corroborating, his own later account of an unbooked visit nearby that afternoon.",
   },
   {
     id: "cellsite-burgess-mason",
     category: "documentary",
+    thread: "records",
     label: "Request historic cell site data — Martin Burgess, 8 October 2019 (Mason)",
     shortLabel: "Burgess's Mason-night cell site data",
     description: "Confirming rather than new on its own — the value is in what it doesn't show.",
     cost: 2,
-    prerequisiteActionIds: ["pull-interview-burgess-mason"],
+    prerequisiteActionIds: ["property-search-burgess"],
     outcome: "A normal, complete pattern of movement for the booked job — arrival, appointment, and a departure route that doesn't retrace the approach. No cell activity at all is recorded that evening, consistent with the phone being left behind for the return trip to the marsh. The gap doesn't undermine the case: the traffic camera, ANPR, and doorbell evidence already on file don't depend on the phone at all.",
   },
   {
     id: "cellsite-burgess-butt",
     category: "documentary",
+    thread: "records",
     label: "Request historic cell site data — Martin Burgess, 22 May 2025 (Butt)",
     shortLabel: "Burgess's Butt-night cell site data",
     description: "A confirming piece, stacked on top of the existing chain.",
     cost: 2,
-    prerequisiteActionIds: ["pull-interview-burgess-mason"],
+    prerequisiteActionIds: ["property-search-burgess"],
     outcome: "The device connects to the Critchley sector at 20:48 (matching the bus boarding), moves through the high street and into the North-Hollenbourne sector by 21:45 (matching Paget Street), then reaches the sector covering the marsh's southern approach by 22:30, before the connection is lost at 22:58. Independently corroborates the bus, high street, and doorbell sightings — three separate timestamps never cross-referenced against telecoms data until now.",
   },
   {
     id: "cellsite-nigel-butt",
     category: "documentary",
+    thread: "records",
     label: "Request historic cell site data — Nigel Wooley, 22 May 2025",
     shortLabel: "Nigel's Butt-night cell site data",
     description: "He's a person of interest from the start, so this needs no gate of its own.",
@@ -443,6 +548,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "cellsite-swayne-porterhouse",
     category: "documentary",
+    thread: "records",
     label: "Request historic cell site data — Colin Swayne, 29 May 2023",
     shortLabel: "Swayne's cell site data",
     description: "He's a named suspect from the start, so this needs no gate of its own.",
@@ -452,6 +558,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "haddad-record-summary",
     category: "documentary",
+    thread: "records",
     label: "Request historical record summary — Khalid Haddad (PNC/NRM)",
     shortLabel: "Haddad's PNC/NRM record",
     description: "Requesting a named suspect's own history is standard practice, not cross-agency friction.",
@@ -462,15 +569,22 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "riverbank-liaison-swayne",
     category: "documentary",
+    thread: "records",
     label: "Request Operation Riverbank liaison — Colin Swayne",
     shortLabel: "the Operation Riverbank liaison",
     description: "A cross-agency request into a genuine institutional friction — Swayne is already a named suspect.",
     cost: 2,
     outcome: "A separate county lines taskforce interview, run by a different unit entirely and genuinely not about any murder, reveals that Kato and Reece approached Geoff Mason first, in 2019, trying to cuckoo his house before Swayne's — Mason refused, and they moved on. Swayne himself never makes the connection to Mason's death, and the information never reaches whoever's working Porterhouse: different unit, different reporting line.",
   },
+
+  // ---------------------------------------------------------------------
+  // ANPR sweeps — unfiltered searches across every vehicle in a camera
+  // window, distinct from the records above (which target one named person)
+  // ---------------------------------------------------------------------
   {
     id: "anpr-burgess-vehicle-history",
     category: "forensic",
+    thread: "anpr",
     label: "Request ANPR history for Patricia Burgess's vehicle, wider date range",
     shortLabel: "Burgess's vehicle ANPR history",
     description: "Genuinely additive to the traffic-camera evidence, not a duplicate — a national, queryable network once the plate is known.",
@@ -481,6 +595,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "anpr-sweep-hollen-marsh-2019",
     category: "forensic",
+    thread: "anpr",
     label: "Request full ANPR sweep — Hollen Marsh access roads, 8 October 2019, 21:00–22:00",
     shortLabel: "the 2019 Hollen Marsh ANPR sweep",
     description: "An unfiltered sweep of every vehicle through camera coverage in the window, not a targeted request.",
@@ -490,6 +605,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "anpr-haddad-marsh-road",
     category: "forensic",
+    thread: "anpr",
     label: "Request ANPR check — Khalid Haddad's vehicle, Marsh Road, 6 January 2022",
     shortLabel: "Haddad's Marsh Road ANPR check",
     description: "A second, independent institutional source, once he's already a person of interest via Porterhouse.",
@@ -500,6 +616,7 @@ export const ACTIONS: ActionItem[] = [
   {
     id: "anpr-sweep-featherton-2022",
     category: "forensic",
+    thread: "anpr",
     label: "Request full ANPR sweep — Featherton, 6 January 2022, 18:10–18:20",
     shortLabel: "the 2022 Featherton ANPR sweep",
     description: "An unfiltered sweep of every vehicle through camera coverage in the window, not a targeted request.",

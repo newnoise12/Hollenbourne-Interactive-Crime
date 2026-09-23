@@ -364,6 +364,40 @@ inconsistent with everything else.
   Confirmed end-to-end in-browser: cited EX.13, saw the VERIFIED stamp and
   pin button render correctly, opened the letterhead document view — all
   in the new type system.
+- **Also recovered from that same artifact, found in a follow-up pass after
+  the user said evidence still felt missing**: the artifact's "Unlock Tree"
+  (its name for the Investigation tab) groups all ~45 actions into named
+  narrative threads — the Mason movements chain, the tool-mark chain, the
+  Butt movements chain, ANPR sweeps, the endgame, etc. — each with a short
+  framing note (e.g. "The single most expensive action available from week
+  one — and the one that can actually name a suspect"). The live
+  Investigation tab was a single flat list of all 45 actions in catalog
+  order with no such grouping at all — this, not the evidence board, was
+  what the user meant by "a whole prompt about what is unlocked and the
+  relative trust point costs of different evidence forms." Ported as
+  `ActionThread`/`THREAD_META`/`THREAD_ORDER` in `lib/actions-catalog.ts`
+  (every action tagged with its thread, verified 45/45 against the
+  artifact's own grouping) and a per-thread heading+note+count in
+  `ActionEconomy.tsx`, replacing the flat `.map()`. Most of the artifact's
+  per-action cost-framing prose (e.g. "Priced highest deliberately...")
+  turned out to already be present, near-verbatim, in each action's
+  existing `description` — it was specifically the section-level grouping
+  and its narrative framing that had never been carried over, not the
+  content underneath it. Confirmed in-browser: all 8 threads render in
+  the artifact's own order with correct counts (20/3/5/3/2/7/4/1 = 45).
+- **Fixed a real gating discrepancy found while doing the above, confirmed
+  with the user first.** `hollenbourne-unlock-tree.md`'s Tier 2 says the
+  three Burgess cell-site actions (`cellsite-burgess-wooley`/`-mason`/
+  `-butt`) should require the tool-mark chain having already named him
+  (`property-search-burgess`) — the whole point of Tier 2 being gated on
+  "Burgess named specifically." They were actually gated only on
+  `pull-interview-burgess-mason` (a Tier 0 action, 1 point), so a team
+  could buy his cell-site data — arguably the single most valuable
+  evidence in the game — without ever running the property search meant
+  to name him as a suspect first. All three now require
+  `property-search-burgess` instead, matching the spec. Confirmed
+  in-browser: all three correctly show "requires: the Burgess property
+  search" and render LOCKED for a fresh team.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
@@ -450,14 +484,18 @@ ever at risk of being lost. **If a future session is asked to verify
 nothing has been lost, or a user says work feels like it's missing,
 checking `Artifact` with `action: "list"` is a real, necessary step** —
 this exact gap (reassuring the user based on git history alone, without
-checking for a published artifact) has now happened twice: once when this
-artifact's quiz content wasn't known about at all, and again later when
-its content had been ported but its actual visual design (fonts,
-evidence-card layout) had not, and the user experienced that gap as the
-live app having regressed to a cruder, earlier design. Porting *some* of
-a recovered source's content is not the same as fully reconciling against
-it — worth explicitly checking what was and wasn't carried over, not just
-whether the source has been found at all.
+checking for a published artifact) has now happened three times, each
+narrower than the last: first when this artifact's quiz content wasn't
+known about at all; then when its content had been ported but its visual
+design (fonts, evidence-card layout) had not; then, in the very same
+session as that second fix, when the user said evidence *still* felt
+missing and it turned out to be a third, more specific thing this
+artifact had that the app didn't — the Investigation tab's narrative
+thread-grouping and framing notes, not the evidence board at all. Porting
+*some* of a recovered source's content, even carefully, does not mean
+everything from it has been reconciled — each fix should prompt asking
+"what else from this same source might still be missing," not just being
+treated as closing the file on it.
 
 ## Decisions worth knowing (so they don't get re-litigated)
 
