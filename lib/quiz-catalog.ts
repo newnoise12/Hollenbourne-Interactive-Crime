@@ -546,6 +546,81 @@ export const CPS_QUIZ: McqQuizDef = {
   ],
 };
 
+// A companion to CPS_QUIZ, not a replacement — that one teaches the Full
+// Code Test's mechanics abstractly; this one applies both stages to
+// specific scenarios. Same week (7), so it pools with CPS_QUIZ into one
+// average via getTeamQuizAverage's plain week filter — exactly the same
+// mechanism Week 6's two argument-diagnosis quizzes already use, no new
+// code needed.
+export const CPS_APPLICATION_QUIZ: McqQuizDef = {
+  id: "cps-application",
+  kind: "mcq",
+  week: 7,
+  title: "CPS Application Quiz",
+  intro:
+    "A companion to the CPS Quiz — that one taught the Full Code Test's mechanics; this one applies both stages to specific scenarios. For each, decide: does it pass the evidential stage? If so, does it pass the public interest stage? Would CPS charge?",
+  bonusThresholds: [
+    [0, 0],
+    [2, 1],
+    [3, 2],
+    [4, 3],
+  ],
+  stages: [
+    {
+      questions: [
+        {
+          q: "A 15-year-old is found in a flat on the Boresfield estate that police believe is being used to store and package drugs for onward distribution. He has no prior record. He says he was told to \"hold something\" for an older boy he's scared of and didn't know what was in the bag. No drugs were found directly on him — they were in a kitchen cupboard he says he'd never opened. No phone data, no witness statements placing him at the flat before that day. Does this pass the evidential stage?",
+          options: [
+            "Yes — he was present in a drugs property, that's enough",
+            "No — presence alone, with a plausible innocent account and no evidence directly connecting him to the drugs specifically, doesn't clear \"a realistic prospect of conviction\"",
+            "Yes, because his age makes him more likely to be guilty",
+            "The evidential stage doesn't apply to minors",
+          ],
+          correct: 1,
+          explain:
+            "Being present somewhere isn't the same as evidence of the specific offence. Without something that actually ties him to the drugs — fingerprints, an admission beyond \"holding something\" vaguely, a witness who saw him handle them — a prosecutor can't honestly say a court would more likely than not convict. This is genuinely common in practice: presence is suggestive, not sufficient.",
+        },
+        {
+          q: "Evidence is strong here: CCTV shows a 17-year-old repeatedly transporting small quantities of drugs between two addresses over several weeks, his phone contains messages consistent with drug supply coordination, and he was found with a modest amount of cash and a \"tick list\" (a common county lines drug-debt record). But: he has no prior convictions, was reported missing from home twice in the preceding year, engaged voluntarily and in detail with police once safeguarding was raised, and an NRM referral has already resulted in a positive reasonable-grounds decision — a formal finding that he is a potential victim of criminal exploitation. The evidential stage is clearly met here. What should happen at the public interest stage?",
+          options: [
+            "It doesn't matter — if the evidence is there, prosecution should always follow",
+            "Genuine, serious public interest factors weigh against prosecution: his age, the exploitation indicators, the positive NRM finding, and his cooperation are all real, substantial reasons a prosecutor could reasonably decide the public interest doesn't support charging him specifically — even though the evidence would support it",
+            "The NRM referral is irrelevant to a CPS charging decision",
+            "He should definitely be charged because a \"tick list\" proves he was a serious operator, not a victim",
+          ],
+          correct: 1,
+          explain:
+            "This is the whole point of separating the two stages: meeting the evidential threshold is necessary but never sufficient on its own. A positive NRM decision doesn't automatically bar prosecution, but it's exactly the kind of factor the public interest stage exists to weigh — and it's realistic that a case built exactly like this could go either way depending on the fuller picture, which is what makes it a genuine judgement call rather than a formula.",
+        },
+        {
+          q: "A man in his thirties is identified, through months of surveillance, as directing multiple younger people to move drugs and cash across several addresses, controlling the phone line itself, and personally threatening a 16-year-old who tried to leave. Financial records show him receiving significant, otherwise-unexplained cash deposits. No exploitation indicators apply to him — he's the one controlling others, not being controlled. How does this scenario differ from the previous one in terms of the public interest stage?",
+          options: [
+            "It doesn't — the same public interest factors apply to everyone involved in a county lines operation equally",
+            "Here, both stages point the same way: strong evidence, and no genuine public interest factors weighing against prosecution — if anything, his position of control and the direct threat to a child strengthen the case for prosecuting",
+            "He should get more leniency because he's older and presumably more experienced",
+            "This case should also be redirected to safeguarding, since it's part of the same operation",
+          ],
+          correct: 1,
+          explain:
+            "This is the deliberate contrast with the previous scenario: identical offence type (county lines), completely different position within it. The two-stage test isn't about the crime category, it's about the individual case — someone directing and threatening others sits nowhere near the same public interest calculus as someone being coerced by them, even within the same operation.",
+        },
+        {
+          q: "A woman in her sixties is reported for shoplifting a small amount of food from a Boresfield convenience store, value under £10. CCTV clearly shows her taking the items and leaving without paying — evidence is not in question. She has no previous convictions, immediately returned to the shop when approached by staff, was visibly distressed, and disclosed she'd recently lost her job and hadn't eaten that day. The evidential stage is trivially met — clear CCTV, no dispute about what happened. What's the most realistic public interest outcome?",
+          options: [
+            "Prosecute regardless — theft is theft, and the evidential stage being easy to meet means it should proceed",
+            "Genuine public interest factors likely weigh against full prosecution here: low harm, no previous record, clear personal circumstances, and a proportionate response (a caution, a conditional discharge, or no further action with a referral to support) may better serve the public interest than a criminal charge",
+            "This shouldn't have been reported to police at all",
+            "Age is the only relevant factor here",
+          ],
+          correct: 1,
+          explain:
+            "This is the scenario type most students underestimate: an easy evidential case is often exactly where the public interest stage does the real work. Proportionality is a genuine, named factor in the Code — prosecuting a first-time, low-value, clearly-desperate theft isn't automatically the \"correct\" outcome just because conviction is certain. This is also the most realistic day-to-day use of the two-stage test — county lines cases are dramatic, but low-value theft and minor disorder are what most charging decisions in England and Wales actually look like.",
+        },
+      ],
+    },
+  ],
+};
+
 export const PRISONS_QUIZ: McqQuizDef = {
   id: "prisons",
   kind: "mcq",
@@ -758,6 +833,7 @@ export const QUIZ_DEFS: QuizDef[] = [
   ARGUMENT_REGENERATION_QUIZ,
   ARGUMENT_POLICING_QUIZ,
   CPS_QUIZ,
+  CPS_APPLICATION_QUIZ,
   PRISONS_QUIZ,
 ];
 

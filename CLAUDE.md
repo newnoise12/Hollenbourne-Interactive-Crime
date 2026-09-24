@@ -554,6 +554,31 @@ team's overall progress, with buttons that switch tabs programmatically
   elements and "Needs work" overall; confirmed not persisted (textareas
   empty again after a reload); confirmed a logged-out request to
   `/api/quiz/reference-feedback` is rejected with 401.
+- **CPS Application Quiz** (`hollenbourne-cps-application-quiz.md`, from a
+  second handover drop landing directly in `Reference/case-content/quizzes/`
+  — see "Repo location" below) — a companion to the existing Week 7 CPS
+  Quiz, not a replacement: that one teaches the Full Code Test's mechanics
+  abstractly, this one applies both stages to 4 scored scenarios (one
+  deliberately echoing Khalid Haddad's own NRM/exploitation backstory as a
+  worked parallel, without being Haddad specifically). Added as
+  `CPS_APPLICATION_QUIZ` in `lib/quiz-catalog.ts`, same week (7) as
+  `CPS_QUIZ` — confirmed this pools the two into one average exactly like
+  Week 6's pair of argument quizzes already do, since `getTeamQuizAverage`
+  filters purely by `week`, not `quizId`. No new code needed. Confirmed
+  end-to-end: submitted 4/4 correct (trust bonus +3), verified directly
+  against `dev.db` that the attempt row stored `week: 7` alongside the
+  existing CPS Quiz's attempts.
+- **Mock CW2 pack** (`hollenbourne-mock-cw2-pack.md` + a chart image, same
+  handover drop) — a practice run of the real CW2 assignment (4 sources:
+  statistical, visual, textual, documentary; choose 2, one must be
+  statistical, 1000-word discussion), explicitly unassessed. Matches
+  Week 11's plan row ("Crime Trends: Data Analysis Workshop" — "Visual,
+  Textual, and Statistical Analysis") closely. **Not yet built** — the
+  user wants to explore whether AI-graded feedback (like Week 3 Stage 2,
+  but for a full 1000-word discussion rather than a single reference) is
+  feasible before deciding how deep to build this; flagged as feasible in
+  principle (same Anthropic Messages API mechanism, rubric-based feedback
+  rather than answer-matching) but not started pending the user's decision.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.
@@ -671,6 +696,12 @@ remain), plus the two new folders as `Reference/recovery/` and
 deleted — this is describing a one-time cleanup, not an ongoing
 convention; a future handover drop should go straight into `Reference/`
 rather than the repo root.
+
+**A second, smaller handover drop landed correctly** the following
+session, straight into `Reference/case-content/quizzes/` rather than the
+repo root — the CPS Application Quiz and Mock CW2 pack described in
+"Current state" above. Confirms the convention above is the right one to
+keep pointing future drops at.
 
 ## Decisions worth knowing (so they don't get re-litigated)
 
