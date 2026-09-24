@@ -623,6 +623,27 @@ everything from it has been reconciled — each fix should prompt asking
 "what else from this same source might still be missing," not just being
 treated as closing the file on it.
 
+**A fresh handover package landed at the repo root** (not inside
+`Reference/`) after the user suspected a revert had lost work — `case/`,
+`mechanics/`, `quizzes/`, `technical-briefs/`, `visuals/`,
+plus two genuinely new folders, `recovery/` (a 13-section checklist and
+two Claude Code prompts written to verify against a suspected revert) and
+`prototype-reference/` (a newer `index.html` than the published artifact
+above — same architecture, several real fixes: the property-search chain
+properly three-way from the start, initial-interview-pull actions gating
+re-interviews). Spot-diffed the overlapping files against
+`Reference/case-content/` — byte-identical — confirming the user's own
+recovery prompt was right that "the content files themselves are all
+intact and correct." Folded everything into `Reference/`: the five
+already-present folders merged into `Reference/case-content/` (also
+fixing a pre-existing mess there — `visuals/` had every image duplicated
+flat *and* in its proper subfolder; now only the subfolder copies
+remain), plus the two new folders as `Reference/recovery/` and
+`Reference/prototype-reference/`. The root-level copies were then
+deleted — this is describing a one-time cleanup, not an ongoing
+convention; a future handover drop should go straight into `Reference/`
+rather than the repo root.
+
 ## Decisions worth knowing (so they don't get re-litigated)
 
 - **Drizzle, not Prisma**: Prisma needs to download a query-engine binary
