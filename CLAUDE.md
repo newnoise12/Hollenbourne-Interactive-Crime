@@ -521,18 +521,39 @@ team's overall progress, with buttons that switch tabs programmatically
   the same "READ IN FULL" control as every other exhibit.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
-
-**Found in the full content audit above, not yet built:**
-- **Week 3's referencing activity has a complete, ready-to-build spec** —
-  `hollenbourne-week3-referencing-quiz.md` (4 mcq + 3 free-text tasks) plus
-  `technical-briefs/hollenbourne-claude-code-referencing-brief.md`, a full
-  technical brief for AI-graded free-text citation checking: exact
-  Anthropic Messages API call structure, a structured JSON grading schema
-  (per-element correct/flawed/missing plus notes), and a ready prompt
-  template. **Blocked on the user**, not on missing spec: needs a fresh
-  Anthropic API key in `.env.local` (the one used earlier was pasted in
-  chat and should be treated as burned) — not something to generate or
-  paste into a session.
+- **Week 3's referencing quiz, including AI-graded free-text practice.**
+  Stage 1 (4 mcq questions, from `hollenbourne-week3-referencing-quiz.md`)
+  is just another `lib/quiz-catalog.ts` `QUIZ_DEFS` entry
+  (`WEEK3_REFERENCING_QUIZ`) — scored, persisted, and averaged into the
+  trust bonus through the exact same generic mcq path every other quiz
+  week uses, no new infrastructure needed. Stage 2 (the 3 free-text "write
+  your own" tasks) is deliberately separate and **never scored or
+  persisted** — its own source doc marks it "for your own review" — but
+  does get real AI-graded structured feedback per element (author/year/
+  title/publication details/access details), per
+  `technical-briefs/hollenbourne-claude-code-referencing-brief.md`:
+  `lib/reference-tasks.ts` (server-only task catalog, so the model answer
+  is never sent to the client), `app/api/quiz/reference-feedback/route.ts`
+  (session-gated, calls the Anthropic Messages API with `claude-sonnet-5`
+  — the brief's `claude-sonnet-4-6` is stale — one retry on failure), and
+  `app/dashboard/quiz/ReferencingPractice.tsx` (rendered inline below the
+  Stage 1 quiz card in `WeeklyOverviewTab.tsx`, both in the current-week
+  and other-weeks positions). **Real bug found and fixed during
+  end-to-end testing**: `claude-sonnet-5`, given this longer prompt,
+  returns a `thinking` content block *before* the `text` block — the
+  initial implementation assumed `content[0]` was always the text block
+  and got `undefined`, failing every request with a 502. Fixed by finding
+  the block by `type === "text"` instead of by index, and `max_tokens`
+  raised from 600 to 1024 to comfortably cover thinking + JSON output.
+  Confirmed in-browser end-to-end after the fix: Stage 1 scored 4/4 →
+  trust bonus +3 (confirmed live on the Investigation tab after a
+  reload); Stage 2 given a genuinely correct reference returned all-
+  correct per-element feedback, and given a deliberately broken one
+  (missing year, missing publication details, flawed title) returned
+  correctly differentiated flawed/missing feedback for exactly those
+  elements and "Needs work" overall; confirmed not persisted (textareas
+  empty again after a reload); confirmed a logged-out request to
+  `/api/quiz/reference-feedback` is rejected with 401.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.
@@ -554,6 +575,13 @@ team's overall progress, with buttons that switch tabs programmatically
 - Deployment — on hold until the user is hands-on for host/account setup.
 
 ## Env vars
+
+`ANTHROPIC_API_KEY` (`.env.local`, gitignored) powers the Week 3 Stage 2
+AI-graded referencing feedback (`app/api/quiz/reference-feedback/route.ts`).
+**Must be a workspace-scoped key from console.anthropic.com, not an
+org-level/unscoped one** — an unscoped key fails with a 400 "not scoped to
+a workspace" error on every call. A Claude Pro subscription login does not
+work here either; this needs real API credentials with billing set up.
 
 `INSTRUCTOR_PASSCODE_HASH` (`.env.local`, gitignored) gates `/instructor`.
 Generate a new one with:

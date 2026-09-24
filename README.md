@@ -31,6 +31,10 @@ Copy the printed hash into `.env.local` as `INSTRUCTOR_PASSCODE_HASH=...` —
 loader will silently mangle the hash (it treats bare `$word` as a variable
 reference).
 
+For the Week 3 AI-graded referencing practice, add a workspace-scoped
+Anthropic API key (console.anthropic.com — an org-level/unscoped key or a
+Claude Pro login won't work) to `.env.local` as `ANTHROPIC_API_KEY=...`.
+
 ## What's built so far
 
 - **Team accounts** — one shared login per team (name + passcode), not
@@ -43,7 +47,11 @@ reference).
 - **This Week** — a Moodle-style front page: the module's current week,
   whichever quiz matches it embedded directly (gated once on a lightweight
   "who's answering" step, no passwords), what's newly unlocked, the team's
-  progress, and every other week's quiz below for review/catch-up.
+  progress, and every other week's quiz below for review/catch-up. Week
+  3's quiz has a second half beyond the scored multiple-choice questions:
+  an AI-graded, unscored practice tool where students write their own
+  Harvard references and get instant, structured per-element feedback
+  (needs `ANTHROPIC_API_KEY` — see below).
 - **Investigation** — the weekly action economy (1 action point per
   student per week, a 0-3 trust bonus from that week's quiz average, a
   team-wide reserve that 2 unspent points can be banked into). ~45 actions,
@@ -71,10 +79,10 @@ reference).
 
 ## What's not built yet
 
-The AI-graded free-text referencing feature for Week 3 (spec'd, not built —
-blocked on a fresh Anthropic API key). Everything else from the original
-punch list is built; see `CLAUDE.md`'s "Current state" section for the full,
-detailed history of what was built when and why.
+Everything from the original punch list is built, including Week 3's
+referencing quiz and its AI-graded free-text practice tool. See
+`CLAUDE.md`'s "Current state" section for the full, detailed history of
+what was built when and why.
 
 ## Stack notes for later deployment
 

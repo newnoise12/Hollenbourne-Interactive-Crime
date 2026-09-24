@@ -10,6 +10,7 @@ import WhoAreYou from "./quiz/WhoAreYou";
 import TrustQuiz from "./quiz/TrustQuiz";
 import McqQuiz from "./quiz/[quizId]/McqQuiz";
 import MultiselectQuiz from "./quiz/[quizId]/MultiselectQuiz";
+import ReferencingPractice from "./quiz/ReferencingPractice";
 
 function QuizCard({ title, weekLabel, status, defaultOpen, children }: {
   title: string;
@@ -129,6 +130,7 @@ export default function WeeklyOverviewTab({
                 ) : (
                   <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
                 )}
+                {quiz.id === "week3-referencing" && <ReferencingPractice />}
               </QuizCard>
             ))}
           </>
@@ -185,6 +187,7 @@ export default function WeeklyOverviewTab({
               ) : (
                 <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
               )}
+              {quiz.id === "week3-referencing" && <ReferencingPractice />}
             </QuizCard>
           ))}
           {!hasWeek2Quiz && (

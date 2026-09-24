@@ -676,7 +676,83 @@ export const PRISONS_QUIZ: McqQuizDef = {
   ],
 };
 
+// Week 3's referencing quiz. Stage 1 (below) is these 4 MCQ questions,
+// scored the same generic way as every other mcq quiz. Stage 2 (the 3
+// free-text "write your own" tasks) is deliberately NOT here — it's
+// unscored by design (per its own source doc) and lives instead as a
+// separate, ungraded, AI-feedback practice widget: see
+// lib/reference-tasks.ts and app/dashboard/quiz/ReferencingPractice.tsx.
+export const WEEK3_REFERENCING_QUIZ: McqQuizDef = {
+  id: "week3-referencing",
+  kind: "mcq",
+  week: 3,
+  title: "Referencing Quiz",
+  intro:
+    "The foundational skill everything else in the module assumes — a Harvard reference needs five things: author, year, title, publication details, and (for anything online) access details. Multiple choice, one correct answer each.",
+  bonusThresholds: [
+    [0, 0],
+    [2, 1],
+    [3, 2],
+    [4, 3],
+  ],
+  stages: [
+    {
+      questions: [
+        {
+          q: "The source: an article by Robinson, K., Ahmed, S. and Clarke, T., published in 2019 in the International Journal of Offender Therapy and Comparative Criminology, volume 63, issue 4, pages 512–530. Which is the correctly formatted Harvard reference?",
+          options: [
+            "Robinson, K. (2019) International Journal of Offender Therapy and Comparative Criminology, 63(4), pp.512–530.",
+            "Robinson, K., Ahmed, S. and Clarke, T. (2019) Article title here. International Journal of Offender Therapy and Comparative Criminology, 63(4), pp.512–530.",
+            "Robinson et al., 2019, Journal of Offender Therapy.",
+            "K. Robinson, S. Ahmed and T. Clarke wrote an article in 2019 about offender therapy.",
+          ],
+          correct: 1,
+          explain:
+            "All three authors (not just the first, in the reference list — \"et al.\" is for in-text citations only), the year, the article title (not italicised — the journal name is italicised instead, since the journal is the standalone work here), volume and issue in brackets, and the page range. Option A drops two authors and the article title. Option C is an in-text citation style, not a reference list entry, and abbreviates the journal name incorrectly. Option D isn't a reference at all.",
+        },
+        {
+          q: "The source: a book by Newburn, T., titled \"Criminology,\" 3rd edition, published in 2017 by Routledge, in Abingdon. Which is the correctly formatted Harvard reference?",
+          options: [
+            "Newburn, T. (2017) Criminology. 3rd edn. Abingdon: Routledge.",
+            "T. Newburn, Criminology, Routledge, 2017.",
+            "Newburn (2017) Criminology.",
+            "Newburn, T. (2017) \"Criminology.\" Routledge.",
+          ],
+          correct: 0,
+          explain:
+            "Author, year, italicised title, edition (when not the first), place of publication, publisher. Option B has the elements in the wrong order and format entirely. Option C drops the edition, place, and publisher. Option D wrongly puts the title in quotation marks instead of italics — that convention is for article or chapter titles, not standalone books.",
+        },
+        {
+          q: "The source: \"The Code for Crown Prosecutors,\" published by the Crown Prosecution Service, most recently reviewed in 2024, found at a government web address. Which is the correctly formatted Harvard reference?",
+          options: [
+            "CPS (2024) Code for Crown Prosecutors. Available online.",
+            "Crown Prosecution Service (2024) The Code for Crown Prosecutors. Available at: [URL] (Accessed: [date]).",
+            "The Code for Crown Prosecutors, CPS website, seen 2024.",
+            "Crown Prosecution Service, no date, Code for Crown Prosecutors.",
+          ],
+          correct: 1,
+          explain:
+            "Full organisational name (not the acronym), year, full and accurate title, and the \"Available at\" / \"Accessed\" structure every online source needs — a reader needs both the URL and the date you accessed it, since government web content can change or move.",
+        },
+        {
+          q: "The source: an internal police memorandum, written by DS H. Ferris, dated 2 June 2025, addressed to the Divisional Commander and the Hollenbourne Case Review Panel. It doesn't fit neatly into \"book,\" \"article,\" or \"report\" — it's an internal document you've been given access to as part of the case materials, not something publicly published. Which approach is most defensible?",
+          options: [
+            "Don't reference it at all, since it was never formally published anywhere",
+            "Treat it as a personal communication / internal document: author, year, a description of what it is, and where you accessed it (e.g. the case materials for this module) — being honest about what kind of source it actually is, rather than forcing it into a format built for something else",
+            "Reference it exactly like a journal article, since it has an author and a date",
+            "Reference it as if it were a CPS publication, since it's about a legal case",
+          ],
+          correct: 1,
+          explain:
+            "This is the actual skill this question is testing: recognising when a source doesn't fit a standard category, and adapting the referencing principles (who, when, what, where you got it) honestly rather than forcing it into the wrong template. A source doesn't need a perfect category to be properly referenced — it needs its origin stated clearly enough that a reader understands exactly what it is and isn't.",
+        },
+      ],
+    },
+  ],
+};
+
 export const QUIZ_DEFS: QuizDef[] = [
+  WEEK3_REFERENCING_QUIZ,
   PACE_QUIZ,
   DARK_FIGURE_QUIZ,
   ARGUMENT_REGENERATION_QUIZ,
