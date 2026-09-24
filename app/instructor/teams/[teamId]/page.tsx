@@ -4,7 +4,6 @@ import { redirect, notFound } from "next/navigation";
 import { isValidInstructorSession } from "@/lib/instructor-auth";
 import { INSTRUCTOR_SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getTeamDetail } from "@/lib/instructor-data";
-import { getEvidenceItem } from "@/lib/evidence-catalog";
 import { MAX_WEEK } from "@/lib/actions-catalog";
 import { STAGE_1_ITEMS, STAGE_2_ITEMS, MAX_ATTEMPTS, QUIZ_WEEK } from "@/lib/quiz-catalog";
 import type { TeamQuizWeekDetail } from "@/lib/instructor-data";
@@ -21,7 +20,7 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
     notFound();
   }
 
-  const { team, citations, weekState, log, quizWeeks, baselineActions } = detail;
+  const { team, currentWeek, unlockedEvidence, weekState, log, quizWeeks, baselineActions } = detail;
   const weeksWithActivity = Object.keys(weekState)
     .map(Number)
     .sort((a, b) => a - b);
@@ -39,26 +38,24 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
           </p>
           <p className="font-mono text-xs text-[#8A8A80] m-0">
             Case reserve: <span className="text-[#E8E1D0]">{team.reservePoints} pt{team.reservePoints === 1 ? "" : "s"}</span>
+            {" "}&middot; Module currently at Week {currentWeek}
           </p>
         </div>
 
         <section className="mb-10">
-          <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-3 mt-0">Case log citations</h2>
-          {Object.keys(citations).length === 0 ? (
-            <p className="font-mono text-xs text-[#8A8A80]">No exhibits cited yet.</p>
+          <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-3 mt-0">
+            Evidence unlocked ({unlockedEvidence.length})
+          </h2>
+          {unlockedEvidence.length === 0 ? (
+            <p className="font-mono text-xs text-[#8A8A80]">Nothing unlocked yet.</p>
           ) : (
             <div className="space-y-3">
-              {Object.entries(citations).map(([exhibitId, citation]) => {
-                const item = getEvidenceItem(exhibitId);
-                return (
-                  <div key={exhibitId} className="bg-[#E8E1D0] border border-[#D6CDB4] px-4 py-3.5">
-                    <p className="font-mono text-[11px] text-[#5B5A4E] mb-1 mt-0">
-                      {exhibitId.toUpperCase()} &mdash; {item?.title ?? "unknown exhibit"}
-                    </p>
-                    <p className="font-mono text-[13px] text-[#2A2F27] m-0">{citation.text}</p>
-                  </div>
-                );
-              })}
+              {unlockedEvidence.map((item) => (
+                <div key={item.id} className="bg-[#E8E1D0] border border-[#D6CDB4] px-4 py-3.5">
+                  <p className="font-mono text-[11px] text-[#5B5A4E] mb-1 mt-0">{item.exhibit}</p>
+                  <p className="font-mono text-[13px] text-[#2A2F27] m-0">{item.title}</p>
+                </div>
+              ))}
             </div>
           )}
         </section>

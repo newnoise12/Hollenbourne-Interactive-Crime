@@ -64,37 +64,28 @@ neither prompts.
 **`/dashboard` is a single-page tabbed app, not separate routes per
 feature.** `app/dashboard/page.tsx` is the only server component — it fetches
 everything every tab needs in parallel and hands it all to
-`DashboardShell.tsx` (client), which renders the masthead, the tab bar
-(Briefing / Investigation / Case Log / Quizzes), and every tab's content in
-one page, toggling visibility with a plain `hidden` attribute rather than
-mounting/unmounting — so switching tabs never loses in-progress state (a
-half-answered quiz, an unsaved corkboard drag) the way a route change would.
-This mirrors a recovered standalone prototype's structure (see "A third,
-previously-unknown copy" below) more closely than the app's own earlier
-multi-page layout did — deliberately: the routes `/dashboard/case-log`,
-`/dashboard/actions`, `/dashboard/quiz`, and `/dashboard/quiz/[quizId]` no
-longer exist. Their former `page.tsx` files are gone; the actual feature
-components they used to render (`ActionEconomy.tsx`, `EvidenceBoard.tsx`,
-`TrustQuiz.tsx`, `McqQuiz.tsx`, `MultiselectQuiz.tsx`, `WhoAreYou.tsx`)
-still live at their same paths and are unchanged in substance — only
-stripped of their own page-level chrome (title, back-link, full-bleed
-background) since `DashboardShell` now supplies that once, consistently,
-for every tab. `QuizzesTab.tsx` is the one genuinely new piece: it lists
-every quiz (Week 2's ranking activity plus every `quiz-catalog.ts` entry)
-as a collapsible card and embeds the relevant quiz component inside,
-gating the whole tab on `WhoAreYou` once, rather than each quiz checking
-identity separately.
+`DashboardShell.tsx` (client), which renders the masthead, the tab bar,
+and every tab's content in one page, toggling visibility with a plain
+`hidden` attribute rather than mounting/unmounting — so switching tabs
+never loses in-progress state (a half-answered quiz, an unsaved corkboard
+drag) the way a route change would. The routes `/dashboard/case-log`,
+`/dashboard/actions`, `/dashboard/quiz`, and `/dashboard/quiz/[quizId]` don't
+exist; the actual feature components (`ActionEconomy.tsx`,
+`EvidenceBoard.tsx`, `TrustQuiz.tsx`, `McqQuiz.tsx`, `MultiselectQuiz.tsx`,
+`WhoAreYou.tsx`) still live at their same paths, stripped of their own
+page-level chrome since `DashboardShell` supplies that once for every tab.
 
-**This was a deliberate, explicitly-approved rebuild**, not an incidental
-refactor — the user asked to match the recovered artifact's *structure*,
-not just its visual look, understanding this meant redoing the page shell
-around already-working backend logic. Nothing in `lib/*.ts` or `app/api/*`
-changed: auth, per-student quiz attribution, prerequisite gating, the
-corkboard, and reserve banking are all exactly as documented below, just
-reachable through tabs instead of URLs now. `/login` and `/instructor/*`
-were restyled (not restructured) to match the same parchment/masthead
-visual language, since they were still plain Tailwind and looked
-inconsistent with everything else.
+**As of the handover-package pass (see "Current week" and "Citation removed"
+below), there are three tabs, not four**: **This Week** (`WeeklyOverviewTab.tsx`,
+label "This Week") / **Investigation** / **Case Log**. There is no separate
+Briefing or Quizzes tab any more — `BriefingTab.tsx` and `QuizzesTab.tsx` are
+both deleted. `WeeklyOverviewTab.tsx` absorbed all of `QuizzesTab.tsx`'s
+job (gates on `WhoAreYou` once, embeds whichever quiz matches the module's
+current week, and lists every other week's quiz below for review/catch-up)
+plus a Moodle-style summary of what's newly unlocked this week and the
+team's overall progress, with buttons that switch tabs programmatically
+(`DashboardShell` lifts its `tab` state and passes `setTab` down as
+`onNavigate`, rather than each tab being a self-contained island).
 
 ## Current state (as of last session)
 
@@ -398,6 +389,136 @@ inconsistent with everything else.
   `property-search-burgess` instead, matching the spec. Confirmed
   in-browser: all three correctly show "requires: the Burgess property
   search" and render LOCKED for a fresh team.
+- **Three usability fixes to the Case Log, from direct user feedback after
+  clicking through the live app.** (1) Confirmed the evidence board is
+  already grouped by case, not by type/theme — that request needed no
+  code change, just checking; worth remembering the "filing cabinet" fix
+  a few sessions back already covers this. (2) **Full-text reading**:
+  `EvidenceItem` gained an optional `body` (`EvidenceBodySection[]` —
+  heading + paragraphs, several sections for a multi-document exhibit)
+  in `lib/evidence-catalog.ts`, populated for the 12 of 19 exhibits with
+  real source prose behind them — Ferris's memo, all four victim
+  biographies (from the case bible), the missing person report, both
+  maps, the homicide-rate stat (from `hollenbourne-source-prose.md`), and
+  all four cases' policy-file/FLO-log/canvass-summary bundles — ported
+  from the recovered artifact prototype and the case bible, not
+  fabricated. The remaining 6 (EX.01–06, the original prototype-era
+  placeholder exhibits, predating the deepening work) have no dedicated
+  source document and were deliberately left without a `body` rather
+  than invented. `EvidenceBoard.tsx`'s new `FullTextReader` component
+  renders this as an inline "READ IN FULL ▾" disclosure inside
+  `ExhibitDetail` — shown for any unlocked exhibit regardless of citation
+  status, since reading and citing are two separate tasks, not
+  sequential gates. Also wired into `PinDetailModal.tsx` (exported from
+  `EvidenceBoard.tsx`) so a corkboard card shows the same full text.
+  (3) **Corkboard pin management**: replaced the disabled/enabled "pin to
+  corkboard" button with a proper toggle — "move to corkboard" /
+  "remove from corkboard" — in both `ExhibitDetail` and `PinDetailModal`,
+  so removing a pin no longer requires scrolling down to the corkboard's
+  small "Unpin EX.xx" link list (kept as a fast secondary option, not
+  removed). Corkboard dragging itself is unchanged and still the
+  intended way to arrange/connect pinned cards — only add/remove no
+  longer needs it. Confirmed end-to-end in-browser: read EX.13's full
+  town-geography text inline, pinned and unpinned it via the new toggle
+  in both places.
+- **The big one: a module-wide "current week," the action→evidence link,
+  full removal of the citation exercise, and the Moodle-style front page —
+  driven by a handover package the user dropped at the repo root
+  (`recovery/`, `mechanics/hollenbourne-weekly-unlock-schedule.md`, an
+  updated `prototype-reference/index.html`) after suspecting a past revert
+  had lost work.** Read the whole package, ran a Pass-1 status check
+  against its 13-section recovery checklist before changing anything (per
+  its own two-pass recovery prompt), found most of it already matched the
+  live code, and got explicit sign-off before starting Pass 2. Four parts:
+  1. **Instructor-controlled current week** — new `moduleSettings` table
+     (`db/schema.ts`, a genuine single-row/singleton pattern, the first one
+     in this schema), `lib/module-settings.ts`'s `getCurrentWeek`/
+     `setCurrentWeek`, `app/api/instructor/set-week/route.ts` (copies
+     `reassign-student`'s exact shape), and `app/instructor/CurrentWeekControl.tsx`
+     on the instructor dashboard. Deliberately instructor-controlled, not
+     calendar-derived — gives control for extensions/snow days rather than
+     assuming the term runs exactly on schedule. This is a real capability
+     that didn't exist at all before: `EvidenceItem.unlocksWeek` and
+     `ActionItem.availableFromWeek` were previously compared only against
+     a client-side, per-team browsable week selector with no connection to
+     reality — nothing ever advanced them, so every week-gated exhibit and
+     action was either free from day one or permanently locked. Confirmed
+     live: bumped the instructor's week control from 1 to 3, watched a
+     team's "evidence unlocked" count go from 7 to 11 (exactly the four
+     victim biographies gated at Week 3).
+  2. **Action → evidence link** — `EvidenceItem` gained `unlockedByActionId`;
+     `lib/evidence-catalog.ts`'s `isEvidenceUnlocked(item, currentWeek,
+     completedActionIds)` is now the single source of truth for whether an
+     exhibit is readable, checked both for week-gates and action-gates
+     together. Every one of the 45 actions in `lib/actions-catalog.ts` now
+     has a matching Case Log exhibit (EX.20 onward, `ev-<action-id>`),
+     reusing that action's own already-written `outcome` text as the
+     exhibit body — mechanical porting, not new authoring, per the
+     recovered prototype's own pattern (every costed action reveals a real
+     Case Log document, not just its own inline card text). `ActionCard`
+     still shows `outcome` inline exactly as before — the Case Log entry
+     is the permanent, poolable, corkboard-able copy of the same finding,
+     not a replacement. Case/suspect tagging for these 45 follows the same
+     judgment calls as EX.01-19 (a suspect only tagged when the finding is
+     substantively about them — a property search, a named registered
+     keeper, cell site data on their number — never inferred from
+     circumstantial description alone). Confirmed live: took "Pull initial
+     interview — Nigel Wooley," its linked EX.21 appeared unlocked in the
+     Case Log, correctly suspect-tagged (indigo, matching the corkboard's
+     own Nigel colour), full outcome text readable via the existing "read
+     in full" reader, pinnable with no citation step.
+  3. **Citation exercise removed entirely**, per explicit request — the
+     user found it "clunky and annoying" and is teaching citation through
+     quizzes instead now that Week 3 has a dedicated referencing quiz spec.
+     Deleted: `lib/evidence.ts`, `lib/citation-validation.ts`,
+     `app/api/evidence/route.ts`, the `evidenceCitations` table (two-pass
+     migration per the documented TTY workaround — added `moduleSettings`
+     alone first, then dropped `evidenceCitations` alone second, since
+     doing both in one `generate` reads as an ambiguous rename candidate),
+     and `EvidenceItem.meta`/`citeType`/`assisted`/`hint` plus the whole
+     CITE form, VERIFIED/INADMISSIBLE stamp, and bibliographic "view
+     document" reference popup from `EvidenceBoard.tsx`. An exhibit now has
+     exactly two states — locked or unlocked — and pinning to the corkboard
+     requires only that it's unlocked, not a prior correct citation.
+     `lib/instructor-data.ts`'s "exhibits cited" stat became "evidence
+     unlocked," computed via the same shared helper.
+  4. **Front page rebuilt** — see "Page structure" above for the
+     structural change (three tabs, `WeeklyOverviewTab.tsx` replacing both
+     `BriefingTab.tsx` and `QuizzesTab.tsx`).
+
+  Deliberately deferred, flagged for the user rather than guessed: whether
+  `ActionItem.category`'s "forensic" category should get its own
+  `EvidenceType` (currently mapped onto the existing "documentary" type,
+  same as everything else without a dedicated exhibit-type icon).
+  Production build, typecheck, and lint all clean throughout; the two-pass
+  migration applied cleanly against the real `dev.db`.
+- **Fixed two real gaps in the above, found by the user clicking through the
+  live preview**: not every exhibit was actually readable in full, and no
+  exhibit had an image, despite several being explicitly visual (maps, CCTV
+  stills, cell-site reports). Checked before assuming either was fixed:
+  `EvidenceItem` had no `image` field at all, and grep confirmed six
+  exhibits — `EX.01`–`06`, the original pre-deepening prototype placeholders
+  (verified against `Reference/evidence-board.jsx`, the actual source they
+  were ported from) — have no real document behind them anywhere in any
+  recovered material, so they never got a `body`. Fixed both: (1)
+  `EvidenceItem` gained `image?: string` (same `public/`-relative-path
+  pattern as `quiz-catalog.ts`'s `McqStage.image`); copied the two case maps
+  and all five cell-site exhibit images from the handover's `visuals/`
+  folder into `public/case-images/`, wired to `EX.13`/`EX.14` and the five
+  `cellsite-*` action-derived exhibits via `ACTION_EVIDENCE_META`;
+  `EvidenceBoard.tsx`'s `ExhibitDetail` renders the image (when present)
+  above the full-text reader, same as `McqQuiz.tsx` already does for quiz
+  charts. `EX.02` ("CCTV still — woodland car park") has no real image
+  anywhere in any recovered material — left text-only rather than
+  mislabelling an unrelated file as it. (2) `FullTextReader` is now always
+  offered, not conditional on `item.body` existing — the six bodyless
+  exhibits show an honest one-line fallback ("No fuller record exists on
+  file for this exhibit beyond the summary above.") instead of silently
+  omitting the button, so every exhibit behaves consistently rather than a
+  handful looking broken. Confirmed in-browser: all 7 images return 200 and
+  render (one visually screenshotted, the other 6 confirmed via direct
+  fetch); EX.01 (previously bodyless) now shows the fallback text through
+  the same "READ IN FULL" control as every other exhibit.
 - Production build passes clean (`npx next build`), TypeScript and ESLint
   both clean.
 
@@ -415,10 +536,15 @@ inconsistent with everything else.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.
-- **Resolved, not a bug**: DS Fenwick (Haddad/Swayne Porterhouse interviews)
-  and DS Ferris (the cross-case memo, Week 9) are deliberately two different
-  detectives on the force, not a naming drift between sources — confirmed
-  with the user. No reconciliation needed if this ever comes up again.
+- **Corrected**: DS Ferris conducts every interview throughout the case,
+  including the Haddad/Swayne Porterhouse arrests — the "DS Fenwick" name
+  in the standalone prototype was a naming drift, not a second detective.
+  A prior session momentarily concluded these were "deliberately two
+  different people" — that was itself the confusion, since resolved
+  against the handover package's `recovery/hollenbourne-claude-code-kickoff-prompt.md`
+  and `recovery/hollenbourne-recovery-checklist.md`, both of which say to
+  default to Ferris. If this ever resurfaces, Ferris is correct; there is
+  no Fenwick in the real design.
 - The disconnected OneDrive copy this content was recovered from
   (`C:\Users\CrisW\dev\hollenbourne-app`) still exists and hasn't been
   cleaned up — safe to delete once its content is confirmed fully migrated,

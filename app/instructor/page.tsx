@@ -5,8 +5,10 @@ import { isValidInstructorSession } from "@/lib/instructor-auth";
 import { INSTRUCTOR_SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getAllTeamsSummary } from "@/lib/instructor-data";
 import { getAllStudentsWithTeams } from "@/lib/students";
+import { getCurrentWeek } from "@/lib/module-settings";
 import LogoutButton from "./LogoutButton";
 import StudentsPanel from "./StudentsPanel";
+import CurrentWeekControl from "./CurrentWeekControl";
 
 export default async function InstructorDashboardPage() {
   const sessionId = (await cookies()).get(INSTRUCTOR_SESSION_COOKIE_NAME)?.value;
@@ -14,7 +16,11 @@ export default async function InstructorDashboardPage() {
     redirect("/instructor/login");
   }
 
-  const [teams, students] = await Promise.all([getAllTeamsSummary(), getAllStudentsWithTeams()]);
+  const [teams, students, currentWeek] = await Promise.all([
+    getAllTeamsSummary(),
+    getAllStudentsWithTeams(),
+    getCurrentWeek(),
+  ]);
 
   return (
     <main className="flex-1 bg-[#23262B] px-6 py-8">
@@ -27,6 +33,8 @@ export default async function InstructorDashboardPage() {
           <LogoutButton />
         </div>
 
+        <CurrentWeekControl initialWeek={currentWeek} />
+
         {teams.length === 0 ? (
           <p className="font-mono text-xs text-[#8A8A80] bg-[#E8E1D0] border border-dashed border-[#A6764A] px-8 py-8 text-center">
             No teams have registered yet.
@@ -38,7 +46,7 @@ export default async function InstructorDashboardPage() {
                 <tr className="text-left text-[#5B5A4E] border-b border-[#D6CDB4]">
                   <th className="px-4 py-2.5 font-medium">Team</th>
                   <th className="px-4 py-2.5 font-medium">Created</th>
-                  <th className="px-4 py-2.5 font-medium">Exhibits cited</th>
+                  <th className="px-4 py-2.5 font-medium">Evidence unlocked</th>
                   <th className="px-4 py-2.5 font-medium">Week 2 quiz</th>
                   <th className="px-4 py-2.5 font-medium">Actions taken</th>
                   <th className="px-4 py-2.5 font-medium">Reserve</th>
@@ -53,7 +61,7 @@ export default async function InstructorDashboardPage() {
                       {team.createdAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </td>
                     <td className="px-4 py-2.5">
-                      {team.citedCount} / {team.citableCount}
+                      {team.unlockedCount} / {team.totalEvidenceCount}
                     </td>
                     <td className="px-4 py-2.5">
                       {team.quizAverage === null ? (

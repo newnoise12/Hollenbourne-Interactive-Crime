@@ -37,38 +37,44 @@ reference).
   individual student logins. Passcodes are hashed, never stored in plain text.
 - **Sessions** — cookie-based, 30-day expiry (a term shouldn't log anyone out
   mid-week).
-- **Database** — seven tables: teams, sessions, weekly action-point state
-  (resets each week), a permanent action log (doesn't reset), evidence
-  citations per team, students (named individuals within a team, no login
-  of their own), and quiz attempts (per student).
-- **Case log (evidence board)** — `/dashboard/case-log`, backed by the
-  `evidenceCitations` table. Citation validation (assisted-fields and
-  free-text paths) runs both client- and server-side.
-- **Weekly action economy** — `/dashboard/actions`, backed by
-  `weekActionState`/`actionLog`. Trust bonus is a manual per-team control
-  for weeks without a quiz driving it (see below).
-- **Week 2 trust activity (quiz)** — `/dashboard/quiz`, backed by
-  `quizAttempts`, attributed to individual students (a lightweight "who's
-  answering" step, no passwords — evidence board and action economy stay
-  team-shared). Up to 3 attempts per student; a team's Week 2 trust bonus
-  is the live average of its members' best scores, so it updates
-  automatically as more students answer and never needs manual editing.
+- **`/dashboard` is a single-page tabbed app** — This Week / Investigation /
+  Case Log, all mounted at once and toggled with `hidden` so switching tabs
+  never loses in-progress state. No separate routes per feature.
+- **This Week** — a Moodle-style front page: the module's current week,
+  whichever quiz matches it embedded directly (gated once on a lightweight
+  "who's answering" step, no passwords), what's newly unlocked, the team's
+  progress, and every other week's quiz below for review/catch-up.
+- **Investigation** — the weekly action economy (1 action point per
+  student per week, a 0-3 trust bonus from that week's quiz average, a
+  team-wide reserve that 2 unspent points can be banked into). ~45 actions,
+  grouped into named narrative threads, each gated by prerequisites and/or
+  a minimum week.
+- **Case Log** — the evidence board, organised into permanent sections by
+  case (one per victim, plus general/force-wide). ~19 baseline exhibits
+  plus one linked exhibit per Investigation action, all readable in full
+  once unlocked and pinnable to a corkboard (drag to arrange, drag between
+  cards to connect with a labelled relationship). No citation exercise —
+  citation is taught through the quizzes instead.
+- **A module-wide "current week"**, instructor-controlled — gates both the
+  evidence board's `unlocksWeek` items and the action economy's
+  `availableFromWeek` items. Not calendar-derived, so an extension or a
+  snow day doesn't need a code change.
 - **Instructor dashboard** — `/instructor`, gated by a single shared
-  passcode (see setup above, not per-team accounts). Mostly read-only — a
-  summary table of every team plus a per-team detail view (citations,
-  week-by-week action state, per-student quiz breakdown) — plus one write
-  action: moving a student to a different team. A move only changes where
-  they show up going forward; their past quiz attempts stay attributed to
-  whichever team they were on when they took them, so it never changes an
-  already-recorded week's trust bonus for either team.
+  passcode (see setup above, not per-team accounts). The current-week
+  control lives here. Mostly read-only otherwise — a summary table of every
+  team plus a per-team detail view (unlocked evidence, week-by-week action
+  state, per-student quiz breakdown) — plus one write action: moving a
+  student to a different team. A move only changes where they show up going
+  forward; their past quiz attempts stay attributed to whichever team they
+  were on when they took them, so it never changes an already-recorded
+  week's trust bonus for either team.
 
 ## What's not built yet
 
-Everything from the original punch list is built. The evidence board, action
-economy, Week 2 quiz, and instructor dashboard have all been ported in from
-earlier standalone-artifact versions (kept for reference in `Reference/`,
-not part of the app build) — later weeks' trust activities would follow the
-same pattern as the Week 2 quiz once their content exists.
+The AI-graded free-text referencing feature for Week 3 (spec'd, not built —
+blocked on a fresh Anthropic API key). Everything else from the original
+punch list is built; see `CLAUDE.md`'s "Current state" section for the full,
+detailed history of what was built when and why.
 
 ## Stack notes for later deployment
 

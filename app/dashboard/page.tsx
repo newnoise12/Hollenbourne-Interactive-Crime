@@ -6,9 +6,9 @@ import { getAllWeekState, getActionLog, getTeamBaselineActions, getTeamReserve }
 import { getQuizAttempts, getGenericQuizAttempts, getTeamQuizAverage } from "@/lib/quiz";
 import { ACTIONS } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS, QUIZ_DEFS } from "@/lib/quiz-catalog";
-import { getCitationsForTeam } from "@/lib/evidence";
 import { getBoard } from "@/lib/board";
 import { EVIDENCE } from "@/lib/evidence-catalog";
+import { getCurrentWeek } from "@/lib/module-settings";
 import { getStudentById, getStudentsForTeam } from "@/lib/students";
 import DashboardShell from "./DashboardShell";
 
@@ -26,23 +26,23 @@ export default async function DashboardPage() {
   const validStudent = student && student.teamId === team.id ? student : null;
 
   const [
+    currentWeek,
     weekState,
     log,
     baselineActions,
     reservePoints,
     quizzesByWeek,
-    citations,
     board,
     roster,
     week2Attempts,
     genericAttemptsList,
   ] = await Promise.all([
+    getCurrentWeek(),
     getAllWeekState(team.id),
     getActionLog(team.id),
     getTeamBaselineActions(team.id),
     getTeamReserve(team.id),
     Promise.all(ALL_QUIZ_WEEKS.map((week) => getTeamQuizAverage(team.id, week))),
-    getCitationsForTeam(team.id),
     getBoard(team.id),
     getStudentsForTeam(team.id),
     validStudent ? getQuizAttempts(validStudent.id) : Promise.resolve([]),
@@ -59,6 +59,7 @@ export default async function DashboardPage() {
   return (
     <DashboardShell
       teamName={team.name}
+      currentWeek={currentWeek}
       actions={ACTIONS}
       initialWeekState={weekState}
       initialLog={log}
@@ -66,7 +67,6 @@ export default async function DashboardPage() {
       baselineActions={baselineActions}
       initialReservePoints={reservePoints}
       evidence={EVIDENCE}
-      initialCitations={citations}
       initialBoard={board}
       validStudent={validStudent}
       roster={roster}

@@ -1,7 +1,9 @@
 import { db } from "@/db/client";
-import { evidencePins, evidenceConnections, evidenceCitations } from "@/db/schema";
+import { evidencePins, evidenceConnections } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getEvidenceItem, type EvidenceItem } from "./evidence-catalog";
+import { getEvidenceItem, isEvidenceUnlocked, type EvidenceItem } from "./evidence-catalog";
+import { getActionLog } from "./actions";
+import { getCurrentWeek } from "./module-settings";
 
 export class BoardError extends Error {}
 
@@ -35,19 +37,21 @@ export async function getBoard(teamId: string): Promise<Board> {
 
 /**
  * Pins an exhibit to the team's corkboard. Requires the exhibit to already
- * be cited — the corkboard is for connecting evidence a team has already
- * engaged with through the citation exercise, not a shortcut around it.
- * Re-pinning an already-pinned exhibit just moves it to the new position
- * (team_pin_exhibit_idx makes this an upsert).
+ * be unlocked (by week and/or by its gating action) — the corkboard is for
+ * arranging and connecting evidence a team can actually read, not a
+ * shortcut to see something early. Re-pinning an already-pinned exhibit
+ * just moves it to the new position (team_pin_exhibit_idx makes this an
+ * upsert).
  */
 export async function pinEvidence(teamId: string, exhibitId: string, x: number, y: number): Promise<Board> {
   const item = getEvidenceItem(exhibitId);
   if (!item) throw new BoardError("Unknown exhibit.");
 
-  const cited = await db.query.evidenceCitations.findFirst({
-    where: and(eq(evidenceCitations.teamId, teamId), eq(evidenceCitations.exhibitId, exhibitId)),
-  });
-  if (!cited) throw new BoardError("Cite this exhibit in the case log before pinning it to the corkboard.");
+  const [currentWeek, log] = await Promise.all([getCurrentWeek(), getActionLog(teamId)]);
+  const completedActionIds = new Set(log.map((entry) => entry.actionId));
+  if (!isEvidenceUnlocked(item, currentWeek, completedActionIds)) {
+    throw new BoardError("This exhibit isn't unlocked yet.");
+  }
 
   await db
     .insert(evidencePins)

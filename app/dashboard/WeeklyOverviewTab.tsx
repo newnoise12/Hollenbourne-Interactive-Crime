@@ -1,0 +1,204 @@
+"use client";
+
+import { useState } from "react";
+import type { Student } from "@/lib/students";
+import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
+import type { EvidenceItem } from "@/lib/evidence-catalog";
+import type { LogEntry } from "@/lib/actions";
+import { STAGE_1_ITEMS, STAGE_2_ITEMS, QUIZ_TITLE, QUIZ_WEEK, QUIZ_DEFS } from "@/lib/quiz-catalog";
+import WhoAreYou from "./quiz/WhoAreYou";
+import TrustQuiz from "./quiz/TrustQuiz";
+import McqQuiz from "./quiz/[quizId]/McqQuiz";
+import MultiselectQuiz from "./quiz/[quizId]/MultiselectQuiz";
+
+function QuizCard({ title, weekLabel, status, defaultOpen, children }: {
+  title: string;
+  weekLabel: string;
+  status: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className="bg-[#E8E1D0] border border-[#D6CDB4] mb-3">
+      <button onClick={() => setOpen((o) => !o)} className="w-full text-left px-5 py-3.5 flex items-center justify-between gap-3 flex-wrap bg-transparent">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-wide text-[#A6764A]">{weekLabel}</span>
+          <h4 className="font-serif font-semibold text-[15px] text-[#2A2F27] m-0">{title}</h4>
+        </div>
+        <span className="font-mono text-xs text-[#5B5A4E]">{status} {open ? "−" : "+"}</span>
+      </button>
+      <div hidden={!open} className="px-5 pb-5 border-t border-[#D6CDB4]">
+        <div className="pt-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function rankStatus(attempts: RankQuizAttempt[]): string {
+  if (attempts.length === 0) return "not started";
+  const best = Math.max(...attempts.map((a) => a.score));
+  return `best ${best}/${attempts[0].maxScore}`;
+}
+
+function genericStatus(attempts: GenericQuizAttempt[]): string {
+  if (attempts.length === 0) return "not started";
+  const best = Math.max(...attempts.map((a) => a.score));
+  return `best ${best}/${attempts[0].maxScore}`;
+}
+
+type Tab = "overview" | "investigation" | "case-log";
+
+export default function WeeklyOverviewTab({
+  currentWeek,
+  validStudent,
+  roster,
+  week2Attempts,
+  genericAttempts,
+  evidence,
+  log,
+  reservePoints,
+  onNavigate,
+}: {
+  currentWeek: number;
+  validStudent: { id: string; name: string } | null;
+  roster: Student[];
+  week2Attempts: RankQuizAttempt[];
+  genericAttempts: Record<string, GenericQuizAttempt[]>;
+  evidence: EvidenceItem[];
+  log: LogEntry[];
+  reservePoints: number;
+  onNavigate: (tab: Tab) => void;
+}) {
+  const completedActionIds = new Set(log.map((entry) => entry.actionId));
+  const unlockedCount = evidence.filter((e) => {
+    const weekOk = !e.unlocksWeek || currentWeek >= e.unlocksWeek;
+    const actionOk = !e.unlockedByActionId || completedActionIds.has(e.unlockedByActionId);
+    return weekOk && actionOk;
+  }).length;
+  const newlyUnlocked = evidence.filter((e) => e.unlocksWeek === currentWeek);
+
+  const thisWeekGeneric = QUIZ_DEFS.filter((q) => q.week === currentWeek);
+  const hasWeek2Quiz = currentWeek === QUIZ_WEEK;
+  const hasAnyQuizThisWeek = hasWeek2Quiz || thisWeekGeneric.length > 0;
+
+  const otherGeneric = QUIZ_DEFS.filter((q) => q.week !== currentWeek);
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1 pb-4 border-b border-[#A6764A55]">
+        <h2 className="font-serif font-bold text-xl text-[#E8E1D0] m-0">Week {currentWeek}</h2>
+      </div>
+
+      <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4.5 my-5">
+        <h3 className="font-serif font-semibold text-lg text-[#2A2F27] mb-2.5 mt-0">This week&apos;s activity</h3>
+        {!validStudent ? (
+          <>
+            {!hasAnyQuizThisWeek && (
+              <p className="font-mono text-[13px] text-[#5B5A4E] leading-relaxed mb-4 mt-0">
+                No scored activity this week &mdash; identify yourself below if you want to review or catch up on
+                another week&apos;s quiz.
+              </p>
+            )}
+            <WhoAreYou students={roster} />
+          </>
+        ) : !hasAnyQuizThisWeek ? (
+          <p className="font-mono text-[13px] text-[#5B5A4E] leading-relaxed mb-0 mt-0">
+            No scored activity this week &mdash; spend the week on the Investigation and Case Log tabs instead.
+          </p>
+        ) : (
+          <>
+            <p className="font-mono text-xs text-[#8A8A80] mb-4 mt-0">
+              Answering as <span className="text-[#2A2F27]">{validStudent.name}</span> &mdash; scored per student,
+              averaged into your team&apos;s trust bonus.
+            </p>
+            {hasWeek2Quiz && (
+              <QuizCard title={QUIZ_TITLE} weekLabel={`Week ${QUIZ_WEEK}`} status={rankStatus(week2Attempts)} defaultOpen>
+                <TrustQuiz
+                  stage1Items={STAGE_1_ITEMS}
+                  stage2Items={STAGE_2_ITEMS}
+                  initialAttempts={week2Attempts}
+                  studentName={validStudent.name}
+                />
+              </QuizCard>
+            )}
+            {thisWeekGeneric.map((quiz) => (
+              <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])} defaultOpen>
+                {quiz.kind === "mcq" ? (
+                  <McqQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
+                ) : (
+                  <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
+                )}
+              </QuizCard>
+            ))}
+          </>
+        )}
+      </div>
+
+      {newlyUnlocked.length > 0 && (
+        <div className="bg-[#E8E1D0] border border-[#D6CDB4] px-5 py-4.5 mb-5">
+          <h3 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-2 mt-0">Newly unlocked this week</h3>
+          <ul className="font-mono text-[13px] text-[#5B5A4E] leading-relaxed pl-4 my-0 space-y-1">
+            {newlyUnlocked.map((item) => (
+              <li key={item.id}>{item.exhibit} &mdash; {item.title}</li>
+            ))}
+          </ul>
+          {currentWeek === 9 && (
+            <p className="font-mono text-xs text-[#8A8A80] mt-3 mb-0">
+              The full baseline case file lands for all four victims at once this week &mdash; the point is to spot a
+              pattern across all of them together, not case by case.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="bg-[#E8E1D0] border border-[#D6CDB4] px-5 py-4.5 mb-8">
+        <h3 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-3 mt-0">Your team&apos;s progress</h3>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[13px] text-[#5B5A4E] mb-4">
+          <span>{unlockedCount} / {evidence.length} evidence unlocked</span>
+          <span>{log.length} action{log.length === 1 ? "" : "s"} taken</span>
+          <span>{reservePoints} reserve pt{reservePoints === 1 ? "" : "s"}</span>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => onNavigate("investigation")}
+            className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border border-[#2A2F27] text-[#2A2F27] cursor-pointer"
+          >
+            GO TO INVESTIGATION
+          </button>
+          <button
+            onClick={() => onNavigate("case-log")}
+            className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border border-[#2A2F27] text-[#2A2F27] cursor-pointer"
+          >
+            GO TO CASE LOG
+          </button>
+        </div>
+      </div>
+
+      {validStudent && otherGeneric.length > 0 && (
+        <div>
+          <h3 className="font-serif font-semibold text-[15px] text-[#E8E1D0] mb-3 mt-0">Other weeks&apos; activities</h3>
+          {otherGeneric.map((quiz) => (
+            <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])}>
+              {quiz.kind === "mcq" ? (
+                <McqQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
+              ) : (
+                <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
+              )}
+            </QuizCard>
+          ))}
+          {!hasWeek2Quiz && (
+            <QuizCard title={QUIZ_TITLE} weekLabel={`Week ${QUIZ_WEEK}`} status={rankStatus(week2Attempts)}>
+              <TrustQuiz
+                stage1Items={STAGE_1_ITEMS}
+                stage2Items={STAGE_2_ITEMS}
+                initialAttempts={week2Attempts}
+                studentName={validStudent.name}
+              />
+            </QuizCard>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

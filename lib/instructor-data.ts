@@ -1,44 +1,46 @@
 import { db } from "@/db/client";
-import { teams, evidenceCitations, actionLog } from "@/db/schema";
+import { teams, actionLog } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getCitationsForTeam } from "./evidence";
 import { getAllWeekState, getActionLog, getTeamBaselineActions } from "./actions";
 import { getTeamQuizAverage, getTeamQuizBreakdown } from "./quiz";
-import { EVIDENCE } from "./evidence-catalog";
+import { getCurrentWeek } from "./module-settings";
+import { EVIDENCE, isEvidenceUnlocked, type EvidenceItem } from "./evidence-catalog";
 import { QUIZ_WEEK, ALL_QUIZ_WEEKS } from "./quiz-catalog";
 
 export type TeamSummary = {
   id: string;
   name: string;
   createdAt: Date;
-  citedCount: number;
-  citableCount: number;
+  unlockedCount: number;
+  totalEvidenceCount: number;
   quizAverage: number | null;
   quizStudentsAttempted: number;
   totalActionsSpent: number;
   reservePoints: number;
 };
 
-const CITABLE_COUNT = EVIDENCE.filter((e) => !e.locked).length;
+function countUnlocked(evidence: EvidenceItem[], currentWeek: number, completedActionIds: Set<string>): number {
+  return evidence.filter((e) => isEvidenceUnlocked(e, currentWeek, completedActionIds)).length;
+}
 
 /** One summary row per team, for the instructor overview table. */
 export async function getAllTeamsSummary(): Promise<TeamSummary[]> {
-  const allTeams = await db.query.teams.findMany();
+  const [allTeams, currentWeek] = await Promise.all([db.query.teams.findMany(), getCurrentWeek()]);
 
   return Promise.all(
     allTeams.map(async (team) => {
-      const [citations, log, quiz] = await Promise.all([
-        db.query.evidenceCitations.findMany({ where: eq(evidenceCitations.teamId, team.id) }),
+      const [log, quiz] = await Promise.all([
         db.query.actionLog.findMany({ where: eq(actionLog.teamId, team.id) }),
         getTeamQuizAverage(team.id, QUIZ_WEEK),
       ]);
+      const completedActionIds = new Set(log.map((entry) => entry.actionId));
 
       return {
         id: team.id,
         name: team.name,
         createdAt: team.createdAt,
-        citedCount: citations.length,
-        citableCount: CITABLE_COUNT,
+        unlockedCount: countUnlocked(EVIDENCE, currentWeek, completedActionIds),
+        totalEvidenceCount: EVIDENCE.length,
         quizAverage: quiz.average,
         quizStudentsAttempted: quiz.studentsAttempted,
         totalActionsSpent: log.length, // one row per action taken; cost is implicit in the catalog, count is enough for an at-a-glance summary
@@ -56,7 +58,8 @@ export type TeamQuizWeekDetail = {
 
 export type TeamDetail = {
   team: { id: string; name: string; createdAt: Date; reservePoints: number };
-  citations: Awaited<ReturnType<typeof getCitationsForTeam>>;
+  currentWeek: number;
+  unlockedEvidence: EvidenceItem[];
   weekState: Awaited<ReturnType<typeof getAllWeekState>>;
   log: Awaited<ReturnType<typeof getActionLog>>;
   baselineActions: number;
@@ -71,8 +74,8 @@ export async function getTeamDetail(teamId: string): Promise<TeamDetail | null> 
   const team = await db.query.teams.findFirst({ where: eq(teams.id, teamId) });
   if (!team) return null;
 
-  const [citations, weekState, log, quizWeeks, baselineActions] = await Promise.all([
-    getCitationsForTeam(team.id),
+  const [currentWeek, weekState, log, quizWeeks, baselineActions] = await Promise.all([
+    getCurrentWeek(),
     getAllWeekState(team.id),
     getActionLog(team.id),
     Promise.all(
@@ -84,9 +87,13 @@ export async function getTeamDetail(teamId: string): Promise<TeamDetail | null> 
     getTeamBaselineActions(team.id),
   ]);
 
+  const completedActionIds = new Set(log.map((entry) => entry.actionId));
+  const unlockedEvidence = EVIDENCE.filter((e) => isEvidenceUnlocked(e, currentWeek, completedActionIds));
+
   return {
     team: { id: team.id, name: team.name, createdAt: team.createdAt, reservePoints: team.reservePoints },
-    citations,
+    currentWeek,
+    unlockedEvidence,
     weekState,
     log,
     baselineActions,

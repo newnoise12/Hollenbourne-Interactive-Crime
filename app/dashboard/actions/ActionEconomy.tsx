@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
-import { CATEGORY_META, THREAD_META, THREAD_ORDER, MAX_TRUST_BONUS, MAX_WEEK, type ActionItem } from "@/lib/actions-catalog";
+import { CATEGORY_META, THREAD_META, THREAD_ORDER, MAX_TRUST_BONUS, type ActionItem } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
 
@@ -103,6 +103,7 @@ export default function ActionEconomy({
   quizStudentsAttemptedByWeek,
   baselineActions,
   initialReservePoints,
+  currentWeek,
 }: {
   actions: ActionItem[];
   initialWeekState: WeekStateMap;
@@ -110,8 +111,9 @@ export default function ActionEconomy({
   quizStudentsAttemptedByWeek: Record<number, number>;
   baselineActions: number;
   initialReservePoints: number;
+  currentWeek: number;
 }) {
-  const [week, setWeek] = useState(1);
+  const [week, setWeek] = useState(currentWeek);
   const [weekStateMap, setWeekStateMap] = useState<WeekStateMap>(initialWeekState);
   const [log, setLog] = useState<LogEntry[]>(initialLog);
   const [reservePoints, setReservePoints] = useState(initialReservePoints);
@@ -134,7 +136,7 @@ export default function ActionEconomy({
   const actionsById = new Map(actions.map((a) => [a.id, a]));
 
   const changeWeek = (delta: number) => {
-    setWeek((w) => Math.min(MAX_WEEK, Math.max(1, w + delta)));
+    setWeek((w) => Math.min(currentWeek, Math.max(1, w + delta)));
   };
 
   const changeTrust = async (delta: number) => {
@@ -233,7 +235,7 @@ export default function ActionEconomy({
               <span className="font-serif font-semibold text-lg text-[#2A2F27] min-w-[70px] text-center">
                 Week {week}
               </span>
-              <button onClick={() => changeWeek(1)} disabled={week >= MAX_WEEK} aria-label="Next week" className={iconBtnClass(week >= MAX_WEEK)}>
+              <button onClick={() => changeWeek(1)} disabled={week >= currentWeek} aria-label="Next week" className={iconBtnClass(week >= currentWeek)}>
                 <ChevronRightIcon size={16} />
               </button>
             </div>

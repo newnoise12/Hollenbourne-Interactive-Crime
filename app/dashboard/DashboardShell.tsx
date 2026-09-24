@@ -4,27 +4,25 @@ import { useState } from "react";
 import LogoutButton from "./LogoutButton";
 import ActionEconomy from "./actions/ActionEconomy";
 import EvidenceBoard from "./case-log/EvidenceBoard";
-import QuizzesTab from "./QuizzesTab";
-import BriefingTab from "./BriefingTab";
+import WeeklyOverviewTab from "./WeeklyOverviewTab";
 import type { ActionItem } from "@/lib/actions-catalog";
 import type { WeekStateMap, LogEntry } from "@/lib/actions";
 import type { EvidenceItem } from "@/lib/evidence-catalog";
-import type { CitationMap } from "@/lib/evidence";
 import type { Board } from "@/lib/board";
 import type { Student } from "@/lib/students";
 import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
 
-type Tab = "briefing" | "investigation" | "case-log" | "quizzes";
+type Tab = "overview" | "investigation" | "case-log";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "briefing", label: "Briefing" },
+  { id: "overview", label: "This Week" },
   { id: "investigation", label: "Investigation" },
   { id: "case-log", label: "Case Log" },
-  { id: "quizzes", label: "Quizzes" },
 ];
 
 export default function DashboardShell({
   teamName,
+  currentWeek,
   actions,
   initialWeekState,
   initialLog,
@@ -32,7 +30,6 @@ export default function DashboardShell({
   baselineActions,
   initialReservePoints,
   evidence,
-  initialCitations,
   initialBoard,
   validStudent,
   roster,
@@ -40,6 +37,7 @@ export default function DashboardShell({
   genericAttempts,
 }: {
   teamName: string;
+  currentWeek: number;
   actions: ActionItem[];
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
@@ -47,14 +45,13 @@ export default function DashboardShell({
   baselineActions: number;
   initialReservePoints: number;
   evidence: EvidenceItem[];
-  initialCitations: CitationMap;
   initialBoard: Board;
   validStudent: { id: string; name: string } | null;
   roster: Student[];
   week2Attempts: RankQuizAttempt[];
   genericAttempts: Record<string, GenericQuizAttempt[]>;
 }) {
-  const [tab, setTab] = useState<Tab>("briefing");
+  const [tab, setTab] = useState<Tab>("overview");
 
   return (
     <div className="bg-[#23262B] min-h-full px-6 py-8">
@@ -93,8 +90,18 @@ export default function DashboardShell({
           ))}
         </nav>
 
-        <div hidden={tab !== "briefing"}>
-          <BriefingTab />
+        <div hidden={tab !== "overview"}>
+          <WeeklyOverviewTab
+            currentWeek={currentWeek}
+            validStudent={validStudent}
+            roster={roster}
+            week2Attempts={week2Attempts}
+            genericAttempts={genericAttempts}
+            evidence={evidence}
+            log={initialLog}
+            reservePoints={initialReservePoints}
+            onNavigate={setTab}
+          />
         </div>
         <div hidden={tab !== "investigation"}>
           <ActionEconomy
@@ -104,13 +111,17 @@ export default function DashboardShell({
             quizStudentsAttemptedByWeek={quizStudentsAttemptedByWeek}
             baselineActions={baselineActions}
             initialReservePoints={initialReservePoints}
+            currentWeek={currentWeek}
           />
         </div>
         <div hidden={tab !== "case-log"}>
-          <EvidenceBoard evidence={evidence} initialCitations={initialCitations} initialBoard={initialBoard} />
-        </div>
-        <div hidden={tab !== "quizzes"}>
-          <QuizzesTab validStudent={validStudent} roster={roster} week2Attempts={week2Attempts} genericAttempts={genericAttempts} />
+          <EvidenceBoard
+            evidence={evidence}
+            initialBoard={initialBoard}
+            currentWeek={currentWeek}
+            completedActionIds={new Set(initialLog.map((e) => e.actionId))}
+            actions={actions}
+          />
         </div>
       </div>
     </div>

@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import type { EvidenceItem } from "@/lib/evidence-catalog";
+import { FullTextReader } from "./EvidenceBoard";
 
 export default function PinDetailModal({
   evidence,
   note,
   onClose,
   onSaveNote,
+  onUnpin,
 }: {
   evidence: EvidenceItem;
   note: string | null;
   onClose: () => void;
   onSaveNote: (note: string) => void;
+  onUnpin: () => void;
 }) {
   const [draftNote, setDraftNote] = useState(note ?? "");
 
@@ -32,6 +35,19 @@ export default function PinDetailModal({
           </button>
         </div>
         <p className="mt-3 font-mono text-[13px] text-[#2A2F27] leading-relaxed whitespace-pre-line">{evidence.snippet}</p>
+
+        {evidence.body && (
+          <div className="mt-3">
+            <FullTextReader sections={evidence.body} />
+          </div>
+        )}
+
+        <button
+          onClick={onUnpin}
+          className="mt-1 font-mono text-[11px] tracking-wide bg-transparent border border-[#8B3226] text-[#8B3226] px-2.5 py-1"
+        >
+          remove from corkboard
+        </button>
 
         <div className="mt-5 border-t border-dotted border-[#A6764A] pt-4">
           <label className="block font-mono text-[11px] text-[#5B5A4E] mb-1">Your note on this card</label>

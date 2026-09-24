@@ -36,6 +36,20 @@
       "when": 1790069585110,
       "tag": "0004_curious_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790235278046,
+      "tag": "0005_brainy_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790235306255,
+      "tag": "0006_fixed_silk_fever",
+      "breakpoints": true
     }
   ]
 }

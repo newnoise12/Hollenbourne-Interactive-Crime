@@ -71,25 +71,6 @@ export const actionLog = sqliteTable("action_log", {
     .default(sql`(unixepoch())`),
 });
 
-// One row per exhibit a team has successfully cited. Absence of a row means
-// that exhibit is still locked/uncited for that team.
-export const evidenceCitations = sqliteTable(
-  "evidence_citations",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    teamId: text("team_id")
-      .notNull()
-      .references(() => teams.id, { onDelete: "cascade" }),
-    exhibitId: text("exhibit_id").notNull(),
-    citationText: text("citation_text").notNull(),
-    titleSpan: text("title_span"),
-    citedAt: integer("cited_at", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch())`),
-  },
-  (table) => [uniqueIndex("team_exhibit_idx").on(table.teamId, table.exhibitId)]
-);
-
 // A named individual within a team. Teams share one login (evidence board,
 // action economy stay team-shared, no individual auth there) — students
 // exist only so quiz attempts can be attributed to a person rather than
@@ -177,6 +158,20 @@ export const evidenceConnections = sqliteTable("evidence_connections", {
     .references(() => evidencePins.id, { onDelete: "cascade" }),
   label: text("label").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// A single global row (id is always the literal "singleton") holding the
+// module-wide current week — the one thing every team's evidence/action
+// availability is gated against. Instructor-controlled (see
+// lib/module-settings.ts), not calendar-derived: gives control for
+// extensions, snow days, or an early/late start rather than assuming the
+// term runs exactly on schedule.
+export const moduleSettings = sqliteTable("module_settings", {
+  id: text("id").primaryKey().default("singleton"),
+  currentWeek: integer("current_week").notNull().default(1),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
 });
