@@ -51,7 +51,12 @@ Claude Pro login won't work) to `.env.local` as `ANTHROPIC_API_KEY=...`.
   3's quiz has a second half beyond the scored multiple-choice questions:
   an AI-graded, unscored practice tool where students write their own
   Harvard references and get instant, structured per-element feedback
-  (needs `ANTHROPIC_API_KEY` — see below).
+  (needs `ANTHROPIC_API_KEY` — see below). Week 11 has a similar but
+  larger unscored practice tool for the real CW2 assignment: pick 3 of 4
+  data sources, cite and interpret each with AI feedback, then write and
+  get feedback on a synthesis discussing how they interact — unlike Week
+  3's version, this one saves progress so a student can leave and come
+  back.
 - **Investigation** — the weekly action economy (1 action point per
   student per week, a 0-3 trust bonus from that week's quiz average, a
   team-wide reserve that 2 unspent points can be banked into). ~45 actions,

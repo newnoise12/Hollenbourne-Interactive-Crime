@@ -176,6 +176,29 @@ export const moduleSettings = sqliteTable("module_settings", {
     .default(sql`(unixepoch())`),
 });
 
+// One row per student — a persistent draft, not an append-only attempt log
+// like quizAttempts, since this is progress being edited (Mock CW2
+// practice: pick 3 of 4 data items, cite + interpret each, then write a
+// synthesis), not discrete graded submissions. Unscored: never touches
+// trust bonus or quizAttempts. See lib/cw2-practice.ts.
+export const cw2MockDrafts = sqliteTable(
+  "cw2_mock_drafts",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    selectedItemIds: text("selected_item_ids"), // JSON string[] | null until chosen
+    responses: text("responses").notNull().default("{}"), // JSON Record<itemId, ItemResponse>
+    synthesis: text("synthesis"), // nullable until written
+    synthesisFeedback: text("synthesis_feedback"), // nullable JSON
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [uniqueIndex("student_cw2_draft_idx").on(table.studentId)]
+);
+
 // A logged-in instructor session. Unlike `sessions`, there's no teamId —
 // there's exactly one shared instructor passcode (checked against
 // INSTRUCTOR_PASSCODE_HASH), not distinct instructor accounts, so a session

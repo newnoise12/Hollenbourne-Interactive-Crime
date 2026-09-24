@@ -5,12 +5,25 @@ import type { Student } from "@/lib/students";
 import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
 import type { EvidenceItem } from "@/lib/evidence-catalog";
 import type { LogEntry } from "@/lib/actions";
+import type { Cw2Draft } from "@/lib/cw2-practice";
 import { STAGE_1_ITEMS, STAGE_2_ITEMS, QUIZ_TITLE, QUIZ_WEEK, QUIZ_DEFS } from "@/lib/quiz-catalog";
+import { MOCK_CW2_WEEK } from "@/lib/cw2-sources";
 import WhoAreYou from "./quiz/WhoAreYou";
 import TrustQuiz from "./quiz/TrustQuiz";
 import McqQuiz from "./quiz/[quizId]/McqQuiz";
 import MultiselectQuiz from "./quiz/[quizId]/MultiselectQuiz";
 import ReferencingPractice from "./quiz/ReferencingPractice";
+import MockCw2Practice from "./quiz/MockCw2Practice";
+
+const EMPTY_CW2_DRAFT: Cw2Draft = { selectedItemIds: [], responses: {}, synthesis: null, synthesisFeedback: null };
+
+function cw2Status(draft: Cw2Draft | null): string {
+  const d = draft ?? EMPTY_CW2_DRAFT;
+  if (d.synthesisFeedback) return "synthesis complete";
+  if (d.selectedItemIds.length === 0) return "not started";
+  const doneCount = d.selectedItemIds.filter((id) => d.responses[id]?.feedback).length;
+  return `${doneCount} of 3 items done`;
+}
 
 function QuizCard({ title, weekLabel, status, defaultOpen, children }: {
   title: string;
@@ -59,6 +72,7 @@ export default function WeeklyOverviewTab({
   evidence,
   log,
   reservePoints,
+  cw2Draft,
   onNavigate,
 }: {
   currentWeek: number;
@@ -69,6 +83,7 @@ export default function WeeklyOverviewTab({
   evidence: EvidenceItem[];
   log: LogEntry[];
   reservePoints: number;
+  cw2Draft: Cw2Draft | null;
   onNavigate: (tab: Tab) => void;
 }) {
   const completedActionIds = new Set(log.map((entry) => entry.actionId));
@@ -81,7 +96,8 @@ export default function WeeklyOverviewTab({
 
   const thisWeekGeneric = QUIZ_DEFS.filter((q) => q.week === currentWeek);
   const hasWeek2Quiz = currentWeek === QUIZ_WEEK;
-  const hasAnyQuizThisWeek = hasWeek2Quiz || thisWeekGeneric.length > 0;
+  const hasCw2ThisWeek = currentWeek === MOCK_CW2_WEEK;
+  const hasAnyQuizThisWeek = hasWeek2Quiz || thisWeekGeneric.length > 0 || hasCw2ThisWeek;
 
   const otherGeneric = QUIZ_DEFS.filter((q) => q.week !== currentWeek);
 
@@ -133,6 +149,11 @@ export default function WeeklyOverviewTab({
                 {quiz.id === "week3-referencing" && <ReferencingPractice />}
               </QuizCard>
             ))}
+            {hasCw2ThisWeek && (
+              <QuizCard title="Mock CW2 Practice" weekLabel={`Week ${MOCK_CW2_WEEK}`} status={cw2Status(cw2Draft)} defaultOpen>
+                <MockCw2Practice initialDraft={cw2Draft ?? EMPTY_CW2_DRAFT} studentName={validStudent.name} />
+              </QuizCard>
+            )}
           </>
         )}
       </div>
@@ -198,6 +219,11 @@ export default function WeeklyOverviewTab({
                 initialAttempts={week2Attempts}
                 studentName={validStudent.name}
               />
+            </QuizCard>
+          )}
+          {!hasCw2ThisWeek && (
+            <QuizCard title="Mock CW2 Practice" weekLabel={`Week ${MOCK_CW2_WEEK}`} status={cw2Status(cw2Draft)}>
+              <MockCw2Practice initialDraft={cw2Draft ?? EMPTY_CW2_DRAFT} studentName={validStudent.name} />
             </QuizCard>
           )}
         </div>

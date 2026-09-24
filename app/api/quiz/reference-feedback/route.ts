@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { getReferenceTask } from "@/lib/reference-tasks";
+import { callClaudeForJsonWithRetry } from "@/lib/anthropic-grading";
 
 // Week 3 Stage 2's AI-graded practice feedback — see
 // Reference/case-content/technical-briefs/hollenbourne-claude-code-referencing-brief.md.
@@ -63,54 +64,6 @@ Return ONLY a JSON object with this exact shape, no other text, no markdown code
 {"elements":{"author":{"status":"correct|flawed|missing","note":"string"},"year":{"status":"correct|flawed|missing","note":"string"},"title":{"status":"correct|flawed|missing","note":"string"},"publication_details":{"status":"correct|flawed|missing","note":"string"},"access_details":{"status":"correct|flawed|missing|not_applicable","note":"string"}},"overall":"correct|mostly_correct|needs_work","summary":"one or two sentence overall comment"}`;
 }
 
-function extractJson(text: string): unknown {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  const candidate = fenced ? fenced[1] : trimmed;
-  return JSON.parse(candidate);
-}
-
-async function callAnthropic(prompt: string): Promise<GradingResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY is not configured.");
-  }
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-5",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Anthropic API returned ${res.status}`);
-  }
-
-  const data = await res.json();
-  // A "thinking" block, when present, comes before the "text" block — find
-  // the text block by type rather than assuming it's content[0].
-  const content = Array.isArray(data?.content) ? data.content : [];
-  const textBlock = content.find((block: { type?: string; text?: unknown }) => block?.type === "text");
-  const text = textBlock?.text;
-  if (typeof text !== "string") {
-    throw new Error("Unexpected Anthropic response shape.");
-  }
-
-  const parsed = extractJson(text);
-  if (!isValidGradingResult(parsed)) {
-    throw new Error("Grading response did not match the expected shape.");
-  }
-  return parsed;
-}
-
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -141,15 +94,9 @@ export async function POST(req: NextRequest) {
   // One retry on failure, per the technical brief — this is a low-volume,
   // asynchronous practice tool, not something that needs a queue.
   try {
-    const result = await callAnthropic(prompt);
+    const result = await callClaudeForJsonWithRetry(prompt, isValidGradingResult);
     return NextResponse.json({ result });
-  } catch (firstError) {
-    try {
-      const result = await callAnthropic(prompt);
-      return NextResponse.json({ result });
-    } catch (secondError) {
-      console.error("Reference feedback grading failed twice:", firstError, secondError);
-      return NextResponse.json({ error: "Couldn't get feedback right now — please try again." }, { status: 502 });
-    }
+  } catch {
+    return NextResponse.json({ error: "Couldn't get feedback right now — please try again." }, { status: 502 });
   }
 }

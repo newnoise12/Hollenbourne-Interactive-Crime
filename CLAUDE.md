@@ -568,17 +568,64 @@ team's overall progress, with buttons that switch tabs programmatically
   end-to-end: submitted 4/4 correct (trust bonus +3), verified directly
   against `dev.db` that the attempt row stored `week: 7` alongside the
   existing CPS Quiz's attempts.
-- **Mock CW2 pack** (`hollenbourne-mock-cw2-pack.md` + a chart image, same
-  handover drop) — a practice run of the real CW2 assignment (4 sources:
-  statistical, visual, textual, documentary; choose 2, one must be
-  statistical, 1000-word discussion), explicitly unassessed. Matches
-  Week 11's plan row ("Crime Trends: Data Analysis Workshop" — "Visual,
-  Textual, and Statistical Analysis") closely. **Not yet built** — the
-  user wants to explore whether AI-graded feedback (like Week 3 Stage 2,
-  but for a full 1000-word discussion rather than a single reference) is
-  feasible before deciding how deep to build this; flagged as feasible in
-  principle (same Anthropic Messages API mechanism, rubric-based feedback
-  rather than answer-matching) but not started pending the user's decision.
+- **Mock CW2 practice tool** — built out from the Mock CW2 pack
+  (`hollenbourne-mock-cw2-pack.md` + its chart) into a genuine scaffolded
+  exercise, not a passive read-through: the user's own design, deliberately
+  more structured than the pack's own "choose 2, write 1000 words" brief.
+  Students pick 3 of the 4 items (statistical, visual, textual,
+  documentary), and for each type an in-text citation, a full bibliographic
+  reference, and an interpretation of what it shows and how it relates to
+  broader social trends — getting AI feedback after each item, not just at
+  the end — before writing a final synthesis discussing how the three
+  items interact, with feedback on that too. Entirely unscored (no trust
+  bonus, nothing in `quizAttempts`) but genuinely persisted, unlike Week 3
+  Stage 2's deliberately-ephemeral practice — a student can leave and come
+  back. Matches Week 11's plan row ("Crime Trends: Data Analysis Workshop"
+  — "Visual, Textual, and Statistical Analysis").
+  New table `cw2MockDrafts` (`db/schema.ts`), one row per student (a draft
+  being edited, not an append-only attempt log), upserted via
+  `onConflictDoUpdate` on a unique `studentId` index — same pattern
+  `lib/module-settings.ts`'s singleton row already uses. `lib/cw2-sources.ts`
+  holds the 4 items' content plus server-only grading answers
+  (`correctCitation`, `interpretationGuidance`) — never sent to the client
+  wholesale, same precaution as `lib/reference-tasks.ts`; the client
+  component (`app/dashboard/quiz/MockCw2Practice.tsx`) keeps its own
+  public-safe duplicate of just the student-facing content, for the same
+  reason `ReferencingPractice.tsx` already does. `lib/cw2-practice.ts` is
+  pure DB access (`getDraft`/`saveSelection`/`saveItemResponse`/
+  `saveSynthesis`); the AI-grading orchestration lives in
+  `app/api/quiz/mock-cw2/route.ts` (one POST route, `action`-discriminated:
+  `select`/`item`/`synthesis`), session- and student-gated exactly like
+  `/api/quiz`.
+  **Extracted a shared `lib/anthropic-grading.ts`** (`callClaudeForJson`/
+  `callClaudeForJsonWithRetry`) from the logic already fixed once in
+  `reference-feedback/route.ts` (finding the response's `text` content
+  block by `type`, not by index — the thinking-block bug) — both AI-graded
+  features now share one place this bug class can be fixed if it recurs;
+  `reference-feedback/route.ts` refactored to use it, no behaviour change.
+  **A second real bug found in this build's own end-to-end testing**: the
+  synthesis-grading call (longer prompt, longer expected response) hit
+  `max_tokens: 1024` and got its JSON response truncated mid-string on the
+  first attempt, then produced *no* text block at all on the retry
+  (thinking tokens alone exhausted the budget) — both attempts failed,
+  502. Fixed by raising the budget for calls with more to say: 1536 for
+  per-item feedback, 2048 for the synthesis (which grades a much longer
+  student submission and returns two assessed dimensions instead of one).
+  Confirmed end-to-end in-browser after the fix: selected 3 items,
+  submitted a genuinely correct citation+reference+interpretation for the
+  statistical item (all-correct, "Strong" feedback), a deliberately broken
+  one for the visual item ("chart, 2026" as the citation, a one-line
+  description instead of a reference, a shallow interpretation — correctly
+  returned Flawed/Missing/Needs work with accurate reasoning for each),
+  and a correct one for the textual item ("Developing" — genuinely
+  differentiated, not just correct/incorrect); confirmed the synthesis
+  section stayed hidden until all 3 items had feedback; submitted a
+  synthesis engaging a real tension between the sources and got back
+  accurate, specific feedback naming that tension; reloaded the page and
+  confirmed every input, every feedback panel, and the synthesis itself
+  were all still there — the actual point of persisting this, unlike
+  Week 3 Stage 2; confirmed a logged-out request to `/api/quiz/mock-cw2`
+  is rejected with 401.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.

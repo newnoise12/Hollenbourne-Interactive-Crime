@@ -11,6 +11,7 @@ import type { EvidenceItem } from "@/lib/evidence-catalog";
 import type { Board } from "@/lib/board";
 import type { Student } from "@/lib/students";
 import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
+import type { Cw2Draft } from "@/lib/cw2-practice";
 
 type Tab = "overview" | "investigation" | "case-log";
 
@@ -35,6 +36,7 @@ export default function DashboardShell({
   roster,
   week2Attempts,
   genericAttempts,
+  cw2Draft,
 }: {
   teamName: string;
   currentWeek: number;
@@ -50,6 +52,7 @@ export default function DashboardShell({
   roster: Student[];
   week2Attempts: RankQuizAttempt[];
   genericAttempts: Record<string, GenericQuizAttempt[]>;
+  cw2Draft: Cw2Draft | null;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
 
@@ -100,6 +103,7 @@ export default function DashboardShell({
             evidence={evidence}
             log={initialLog}
             reservePoints={initialReservePoints}
+            cw2Draft={cw2Draft}
             onNavigate={setTab}
           />
         </div>

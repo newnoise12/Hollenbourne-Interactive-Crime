@@ -10,6 +10,7 @@ import { getBoard } from "@/lib/board";
 import { EVIDENCE } from "@/lib/evidence-catalog";
 import { getCurrentWeek } from "@/lib/module-settings";
 import { getStudentById, getStudentsForTeam } from "@/lib/students";
+import { getDraft as getCw2Draft } from "@/lib/cw2-practice";
 import DashboardShell from "./DashboardShell";
 
 export default async function DashboardPage() {
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
     roster,
     week2Attempts,
     genericAttemptsList,
+    cw2Draft,
   ] = await Promise.all([
     getCurrentWeek(),
     getAllWeekState(team.id),
@@ -49,6 +51,7 @@ export default async function DashboardPage() {
     validStudent
       ? Promise.all(QUIZ_DEFS.map((q) => getGenericQuizAttempts(validStudent.id, q.id)))
       : Promise.resolve(QUIZ_DEFS.map(() => [])),
+    validStudent ? getCw2Draft(validStudent.id) : Promise.resolve(null),
   ]);
 
   const quizStudentsAttemptedByWeek = Object.fromEntries(
@@ -72,6 +75,7 @@ export default async function DashboardPage() {
       roster={roster}
       week2Attempts={week2Attempts}
       genericAttempts={genericAttempts}
+      cw2Draft={cw2Draft}
     />
   );
 }
