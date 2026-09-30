@@ -7,7 +7,7 @@ import type { EvidenceItem } from "@/lib/evidence-catalog";
 import type { LogEntry } from "@/lib/actions";
 import type { Cw2Draft } from "@/lib/cw2-practice";
 import { STAGE_1_ITEMS, STAGE_2_ITEMS, QUIZ_TITLE, QUIZ_WEEK, QUIZ_DEFS } from "@/lib/quiz-catalog";
-import { MOCK_CW2_WEEK } from "@/lib/cw2-sources";
+import { MOCK_CW2_WEEK } from "@/lib/cw2-items";
 import WhoAreYou from "./quiz/WhoAreYou";
 import TrustQuiz from "./quiz/TrustQuiz";
 import McqQuiz from "./quiz/[quizId]/McqQuiz";
@@ -15,14 +15,14 @@ import MultiselectQuiz from "./quiz/[quizId]/MultiselectQuiz";
 import ReferencingPractice from "./quiz/ReferencingPractice";
 import MockCw2Practice from "./quiz/MockCw2Practice";
 
-const EMPTY_CW2_DRAFT: Cw2Draft = { selectedItemIds: [], responses: {}, synthesis: null, synthesisFeedback: null };
+const EMPTY_CW2_DRAFT: Cw2Draft = { selectedItemIds: [], responses: {}, synthesis: null, synthesisFeedback: null, checksUsedToday: 0 };
 
 function cw2Status(draft: Cw2Draft | null): string {
   const d = draft ?? EMPTY_CW2_DRAFT;
   if (d.synthesisFeedback) return "synthesis complete";
-  if (d.selectedItemIds.length === 0) return "not started";
   const doneCount = d.selectedItemIds.filter((id) => d.responses[id]?.feedback).length;
-  return `${doneCount} of 3 items done`;
+  if (doneCount === 0) return "not started";
+  return `${doneCount} of 3 data types done`;
 }
 
 function QuizCard({ title, weekLabel, status, defaultOpen, children }: {

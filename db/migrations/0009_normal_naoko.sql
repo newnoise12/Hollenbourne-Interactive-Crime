@@ -1,0 +1,1 @@
+ALTER TABLE `cw2_mock_drafts` DROP COLUMN `selected_item_ids`;

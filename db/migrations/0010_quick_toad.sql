@@ -1,0 +1,1 @@
+ALTER TABLE `cw2_mock_drafts` ADD `selected_item_ids` text;

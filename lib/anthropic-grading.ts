@@ -16,7 +16,7 @@ function extractJson(text: string): unknown {
 }
 
 /** One call to Claude, requesting strict-JSON output. Throws on any failure — no retry here, see callClaudeForJsonWithRetry. */
-export async function callClaudeForJson<T>(prompt: string, isValid: (value: unknown) => value is T, maxTokens = 1024): Promise<T> {
+export async function callClaudeForJson<T>(prompt: string, isValid: (value: unknown) => value is T, maxTokens = 1024, system?: string): Promise<T> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not configured.");
@@ -32,6 +32,7 @@ export async function callClaudeForJson<T>(prompt: string, isValid: (value: unkn
     body: JSON.stringify({
       model: "claude-sonnet-5",
       max_tokens: maxTokens,
+      ...(system ? { system } : {}),
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -58,12 +59,12 @@ export async function callClaudeForJson<T>(prompt: string, isValid: (value: unkn
 }
 
 /** callClaudeForJson with one retry on any failure — low-volume, asynchronous practice tools don't need more than that. */
-export async function callClaudeForJsonWithRetry<T>(prompt: string, isValid: (value: unknown) => value is T, maxTokens = 1024): Promise<T> {
+export async function callClaudeForJsonWithRetry<T>(prompt: string, isValid: (value: unknown) => value is T, maxTokens = 1024, system?: string): Promise<T> {
   try {
-    return await callClaudeForJson(prompt, isValid, maxTokens);
+    return await callClaudeForJson(prompt, isValid, maxTokens, system);
   } catch (firstError) {
     try {
-      return await callClaudeForJson(prompt, isValid, maxTokens);
+      return await callClaudeForJson(prompt, isValid, maxTokens, system);
     } catch (secondError) {
       console.error("AI grading failed twice:", firstError, secondError);
       throw secondError;

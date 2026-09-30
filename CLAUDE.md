@@ -626,6 +626,101 @@ team's overall progress, with buttons that switch tabs programmatically
   were all still there — the actual point of persisting this, unlike
   Week 3 Stage 2; confirmed a logged-out request to `/api/quiz/mock-cw2`
   is rejected with 401.
+- **Mock CW2 feedback reworked to the v2 brief + feedback philosophy** (a
+  third handover drop into `Reference/case-content/technical-briefs/`:
+  `hollenbourne-cw2-feedback-philosophy.md`, `hollenbourne-claude-code-cw2-feedback-brief.md`,
+  and a restructured `hollenbourne-mock-cw2-pack.md` — **note this shares a
+  filename with the older data pack in `quizzes/` but is a different, newer
+  document: the step-by-step form is the current spec**). This supersedes
+  the description of the Mock CW2 tool above wherever they differ:
+  - **Four data types, the student chooses three.** Statistical, visual,
+    textual, documentary. Exactly 3 must be chosen and the statistical one
+    must be among them (the real assignment's rule — enforced server-side
+    in `saveSelection`, `lib/cw2-practice.ts`). The chosen three are worked
+    in catalog order, each unlocking after the previous is checked, then
+    synthesis. Deselected items keep their responses; changing the
+    selection clears the synthesis *feedback* (it was about a different set
+    of sources) but keeps the text.
+  - **Category definitions (the user's, worth not re-litigating): "visual
+    data" means an IMAGE; a chart is a way of representing statistical
+    data.** So the sentencing-outcomes chart
+    (`public/quiz-charts/chart-mock-cw2-sentencing-outcomes.png`) is shown
+    *inside* the statistical item, alongside its written figures, and is
+    not a separate option. The visual item (`id: "image"`,
+    `public/cw2-images/station-platform.webp`) is an AI-generated image
+    the user supplied for the module: a teenager alone on a station
+    platform with a phone, beside a British Transport Police "Could this be
+    child exploitation?" poster. History: the tool went through
+    chart-as-its-own-visual-option and five-option versions in one session
+    before this was clarified; the selection column was also dropped and
+    restored (migration 0010).
+  - **The image's citation has no single correct string** — no generating
+    tool or date was given — so `CW2_GRADING.image.citationNote` accepts any
+    honest, clearly labelled treatment of AI-generated course material
+    (author = university/module/named tool, 2026, descriptive title,
+    "[AI-generated image]" label, no URL or access date) and marks a
+    real-photographer/stock-agency credit as wrong. Tighten it if the tool
+    name and generation date are supplied.
+  - **The visual frame is a drafted extension, not from the philosophy doc.**
+    The doc defines frames for statistical, textual and documentary
+    sources but none for an image. `CW2_GRADING.image` in
+    `lib/cw2-grading.ts` (marked with a NOTE) reads it as a constructed
+    image — composition, the poster text beside the subject, what the image
+    invites a viewer to infer, that it cannot show whether the person is
+    exploited, and that it is an illustration rather than evidence of a
+    real case. Check it against the assessment brief. The grader is given
+    a text description of the image (and of the chart), not the image
+    files themselves.
+  - **Form fields per step**: parenthetical citation, narrative citation,
+    full reference, "what is this data saying" (description), "what could
+    explain this" (interpretation); synthesis has two boxes (relationship,
+    argument). Stored in `cw2_mock_drafts`; rows written before this rework
+    are normalised on read (old feedback shape dropped, so it just gets
+    re-checked).
+  - **Feedback**: `lib/cw2-grading.ts` (SERVER-ONLY) holds a system prompt
+    containing all 12 principles and both worked examples in full, including
+    Worked Example 1's corrected mistake, plus answer keys and prompt
+    builders. The data-type checkpoint returns citation (parenthetical /
+    narrative / bibliographic checked separately), description accuracy,
+    plausibility-of-reasoning with a **structurally separate**
+    sufficiency_statement and socratic_prompt, multiplicity, and epistemic
+    framing. Synthesis returns relationship (connection *or* tension both
+    pass), reasoning-gap, multiplicity, epistemic framing. Two additions to
+    the brief's JSON shape, both taken from the philosophy doc:
+    `epistemic_framing` (Principle 5 says it is a distinct check the brief
+    shape omitted) and a `relationship` field for synthesis (the brief
+    lists the check but had nowhere to put it). The disclaimer is NOT in
+    the model JSON — it is the hardcoded `FORMATIVE_DISCLAIMER`
+    (`lib/cw2-items.ts`), shown in a sticky banner and every feedback
+    panel. No instructor-facing view of this feedback exists, deliberately
+    ("never seen by whoever marks the real submission") — don't add one
+    without asking.
+  - **Daily cap**: `DAILY_CHECK_CAP = 15` checks per student per London day
+    (`checks_today`/`checks_date` on the draft row; 429 past it; work stays
+    saved). Adjust the constant if it proves wrong.
+  - **Content split**: `lib/cw2-items.ts` is student-facing and client-safe;
+    `lib/cw2-grading.ts` is the answer key and must never be imported
+    client-side. This removed the duplicate-content-in-the-component
+    workaround.
+  - **Verified live** using Worked Example 1 as a calibration test: the
+    philosophy doc's own student answer got multiplicity "present", *no*
+    false proxy-measure flag (the Principle-6 failure), and epistemic
+    framing "could_be_sharper" as the one real refinement — exactly as the
+    doc says. A weak textual answer (hedged non-sequitur: "might possibly
+    indicate the boy was lying") was marked `gap_found` despite the hedging
+    (Principle 9), and caught a misread source count. Cap 429, persistence
+    and the sticky banner also confirmed.
+  - **Known issue — latency**: a data-type check takes ~30s and the
+    synthesis ~60s (long system prompt plus thinking). Fine for an async
+    practice tool with a "CHECKING…" state, but a host with a short request
+    timeout would cut it off. Token budgets are 3072 / 4096.
+  - **Documentary content is a placeholder**: the pack's documentary item is
+    MoJ (2023) *County Lines Exploitation — Practice Guidance for Youth
+    Offending Teams* with its extract marked "to be finalised". Until the
+    real extract exists, the documentary step uses the Home Office (2025)
+    evaluation already in the app (prompt wording adapted from "guidance"
+    to "evaluation"). Swapping is a content-only edit in
+    `lib/cw2-items.ts` and `lib/cw2-grading.ts`.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.

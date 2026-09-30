@@ -188,10 +188,15 @@ export const cw2MockDrafts = sqliteTable(
     studentId: text("student_id")
       .notNull()
       .references(() => students.id, { onDelete: "cascade" }),
-    selectedItemIds: text("selected_item_ids"), // JSON string[] | null until chosen
+    selectedItemIds: text("selected_item_ids"), // JSON string[] (exactly 3 of the 4 items) | null until chosen
     responses: text("responses").notNull().default("{}"), // JSON Record<itemId, ItemResponse>
-    synthesis: text("synthesis"), // nullable until written
+    synthesis: text("synthesis"), // nullable until written; JSON { relationship, argument }
     synthesisFeedback: text("synthesis_feedback"), // nullable JSON
+    // Daily cap on AI checks (formative-feedback brief: "a sensible daily
+    // cap rather than an unlimited retry loop"). checksDate is the London
+    // calendar date the count applies to; a stale date means the count is 0.
+    checksToday: integer("checks_today").notNull().default(0),
+    checksDate: text("checks_date"),
     updatedAt: integer("updated_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
