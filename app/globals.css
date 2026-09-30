@@ -29,3 +29,23 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* The two case maps (public/case-images/), side by side as one fixed
+   backdrop behind every screen. Both suspect/victim address labels are
+   real text baked into these images, so this is deliberately darkened and
+   desaturated enough to read as texture, not a legible document — see
+   CLAUDE.md for why (the game's no-spoiler design principle). The five
+   bg-[#23262B] page shells (login, instructor, dashboard) are given a
+   matching opacity so this shows through consistently everywhere, rather
+   than duplicating the backdrop per page. */
+.map-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: #23262b;
+  background-image: url("/case-images/hollenbourne-town-map.png"), url("/case-images/boresfield-street-map.png");
+  background-repeat: no-repeat, no-repeat;
+  background-position: left center, right center;
+  background-size: 50% 100%, 50% 100%;
+  filter: grayscale(1) brightness(0.22) contrast(0.9);
+}

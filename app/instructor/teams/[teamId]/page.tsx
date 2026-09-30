@@ -26,7 +26,7 @@ export default async function InstructorTeamDetailPage({ params }: { params: Pro
     .sort((a, b) => a - b);
 
   return (
-    <main className="flex-1 bg-[#23262B] px-6 py-8">
+    <main className="flex-1 bg-[#23262B]/90 px-6 py-8">
       <div className="max-w-3xl mx-auto">
         <Link href="/instructor" className="font-mono text-[11px] text-[#8A8A80] underline">
           &larr; all teams

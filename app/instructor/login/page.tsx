@@ -11,7 +11,7 @@ export default async function InstructorLoginPage() {
   }
 
   return (
-    <main className="flex-1 bg-[#23262B] flex items-center justify-center px-4 py-16">
+    <main className="flex-1 bg-[#23262B]/90 flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-[#A6764A] m-0">
