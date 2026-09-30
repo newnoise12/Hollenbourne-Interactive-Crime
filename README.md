@@ -117,10 +117,13 @@ The app runs in production exactly as it does locally — same SQLite
 database, same migrations — just pointed at a file on a persistent volume
 instead of the local `dev.db`.
 
-1. **Push this repo to GitHub** (there's no remote yet — create one and
-   `git push` the existing history to it).
+1. **Push this repo to GitHub.**
 2. **Create a Railway project** from that GitHub repo (railway.app → New
-   Project → Deploy from GitHub repo).
+   Project → Deploy from GitHub repo). If Railway says it can't load your
+   repo's branches, its GitHub App likely isn't installed/authorized on
+   your account yet (check github.com/settings/installations, distinct
+   from "Authorized OAuth Apps") — disconnecting and reconnecting the repo
+   in Railway's Settings re-triggers that installation prompt.
 3. **Add a volume** to the service (Railway dashboard → the service →
    Volumes → New Volume), mounted at `/data`.
 4. **Set environment variables** on the service:
@@ -130,10 +133,21 @@ instead of the local `dev.db`.
      (see "Env vars" in `CLAUDE.md` — an org-level/unscoped key fails)
    - `INSTRUCTOR_PASSCODE_HASH` — generate with the command in "Running it
      locally" above, and **backslash-escape every `$`** in it
-5. **Deploy.** `railway.json` runs `drizzle-kit migrate` before `next
-   start` on every deploy, so the volume's database is always up to date
-   with `db/schema.ts` — no manual migration step needed after the first
-   deploy.
+5. **Set the start command directly in Railway's dashboard**, not via a
+   config file: service → Settings → Deploy → Custom Start Command →
+   `npm run db:migrate && npm run start`. (`railway.json`-style
+   "Config as Code" is Railway-deprecated and unavailable for services
+   created after 2026-08-28 — don't bother re-adding one; this project
+   doesn't use it.)
+6. **Deploy**, and check the build log if it fails. One real gotcha hit
+   here already: `better-sqlite3` is a native module — if Railway's build
+   image doesn't have a prebuilt binary for whatever Node version it
+   picked (it defaults to the newest available unless pinned), it falls
+   back to compiling from source via `node-gyp`, which then fails with
+   "Could not find any Python installation." Fixed by pinning
+   `package.json`'s `engines.node` to `"22.x"` — the same line the app is
+   already developed and tested on locally — rather than an open-ended
+   `">=22"` range.
 
 The instructor passcode and Anthropic API key are separate secrets from
 whatever's in your local `.env.local` — set them directly in Railway's

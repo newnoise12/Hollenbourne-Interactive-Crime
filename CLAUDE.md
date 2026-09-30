@@ -741,12 +741,44 @@ team's overall progress, with buttons that switch tabs programmatically
   is left in it before deleting.
 - **Deployment — in progress, targeting Railway with SQLite on a
   persistent volume** (see "Decisions worth knowing" and README's
-  "Deploying (Railway)" section for the reasoning and steps). `railway.json`
-  (new, repo root) runs `drizzle-kit migrate` before `next start` on every
-  deploy; `package.json` gained `db:migrate` and an `engines.node` pin.
-  Blocked on the user's own account/repo setup — no GitHub remote exists
-  yet, and creating the Railway project, its volume, and its env vars all
-  need the user's own login. Not yet actually deployed or verified live.
+  "Deploying (Railway)" section for the reasoning and steps). GitHub
+  remote is live at `github.com/newnoise12/Hollenbourne-Interactive-Crime`
+  (branch `master` — GitHub's own new-repo default of `main` was never
+  created; Railway's branch selector had to be pointed at `master`
+  explicitly). `package.json` gained `db:migrate` and an `engines.node`
+  pin.
+  **`railway.json` was added, then deleted — it does nothing on this
+  project.** Railway's actual builder is **Railpack**, not Nixpacks, and
+  "Config as Code" (what `railway.json` requires) is deprecated and
+  unavailable to any service created after 2026-08-28, which this one was
+  — the file was silently ignored the whole time. The equivalent settings
+  are configured directly in Railway's dashboard instead: Settings → Deploy
+  → **Custom Start Command** = `npm run db:migrate && npm run start`. If a
+  future session is tempted to reach for `railway.json`/`nixpacks.toml`
+  again, check the service's Settings → Config-as-code section first —
+  it'll say outright whether this project can use one.
+  **Two real deploy-blocking bugs found and fixed getting this far:**
+  1. Railway's GitHub App was never actually installed on the user's
+     GitHub account (`github.com/settings/installations` showed zero
+     installed apps) despite the repo appearing "connected" in Railway —
+     every deploy attempt silently produced nothing, with the service
+     stuck on "There is no active deployment for this service" and the
+     branch selector showing "Could not load branches" with a Retry that
+     never succeeded. Not an OAuth-app permission (that's a different
+     GitHub settings page, "Authorized OAuth Apps," which only offers
+     "Revoke" — a real dead end the user hit first). Fixed by
+     disconnecting and reconnecting the repo in Railway's Settings, which
+     re-triggered GitHub's actual App-installation popup this time.
+  2. First real build attempt failed: `better-sqlite3` (a native module)
+     had no prebuilt binary for the newest Node version Railway's Railpack
+     builder picked by default (24.10.0), so it fell back to compiling
+     from source via `node-gyp`, which failed outright — the build image
+     has no Python. `package.json`'s `engines.node` was `">=22"` (an open
+     range); pinned to `"22.x"` to force the same Node line the app is
+     actually developed and tested on locally, avoiding the newest-minor
+     trap entirely rather than trying to get Python into the build image.
+  Not yet confirmed live end-to-end — next deploy after the engines pin
+  is the one to check.
 
 ## Env vars
 
