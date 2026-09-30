@@ -57,6 +57,51 @@ export function FullTextReader({ sections }: { sections: EvidenceBodySection[] }
 
 const CASE_ORDER: CaseName[] = ["general", "mason", "wooley", "porterhouse", "butt"];
 
+// Genuine full-size viewing — distinct from the 440px-wide reader panel,
+// which is deliberately narrow for reading text but was squeezing exhibit
+// images (the case maps, the cell-site overlays) down to a fraction of their
+// real size. This renders at up to the full viewport, scrollable if the
+// image is still larger than that.
+export function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 bg-[rgba(10,9,7,0.9)] flex items-center justify-center p-4 z-[60] overflow-auto"
+    >
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="fixed top-4 right-4 bg-transparent border-none cursor-pointer text-[#E8E1D0] z-10"
+      >
+        <XIcon size={24} />
+      </button>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full w-auto h-auto cursor-zoom-out border border-[#A6764A]"
+      />
+    </div>
+  );
+}
+
+// A clickable exhibit image — thumbnail-sized inside the reader panel, opens
+// the same image at genuine full size in an ImageLightbox on click.
+export function ExhibitImage({ src, alt }: { src: string; alt: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="block bg-transparent border-none p-0 cursor-zoom-in mb-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} className="max-w-full border border-[#A6764A]" />
+      </button>
+      <p className="font-mono text-[10px] text-[#8A8A80] mb-3 mt-0">Click the image to view it full size.</p>
+      {open && <ImageLightbox src={src} alt={alt} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 // The reader-dialog overlay pattern from the recovered artifact prototype
 // (see CLAUDE.md's "Repo location") — a small backdrop-centred sheet, not an
 // inline expanded card.
@@ -163,10 +208,7 @@ function ExhibitDetail({
 
       <p className="font-mono text-[13px] text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{item.snippet}</p>
 
-      {item.image && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.image} alt={item.title} className="max-w-full border border-[#A6764A] mb-3" />
-      )}
+      {item.image && <ExhibitImage src={item.image} alt={item.title} />}
 
       <FullTextReader
         sections={item.body ?? [{ paragraphs: ["No fuller record exists on file for this exhibit beyond the summary above."] }]}

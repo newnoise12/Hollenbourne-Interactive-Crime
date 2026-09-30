@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { EvidenceItem } from "@/lib/evidence-catalog";
-import { FullTextReader } from "./EvidenceBoard";
+import { FullTextReader, ExhibitImage } from "./EvidenceBoard";
 
 export default function PinDetailModal({
   evidence,
@@ -36,11 +36,17 @@ export default function PinDetailModal({
         </div>
         <p className="mt-3 font-mono text-[13px] text-[#2A2F27] leading-relaxed whitespace-pre-line">{evidence.snippet}</p>
 
-        {evidence.body && (
+        {evidence.image && (
           <div className="mt-3">
-            <FullTextReader sections={evidence.body} />
+            <ExhibitImage src={evidence.image} alt={evidence.title} />
           </div>
         )}
+
+        <div className="mt-3">
+          <FullTextReader
+            sections={evidence.body ?? [{ paragraphs: ["No fuller record exists on file for this exhibit beyond the summary above."] }]}
+          />
+        </div>
 
         <button
           onClick={onUnpin}

@@ -3,14 +3,18 @@
 // maps — free from day one or time-released), deepened from
 // Reference/case-content/mechanics/hollenbourne-evidence-overview.md's
 // Category 1/2. EX.20 onward are investigation findings — one per action in
-// lib/actions-catalog.ts, reusing that action's own already-written
-// `outcome` text as the exhibit body, per the recovered handover package's
-// prototype (every costed action reveals a real, readable Case Log
-// document, not just its own inline outcome paragraph). Not stored in the
-// database; team progress lives in actionLog (for action-unlocked items)
-// and the module-wide current week (db/schema.ts, lib/module-settings.ts).
+// lib/actions-catalog.ts, per the recovered handover package's prototype
+// (every costed action reveals a real, readable Case Log document, not just
+// its own inline outcome paragraph). Where a genuine fuller source document
+// exists for that action (most interviews, cell-site/ANPR reports, a few
+// witness statements — see lib/action-evidence-bodies.ts), that's the body;
+// otherwise it falls back to the action's own outcome text, which is all
+// that's ever existed for it. Not stored in the database; team progress
+// lives in actionLog (for action-unlocked items) and the module-wide
+// current week (db/schema.ts, lib/module-settings.ts).
 
 import { ACTIONS, type ActionItem } from "./actions-catalog";
+import { ACTION_EVIDENCE_BODY } from "./action-evidence-bodies";
 
 export type EvidenceType = "statistical" | "visual" | "interview" | "documentary";
 
@@ -552,7 +556,11 @@ function buildActionEvidence(): EvidenceItem[] {
       snippet: action.description,
       unlockedByActionId: action.id,
       image: meta.image,
-      body: [{ paragraphs: [action.outcome] }],
+      // A handful of actions (mostly interviews, cell-site/ANPR reports, and
+      // a few witness statements) have a genuine fuller source document —
+      // see lib/action-evidence-bodies.ts. Everything else falls back to
+      // the action's own outcome text, which is all that's ever existed for it.
+      body: ACTION_EVIDENCE_BODY[action.id] ?? [{ paragraphs: [action.outcome] }],
     };
   });
 }
