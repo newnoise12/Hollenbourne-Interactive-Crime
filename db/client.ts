@@ -1,8 +1,11 @@
-// Database client. Local dev: SQLite via better-sqlite3, zero external setup.
-// Deployment: swap this file's contents for a Postgres client (e.g. from
-// `drizzle-orm/node-postgres` or `drizzle-orm/postgres-js`) pointed at
-// Railway/Render's provided connection string — the rest of the app talks
-// to `db` through Drizzle's query API either way and doesn't need to change.
+// Database client — SQLite via better-sqlite3, both locally (./dev.db) and
+// in production (a file on a persistent volume, see README's "Deploying").
+// DATABASE_URL is a plain file path either way, not a connection string.
+//
+// A Postgres move is possible later but isn't a drop-in swap of just this
+// file — Drizzle's sqlite-core and pg-core table builders are different
+// APIs, so db/schema.ts itself would need converting too. See README's
+// "Stack notes" for why SQLite-in-production was the pragmatic call.
 
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";

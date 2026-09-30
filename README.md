@@ -99,11 +99,45 @@ what was built when and why.
 - **No next/font/google** — same reasoning. Fetching fonts from Google at
   *build* time means a network hiccup during deployment can break the
   build. Using the system font stack instead removes that risk entirely.
-- **SQLite locally, Postgres in production** — when you're ready to deploy
-  (e.g. to Railway or Render), swap `db/client.ts` for a Postgres driver
-  (`drizzle-orm/node-postgres` or `drizzle-orm/postgres-js`) and re-run
-  migrations against the new database. The schema file itself barely
-  changes.
+- **SQLite in production too, for now** — the original plan here was
+  Postgres in production, but Drizzle's SQLite and Postgres table builders
+  are different APIs, not a drop-in swap of `db/client.ts` as the comment
+  there used to claim — converting means either maintaining two schema
+  files in parallel or moving local dev to Postgres as well. Given day-to-day
+  changes to this app are almost always *content* (quiz questions, evidence
+  text, grading prompts — plain data files, no schema involved), running
+  SQLite in production on a persistent volume was the pragmatic call for
+  getting live quickly, with the schema itself completely unchanged.
+  Revisit the Postgres move later, unhurried, if it's ever actually needed
+  (e.g. multiple app instances needing to share one database).
+
+## Deploying (Railway)
+
+The app runs in production exactly as it does locally — same SQLite
+database, same migrations — just pointed at a file on a persistent volume
+instead of the local `dev.db`.
+
+1. **Push this repo to GitHub** (there's no remote yet — create one and
+   `git push` the existing history to it).
+2. **Create a Railway project** from that GitHub repo (railway.app → New
+   Project → Deploy from GitHub repo).
+3. **Add a volume** to the service (Railway dashboard → the service →
+   Volumes → New Volume), mounted at `/data`.
+4. **Set environment variables** on the service:
+   - `DATABASE_URL` = `/data/prod.db` (a path on the volume — better-sqlite3
+     opens it directly, same as `./dev.db` locally)
+   - `ANTHROPIC_API_KEY` — a workspace-scoped key from console.anthropic.com
+     (see "Env vars" in `CLAUDE.md` — an org-level/unscoped key fails)
+   - `INSTRUCTOR_PASSCODE_HASH` — generate with the command in "Running it
+     locally" above, and **backslash-escape every `$`** in it
+5. **Deploy.** `railway.json` runs `drizzle-kit migrate` before `next
+   start` on every deploy, so the volume's database is always up to date
+   with `db/schema.ts` — no manual migration step needed after the first
+   deploy.
+
+The instructor passcode and Anthropic API key are separate secrets from
+whatever's in your local `.env.local` — set them directly in Railway's
+dashboard, never by pasting a secret value into chat.
 
 ## Known non-issues (checked, not ignored)
 

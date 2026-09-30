@@ -739,7 +739,14 @@ team's overall progress, with buttons that switch tabs programmatically
   but not yet done. This now includes the nested `app\` Next.js project
   described above (corkboard/banking source) — confirm nothing else useful
   is left in it before deleting.
-- Deployment — on hold until the user is hands-on for host/account setup.
+- **Deployment — in progress, targeting Railway with SQLite on a
+  persistent volume** (see "Decisions worth knowing" and README's
+  "Deploying (Railway)" section for the reasoning and steps). `railway.json`
+  (new, repo root) runs `drizzle-kit migrate` before `next start` on every
+  deploy; `package.json` gained `db:migrate` and an `engines.node` pin.
+  Blocked on the user's own account/repo setup — no GitHub remote exists
+  yet, and creating the Railway project, its volume, and its env vars all
+  need the user's own login. Not yet actually deployed or verified live.
 
 ## Env vars
 
@@ -854,10 +861,22 @@ keep pointing future drops at.
 - **No `next/font/google`**: same reasoning — fetching fonts from Google at
   *build* time means a network hiccup during deployment can break the build.
   Using the system font stack instead removes that risk entirely.
-- **SQLite locally, Postgres in production**: when deploying (Railway or
-  Render), swap `db/client.ts` for a Postgres driver
-  (`drizzle-orm/node-postgres` or `drizzle-orm/postgres-js`) and re-run
-  migrations against the new database. The schema file barely changes.
+- **SQLite in production too, deployed to Railway on a persistent volume**
+  (reversed from an earlier "Postgres in production" plan once actually
+  deploying). That earlier plan assumed swapping `db/client.ts` for a
+  Postgres driver was a drop-in change — it isn't: Drizzle's sqlite-core
+  and pg-core table builders are different APIs, so `db/schema.ts` itself
+  would need converting, and either a second schema file to keep in sync
+  or moving local dev to Postgres too. Since day-to-day changes here are
+  almost always content (quiz text, evidence, grading prompts — plain
+  data files, no schema involved), running SQLite in production was the
+  pragmatic call to get live quickly without taking on that maintenance
+  burden. `DATABASE_URL` is a plain file path in both environments — see
+  README's "Deploying (Railway)" for the actual steps (a Railway volume
+  mounted at `/data`, `railway.json` running `drizzle-kit migrate` before
+  `next start` on every deploy). Revisit Postgres later if it's ever
+  actually needed (e.g. multiple app instances sharing one database), not
+  as a default assumption.
 - **`npm audit` will show some vulnerabilities** — all confirmed to be in
   dev-only tooling (Prisma's old CLI deps left in the lockfile history,
   esbuild's dev server via drizzle-kit), not in code that runs in the
