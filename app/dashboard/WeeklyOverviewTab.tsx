@@ -99,7 +99,20 @@ export default function WeeklyOverviewTab({
   const hasCw2ThisWeek = currentWeek === MOCK_CW2_WEEK;
   const hasAnyQuizThisWeek = hasWeek2Quiz || thisWeekGeneric.length > 0 || hasCw2ThisWeek;
 
-  const otherGeneric = QUIZ_DEFS.filter((q) => q.week !== currentWeek);
+  // Past weeks' activities only — future weeks stay hidden until the
+  // instructor rolls the current week forward, per the game's own
+  // week-gating design elsewhere (evidence, actions). Built as one list
+  // and sorted by week so it reads in order, rather than three separate
+  // un-interleaved blocks (week2 / generic / cw2) in catalog order.
+  type PastActivity =
+    | { kind: "week2"; week: number }
+    | { kind: "generic"; week: number; quiz: (typeof QUIZ_DEFS)[number] }
+    | { kind: "cw2"; week: number };
+  const pastActivities: PastActivity[] = [
+    ...(QUIZ_WEEK < currentWeek ? ([{ kind: "week2", week: QUIZ_WEEK }] as const) : []),
+    ...QUIZ_DEFS.filter((q) => q.week < currentWeek).map((quiz) => ({ kind: "generic" as const, week: quiz.week, quiz })),
+    ...(MOCK_CW2_WEEK < currentWeek ? ([{ kind: "cw2", week: MOCK_CW2_WEEK }] as const) : []),
+  ].sort((a, b) => a.week - b.week);
 
   return (
     <div>
@@ -198,34 +211,44 @@ export default function WeeklyOverviewTab({
         </div>
       </div>
 
-      {validStudent && otherGeneric.length > 0 && (
+      {validStudent && pastActivities.length > 0 && (
         <div>
           <h3 className="font-serif font-semibold text-[15px] text-[#E8E1D0] mb-3 mt-0">Other weeks&apos; activities</h3>
-          {otherGeneric.map((quiz) => (
-            <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])}>
-              {quiz.kind === "mcq" ? (
-                <McqQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
-              ) : (
-                <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
-              )}
-              {quiz.id === "week3-referencing" && <ReferencingPractice />}
-            </QuizCard>
-          ))}
-          {!hasWeek2Quiz && (
-            <QuizCard title={QUIZ_TITLE} weekLabel={`Week ${QUIZ_WEEK}`} status={rankStatus(week2Attempts)}>
-              <TrustQuiz
-                stage1Items={STAGE_1_ITEMS}
-                stage2Items={STAGE_2_ITEMS}
-                initialAttempts={week2Attempts}
-                studentName={validStudent.name}
-              />
-            </QuizCard>
-          )}
-          {!hasCw2ThisWeek && (
-            <QuizCard title="Mock CW2 Practice" weekLabel={`Week ${MOCK_CW2_WEEK}`} status={cw2Status(cw2Draft)}>
-              <MockCw2Practice initialDraft={cw2Draft ?? EMPTY_CW2_DRAFT} studentName={validStudent.name} />
-            </QuizCard>
-          )}
+          <p className="font-mono text-xs text-[#8A8A80] mb-4 mt-0">
+            Past weeks only, in order &mdash; nothing from a week that hasn&apos;t arrived yet.
+          </p>
+          {pastActivities.map((activity) => {
+            if (activity.kind === "week2") {
+              return (
+                <QuizCard key="week2" title={QUIZ_TITLE} weekLabel={`Week ${QUIZ_WEEK}`} status={rankStatus(week2Attempts)}>
+                  <TrustQuiz
+                    stage1Items={STAGE_1_ITEMS}
+                    stage2Items={STAGE_2_ITEMS}
+                    initialAttempts={week2Attempts}
+                    studentName={validStudent.name}
+                  />
+                </QuizCard>
+              );
+            }
+            if (activity.kind === "cw2") {
+              return (
+                <QuizCard key="cw2" title="Mock CW2 Practice" weekLabel={`Week ${MOCK_CW2_WEEK}`} status={cw2Status(cw2Draft)}>
+                  <MockCw2Practice initialDraft={cw2Draft ?? EMPTY_CW2_DRAFT} studentName={validStudent.name} />
+                </QuizCard>
+              );
+            }
+            const quiz = activity.quiz;
+            return (
+              <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])}>
+                {quiz.kind === "mcq" ? (
+                  <McqQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
+                ) : (
+                  <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
+                )}
+                {quiz.id === "week3-referencing" && <ReferencingPractice />}
+              </QuizCard>
+            );
+          })}
         </div>
       )}
     </div>
