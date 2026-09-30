@@ -47,5 +47,5 @@ body {
   background-repeat: no-repeat, no-repeat;
   background-position: left center, right center;
   background-size: 50% 100%, 50% 100%;
-  filter: grayscale(1) brightness(0.22) contrast(0.9);
+  filter: grayscale(1) brightness(0.26) contrast(0.9);
 }

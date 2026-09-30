@@ -57,7 +57,7 @@ export default function DashboardShell({
   const [tab, setTab] = useState<Tab>("overview");
 
   return (
-    <div className="bg-[#23262B]/90 min-h-full px-6 py-8">
+    <div className="bg-[#23262B]/80 min-h-full px-6 py-8">
       <div className="max-w-[640px] mx-auto">
         <div className="flex justify-between items-start mb-1 pb-5 border-b-[3px] border-double border-[#A6764A]">
           <div>

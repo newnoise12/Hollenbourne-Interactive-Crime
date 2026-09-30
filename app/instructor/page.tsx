@@ -23,7 +23,7 @@ export default async function InstructorDashboardPage() {
   ]);
 
   return (
-    <main className="flex-1 bg-[#23262B]/90 px-6 py-8">
+    <main className="flex-1 bg-[#23262B]/80 px-6 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-start mb-6 pb-5 border-b-[3px] border-double border-[#A6764A]">
           <div>
