@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { fromPinId, toPinId, label } = body;
-  if (typeof fromPinId !== "string" || typeof toPinId !== "string" || typeof label !== "string") {
-    return NextResponse.json({ error: "fromPinId, toPinId and label are required." }, { status: 400 });
+  if (typeof fromPinId !== "string" || typeof toPinId !== "string" || (label !== undefined && typeof label !== "string")) {
+    return NextResponse.json({ error: "fromPinId and toPinId are required." }, { status: 400 });
   }
 
   try {

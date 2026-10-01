@@ -88,14 +88,19 @@ export async function unpinEvidence(teamId: string, pinId: string): Promise<Boar
   return getBoard(teamId);
 }
 
-export async function connectPins(teamId: string, fromPinId: string, toPinId: string, label: string): Promise<Board> {
+/**
+ * Connects two pinned cards. Deliberately label-optional — connecting is
+ * meant to be a quick, direct, playful gesture (click a card, click
+ * another), not gated behind writing a description first. A card's own
+ * note field already covers describing *why* something's connected, for
+ * teams that want that; label defaults to "" when not given.
+ */
+export async function connectPins(teamId: string, fromPinId: string, toPinId: string, label = ""): Promise<Board> {
   if (fromPinId === toPinId) throw new BoardError("Can't connect a card to itself.");
-  const trimmed = label.trim();
-  if (!trimmed) throw new BoardError("A connection needs a label.");
   await getOwnedPin(teamId, fromPinId);
   await getOwnedPin(teamId, toPinId);
 
-  await db.insert(evidenceConnections).values({ teamId, fromPinId, toPinId, label: trimmed });
+  await db.insert(evidenceConnections).values({ teamId, fromPinId, toPinId, label: label.trim() });
   return getBoard(teamId);
 }
 

@@ -144,7 +144,9 @@ export default function Corkboard({
         id: c.id,
         source: c.fromPinId,
         target: c.toPinId,
-        label: c.label,
+        // Most connections are unlabelled now (direct click-to-connect, no
+        // prompt) — omit the label entirely rather than rendering an empty pill.
+        label: c.label || undefined,
         style: { stroke: "#A6764A" },
         labelStyle: { fontSize: 11 },
       })),
@@ -187,10 +189,13 @@ export default function Corkboard({
   // In-page prompts rather than window.prompt/confirm — those get silently
   // suppressed in some automated/controlled browsers (confirmed during
   // testing elsewhere in this app; see app/dashboard/quiz/TrustQuiz.tsx).
-  const [pendingConnection, setPendingConnection] = useState<{ source: string; target: string } | null>(null);
-  const [connectionLabel, setConnectionLabel] = useState("");
   const [pendingRemoveEdge, setPendingRemoveEdge] = useState<Edge | null>(null);
 
+  // Click a card, then click another — connects immediately, no label step.
+  // Deliberately direct rather than gated behind writing a description
+  // first: a corkboard is for quickly trying out theories, and a card's own
+  // note field already covers describing *why* something's connected for
+  // teams that want that, per the user's own framing of the redesign.
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_, node) => {
       if (!connectMode) return;
@@ -202,22 +207,15 @@ export default function Corkboard({
         setConnectFrom(null); // clicked the same card again — deselect
         return;
       }
-      setConnectionLabel("");
-      setPendingConnection({ source: connectFrom, target: node.id });
+      onConnect(connectFrom, node.id, "");
       setConnectFrom(null);
     },
-    [connectMode, connectFrom]
+    [connectMode, connectFrom, onConnect]
   );
 
   const toggleConnectMode = () => {
     setConnectMode((on) => !on);
     setConnectFrom(null);
-  };
-
-  const confirmConnection = () => {
-    if (!pendingConnection || !connectionLabel.trim()) return;
-    onConnect(pendingConnection.source, pendingConnection.target, connectionLabel.trim());
-    setPendingConnection(null);
   };
 
   const handleEdgeClick = useCallback((_: unknown, edge: Edge) => {
@@ -298,42 +296,10 @@ export default function Corkboard({
         </div>
       )}
 
-      {pendingConnection && (
-        <div className="mt-3 bg-[#E8E1D0] border border-[#A6764A] px-4 py-3.5">
-          <p className="font-mono text-xs text-[#2A2F27] mb-2 mt-0">
-            Label this connection (e.g. &quot;same weapon type&quot;, &quot;alibi conflict&quot;):
-          </p>
-          <div className="flex gap-2 flex-wrap items-center">
-            <input
-              autoFocus
-              type="text"
-              value={connectionLabel}
-              onChange={(e) => setConnectionLabel(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && confirmConnection()}
-              className="flex-1 basis-[220px] font-mono text-[13px] bg-[#FBF8F0] border border-[#D6CDB4] px-2.5 py-1.5 text-[#2A2F27] outline-none"
-              placeholder="Connection label"
-            />
-            <button
-              onClick={confirmConnection}
-              disabled={!connectionLabel.trim()}
-              className="font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] px-3.5 py-1.5 border border-[#2A2F27] disabled:opacity-50"
-            >
-              CONNECT
-            </button>
-            <button
-              onClick={() => setPendingConnection(null)}
-              className="font-mono text-xs tracking-wide bg-transparent text-[#5B5A4E] px-3.5 py-1.5 border border-[#5B5A4E]"
-            >
-              CANCEL
-            </button>
-          </div>
-        </div>
-      )}
-
       {pendingRemoveEdge && (
         <div className="mt-3 bg-[#E8E1D0] border border-[#8B3226] px-4 py-3.5">
           <p className="font-mono text-xs text-[#2A2F27] mb-3 mt-0">
-            Remove connection &quot;{pendingRemoveEdge.label}&quot;?
+            {pendingRemoveEdge.label ? `Remove connection "${pendingRemoveEdge.label}"?` : "Remove this connection?"}
           </p>
           <div className="flex gap-2">
             <button
