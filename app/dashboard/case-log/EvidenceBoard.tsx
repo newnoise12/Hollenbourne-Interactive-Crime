@@ -103,14 +103,17 @@ export function ExhibitImage({ src, alt }: { src: string; alt: string }) {
 }
 
 // The reader-dialog overlay pattern from the recovered artifact prototype
-// (see CLAUDE.md's "Repo location") — a small backdrop-centred sheet, not an
-// inline expanded card.
+// (see CLAUDE.md's "Repo location") — a backdrop-centred sheet, not an
+// inline expanded card. Widened from the artifact's original 440px once
+// full interview transcripts made that column too narrow to read
+// comfortably — matches roughly the width of the dashboard shell itself
+// (max-w-[640px]) rather than the artifact's much smaller dialog.
 function Overlay({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   return (
     <div onClick={onClose} className="fixed inset-0 bg-[rgba(20,18,14,0.72)] flex items-center justify-center p-5 z-50">
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#E8E1D0] border border-[#D6CDB4] max-w-[440px] w-full max-h-[85vh] overflow-y-auto relative"
+        className="bg-[#E8E1D0] border border-[#D6CDB4] max-w-[680px] w-full max-h-[85vh] overflow-y-auto relative"
       >
         <button
           onClick={onClose}

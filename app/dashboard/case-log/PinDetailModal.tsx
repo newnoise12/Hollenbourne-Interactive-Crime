@@ -22,7 +22,7 @@ export default function PinDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg bg-[#F4EFE1] border border-[#A6764A] shadow-xl p-6 max-h-[80vh] overflow-y-auto"
+        className="w-full max-w-[680px] bg-[#F4EFE1] border border-[#A6764A] shadow-xl p-6 max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
