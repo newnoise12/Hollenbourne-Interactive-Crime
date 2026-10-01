@@ -884,6 +884,24 @@ repo root — the CPS Application Quiz and Mock CW2 pack described in
 "Current state" above. Confirms the convention above is the right one to
 keep pointing future drops at.
 
+**File-drop handovers are being superseded by a live Claude Doc**, created
+2026-10-01 specifically to cut out the save-file-then-drop-it-in-Reference
+round trip: **"Hollenbourne Content Inbox"**,
+`https://claude.ai/code/artifact/4745b21f-884b-4f98-9175-d5d9a79dff64`. The
+user writes new/updated case content, quiz drafts, mechanics/action-economy
+changes, AI-grading brief changes, or visuals notes directly into this doc
+from any Claude chat (their "desktop chat" included) — a Code session reads
+it with this tool's `read` action when asked, instead of waiting for a file
+drop. If a future session is asked to check for new content and nothing's
+been handed over directly in the conversation, check this doc before
+assuming there's nothing new — the same way `Reference/case-content/` and
+the recovered artifact needed explicitly checking for, this doc won't show
+up by grepping the repo. Whether ported content gets cleared from the doc
+or left as a running log was an open question put to the user in a comment
+on the doc itself at creation time — check there for the answer before
+assuming either way. The `Reference/` file-drop convention documented above
+still works as a fallback; it's just no longer the primary path.
+
 ## Decisions worth knowing (so they don't get re-litigated)
 
 - **Drizzle, not Prisma**: Prisma needs to download a query-engine binary
