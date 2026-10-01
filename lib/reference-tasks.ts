@@ -29,19 +29,21 @@ export const REFERENCE_TASKS: ReferenceTask[] = [
     id: "newspaper",
     title: "Task 1 — Newspaper article",
     facts:
-      "Author: Sarah Chen | Publication: The Guardian | Date: 14 March 2025 | Headline: \"Rising prison populations and the sentencing debate\" | Accessed: online",
+      "Author: Sarah Chen | Publication: The Guardian | Date: 14 March 2025 | Headline: \"Rising prison populations and the sentencing debate\" | URL: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate | Accessed: online",
     correctReference:
-      "Chen, S. (2025) 'Rising prison populations and the sentencing debate', The Guardian, 14 March. Available at: [URL] (Accessed: [date]).",
+      "Chen, S. (2025) 'Rising prison populations and the sentencing debate', The Guardian, 14 March. Available at: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate (Accessed: [date]).",
+    gradingNote:
+      "The access date is the student's own choice — any real-looking date is fine, do not require a specific one. The URL above is the one actually given to the student: mark it flawed if they've used a different, less specific, or invented URL (e.g. just the homepage) instead of this one.",
   },
   {
     id: "undated-website",
     title: "Task 2 — Undated website",
     facts:
-      "Author: none named (organisational) | Publisher: Crown Prosecution Service | Title: a UK government page explaining how the Crown Prosecution Service works | Publication date: not given on the page | Accessed: on a date of the student's choosing",
+      "Author: none named (organisational) | Publisher: Crown Prosecution Service | Title: a UK government page explaining how the Crown Prosecution Service works | Publication date: not given on the page | URL: https://www.cps.gov.uk/about-cps | Accessed: on a date of the student's choosing",
     correctReference:
-      "Crown Prosecution Service (no date) [page title]. Available at: [URL] (Accessed: [date]).",
+      "Crown Prosecution Service (no date) About the CPS. Available at: https://www.cps.gov.uk/about-cps (Accessed: [date]).",
     gradingNote:
-      "There is no single correct string here — the student chooses their own access date. Grade the SHAPE of the answer: organisational author (Crown Prosecution Service, not a named individual), 'no date' used honestly in place of a fabricated year, a plausible title, and a genuine 'Available at' / 'Accessed: [some real-looking date]' structure. Do not mark it down for using a different (but real, sensible) access date than any other attempt.",
+      "There is no single correct string here — the student chooses their own access date and may phrase the page title slightly differently (anything reasonably close to 'About the CPS' is fine). Grade the SHAPE of the answer: organisational author (Crown Prosecution Service, not a named individual), 'no date' used honestly in place of a fabricated year, a plausible title, the URL given above (not a different or invented one), and a genuine 'Available at' / 'Accessed: [some real-looking date]' structure. Do not mark it down for using a different (but real, sensible) access date than any other attempt.",
   },
   {
     id: "book-chapter",

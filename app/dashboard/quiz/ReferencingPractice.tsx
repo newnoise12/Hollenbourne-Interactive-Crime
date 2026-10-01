@@ -51,13 +51,13 @@ const TASKS: TaskDef[] = [
     id: "newspaper",
     title: "Task 1 — Newspaper article",
     facts:
-      "Author: Sarah Chen | Publication: The Guardian | Date: 14 March 2025 | Headline: \"Rising prison populations and the sentencing debate\" | Accessed: online",
+      "Author: Sarah Chen | Publication: The Guardian | Date: 14 March 2025 | Headline: \"Rising prison populations and the sentencing debate\" | URL: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate | Accessed: online",
   },
   {
     id: "undated-website",
     title: "Task 2 — Undated website",
     facts:
-      "Author: none named (organisational) | Publisher: Crown Prosecution Service | Title: a UK government page explaining how the Crown Prosecution Service works | Publication date: not given on the page | Accessed: on a date of your choosing",
+      "Author: none named (organisational) | Publisher: Crown Prosecution Service | Title: a UK government page explaining how the Crown Prosecution Service works | Publication date: not given on the page | URL: https://www.cps.gov.uk/about-cps | Accessed: on a date of your choosing",
   },
   {
     id: "book-chapter",
