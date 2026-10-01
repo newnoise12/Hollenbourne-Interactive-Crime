@@ -5,17 +5,16 @@ import {
   ReactFlow,
   Background,
   Controls,
-  ConnectionMode,
+  Handle,
+  Position,
   applyNodeChanges,
   applyEdgeChanges,
   type Node,
   type Edge,
   type NodeChange,
   type EdgeChange,
-  type Connection,
   type NodeProps,
-  Handle,
-  Position,
+  type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { SUSPECT_META, getEvidenceColor, type EvidenceItem } from "@/lib/evidence-catalog";
@@ -38,42 +37,39 @@ export interface BoardConnection {
 const BOARD_WIDTH = 2000;
 const BOARD_HEIGHT = 1100;
 
-// One handle per edge (not a stacked target+source pair — two DOM elements
-// sitting at the exact same pixel made drops land ambiguously and silently
-// fail to register a connection at all, which is what "I can't get it to
-// connect" turned out to be). Paired with connectionMode="loose" on the
-// ReactFlow element below, a single handle can both start and end a
-// connection regardless of its declared type, so one per side is enough to
-// connect from whichever edge two cards happen to face each other on the
-// board. Visible only on hover (opacity-0 → group-hover:opacity-100),
-// matching the existing hover-reveal tooltip below.
-const CONNECTION_HANDLE_POSITIONS: Position[] = [Position.Top, Position.Right, Position.Bottom, Position.Left];
-
 function EvidenceCardNode({ data }: NodeProps) {
-  const { evidence, note, onOpen } = data as unknown as {
+  const { evidence, note, onOpen, connectModeActive, isConnectSource } = data as unknown as {
     evidence: EvidenceItem;
     note: string | null;
     onOpen: () => void;
+    connectModeActive: boolean;
+    isConnectSource: boolean;
   };
   const color = getEvidenceColor(evidence);
   const suspectLabel = evidence.suspect ? SUSPECT_META[evidence.suspect].label : null;
 
   return (
     <div className="group relative">
-      {CONNECTION_HANDLE_POSITIONS.map((position) => (
-        <Handle
-          key={position}
-          type="source"
-          position={position}
-          id={position}
-          style={{ background: color, width: 16, height: 16, border: "2px solid #FBF8F0" }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-        />
-      ))}
+      {/* Purely structural, not interactive (nodesConnectable={false} on the
+          ReactFlow element below disables drag-to-connect entirely) — react
+          flow needs at least one registered handle per node to know where to
+          anchor an edge's line, even though connecting is click-based now. */}
+      <Handle type="target" position={Position.Top} isConnectable={false} className="opacity-0" />
+      <Handle type="source" position={Position.Bottom} isConnectable={false} className="opacity-0" />
       <button
-        onClick={onOpen}
+        // onNodeClick on the parent <ReactFlow> drives the actual
+        // connect-mode selection (see handleNodeClick) — this button's own
+        // click only opens the exhibit, and only when not mid-connection, so
+        // the two don't both fire on the same click.
+        onClick={() => {
+          if (!connectModeActive) onOpen();
+        }}
         className="w-44 text-left rounded-md border-2 bg-[#FBF8F0] shadow-sm px-2.5 py-2 hover:shadow-md transition-shadow"
-        style={{ borderColor: color }}
+        style={{
+          borderColor: isConnectSource ? "#2A2F27" : color,
+          boxShadow: isConnectSource ? "0 0 0 2px #2A2F27" : undefined,
+          cursor: connectModeActive ? "pointer" : undefined,
+        }}
       >
         <div className="flex items-start justify-between gap-1.5">
           <span className="text-[10px] font-mono uppercase tracking-wide" style={{ color }}>
@@ -116,16 +112,31 @@ export default function Corkboard({
   onConnect: (fromPinId: string, toPinId: string, label: string) => void;
   onDeleteConnection: (connectionId: string) => void;
 }) {
+  // Click-to-connect, not drag-to-connect: the previous design used
+  // react-flow's own drag-a-handle-to-another-node connection gesture, but
+  // that relies on releasing the mouse precisely over a tiny target —
+  // confirmed broken in practice (the drag itself worked, the drop never
+  // registered). Clicking one card then another is immune to that whole
+  // class of precision/hit-testing problem.
+  const [connectMode, setConnectMode] = useState(false);
+  const [connectFrom, setConnectFrom] = useState<string | null>(null);
+
   const initialNodes: Node[] = useMemo(
     () =>
       pins.map((pin) => ({
         id: pin.id,
         type: "evidenceCard",
         position: { x: pin.x, y: pin.y },
-        data: { evidence: pin.evidence, note: pin.note, onOpen: () => onOpenPin(pin) },
+        data: {
+          evidence: pin.evidence,
+          note: pin.note,
+          onOpen: () => onOpenPin(pin),
+          connectModeActive: connectMode,
+          isConnectSource: connectFrom === pin.id,
+        },
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pins]
+    [pins, connectMode, connectFrom]
   );
   const initialEdges: Edge[] = useMemo(
     () =>
@@ -180,11 +191,28 @@ export default function Corkboard({
   const [connectionLabel, setConnectionLabel] = useState("");
   const [pendingRemoveEdge, setPendingRemoveEdge] = useState<Edge | null>(null);
 
-  const handleConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
-    setConnectionLabel("");
-    setPendingConnection({ source: connection.source, target: connection.target });
-  }, []);
+  const handleNodeClick: NodeMouseHandler = useCallback(
+    (_, node) => {
+      if (!connectMode) return;
+      if (!connectFrom) {
+        setConnectFrom(node.id);
+        return;
+      }
+      if (connectFrom === node.id) {
+        setConnectFrom(null); // clicked the same card again — deselect
+        return;
+      }
+      setConnectionLabel("");
+      setPendingConnection({ source: connectFrom, target: node.id });
+      setConnectFrom(null);
+    },
+    [connectMode, connectFrom]
+  );
+
+  const toggleConnectMode = () => {
+    setConnectMode((on) => !on);
+    setConnectFrom(null);
+  };
 
   const confirmConnection = () => {
     if (!pendingConnection || !connectionLabel.trim()) return;
@@ -198,10 +226,26 @@ export default function Corkboard({
 
   return (
     <div>
-      <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0">
-        Drag cards to arrange them. Drag from one card&apos;s edge to another to connect them. Click a card to open
-        the full document; click a connection to remove it.
-      </p>
+      <div className="flex justify-between items-start gap-3 mb-2 flex-wrap">
+        <p className="font-mono text-xs text-[#8A8A80] m-0">
+          {connectMode
+            ? connectFrom
+              ? "Now click the card you want to connect it to (or click it again to cancel)."
+              : "Click a card to start a connection, then click a second card to link them."
+            : "Drag cards to arrange them. Click a card to open the full document; click a connection to remove it."}
+        </p>
+        <button
+          onClick={toggleConnectMode}
+          className="font-mono text-[11px] tracking-wide px-2.5 py-1 border shrink-0"
+          style={
+            connectMode
+              ? { background: "#2A2F27", color: "#E8E1D0", borderColor: "#2A2F27" }
+              : { background: "transparent", color: "#A6764A", borderColor: "#A6764A" }
+          }
+        >
+          {connectMode ? "DONE CONNECTING" : "CONNECT CARDS"}
+        </button>
+      </div>
       <div style={{ height: 480 }} className="border border-[#A6764A] overflow-hidden bg-[#F4EFE1]">
         <ReactFlow
           nodes={nodes}
@@ -209,8 +253,8 @@ export default function Corkboard({
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
           onNodeDragStop={handleNodeDragStop}
-          onConnect={handleConnect}
-          connectionMode={ConnectionMode.Loose}
+          onNodeClick={handleNodeClick}
+          nodesConnectable={false}
           onEdgeClick={handleEdgeClick}
           nodeTypes={nodeTypes}
           translateExtent={[

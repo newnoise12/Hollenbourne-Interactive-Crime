@@ -55,6 +55,20 @@ export default function DashboardShell({
   cw2Draft: Cw2Draft | null;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
+  // The Case Log tab (and only this one) hosts @xyflow/react's corkboard,
+  // which measures its nodes via ResizeObserver to compute edge paths. That
+  // measurement never completes for content mounted inside a display:none
+  // container (confirmed: this is why connections silently failed to draw —
+  // nothing to do with the connect gesture itself), and this tab starts
+  // hidden since "overview" is the default. Deferring EvidenceBoard's first
+  // mount until the tab is actually opened lets it mount while visible;
+  // after that it's never unmounted, so later tab switches still just
+  // toggle `hidden` as everywhere else and don't lose in-progress state.
+  const [hasOpenedCaseLog, setHasOpenedCaseLog] = useState(false);
+  const handleSetTab = (next: Tab) => {
+    if (next === "case-log") setHasOpenedCaseLog(true);
+    setTab(next);
+  };
 
   return (
     <div className="bg-[#23262B]/80 min-h-full px-6 py-8">
@@ -81,7 +95,7 @@ export default function DashboardShell({
           {TABS.map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => handleSetTab(t.id)}
               className="font-mono text-xs tracking-wide px-3.5 py-2.5 border-b-2 -mb-px bg-transparent"
               style={{
                 borderBottomColor: tab === t.id ? "#A6764A" : "transparent",
@@ -104,7 +118,7 @@ export default function DashboardShell({
             log={initialLog}
             reservePoints={initialReservePoints}
             cw2Draft={cw2Draft}
-            onNavigate={setTab}
+            onNavigate={handleSetTab}
           />
         </div>
         <div hidden={tab !== "investigation"}>
@@ -119,13 +133,15 @@ export default function DashboardShell({
           />
         </div>
         <div hidden={tab !== "case-log"}>
-          <EvidenceBoard
-            evidence={evidence}
-            initialBoard={initialBoard}
-            currentWeek={currentWeek}
-            completedActionIds={new Set(initialLog.map((e) => e.actionId))}
-            actions={actions}
-          />
+          {hasOpenedCaseLog && (
+            <EvidenceBoard
+              evidence={evidence}
+              initialBoard={initialBoard}
+              currentWeek={currentWeek}
+              completedActionIds={new Set(initialLog.map((e) => e.actionId))}
+              actions={actions}
+            />
+          )}
         </div>
       </div>
     </div>
