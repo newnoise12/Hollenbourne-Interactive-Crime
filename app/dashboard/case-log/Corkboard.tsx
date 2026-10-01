@@ -37,6 +37,23 @@ export interface BoardConnection {
 const BOARD_WIDTH = 2000;
 const BOARD_HEIGHT = 1100;
 
+// One target + one source handle stacked at each of the four edges, so a
+// connection can be started or finished from whichever side two cards
+// happen to face each other on the board — not just straight up/down.
+// Visible only on hover (opacity-0 → group-hover:opacity-100), matching the
+// existing hover-reveal tooltip below, rather than cluttering the board
+// with eight dots per card at all times.
+const CONNECTION_HANDLES: { position: Position; type: "source" | "target" }[] = [
+  { position: Position.Top, type: "target" },
+  { position: Position.Top, type: "source" },
+  { position: Position.Right, type: "target" },
+  { position: Position.Right, type: "source" },
+  { position: Position.Bottom, type: "target" },
+  { position: Position.Bottom, type: "source" },
+  { position: Position.Left, type: "target" },
+  { position: Position.Left, type: "source" },
+];
+
 function EvidenceCardNode({ data }: NodeProps) {
   const { evidence, note, onOpen } = data as unknown as {
     evidence: EvidenceItem;
@@ -48,7 +65,16 @@ function EvidenceCardNode({ data }: NodeProps) {
 
   return (
     <div className="group relative">
-      <Handle type="target" position={Position.Top} className="opacity-0" />
+      {CONNECTION_HANDLES.map(({ position, type }) => (
+        <Handle
+          key={`${position}-${type}`}
+          type={type}
+          position={position}
+          id={`${position}-${type}`}
+          style={{ background: color, width: 10, height: 10, border: "2px solid #FBF8F0" }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+        />
+      ))}
       <button
         onClick={onOpen}
         className="w-44 text-left rounded-md border-2 bg-[#FBF8F0] shadow-sm px-2.5 py-2 hover:shadow-md transition-shadow"
@@ -72,8 +98,6 @@ function EvidenceCardNode({ data }: NodeProps) {
         <p className="font-medium">{evidence.title}</p>
         <p className="mt-1 text-neutral-600 line-clamp-3">{evidence.snippet}</p>
       </div>
-
-      <Handle type="source" position={Position.Bottom} className="opacity-0" />
     </div>
   );
 }
