@@ -254,6 +254,17 @@ export default function Corkboard({
           onEdgesChange={handleEdgesChange}
           onNodeDragStop={handleNodeDragStop}
           onNodeClick={handleNodeClick}
+          // Default is 1px — genuinely that strict, confirmed by reading
+          // the library's own source. A real mouse click almost always
+          // moves a pixel or two between press and release, which was
+          // enough for react-flow to classify it as a drag instead of a
+          // click: onNodeClick silently never fired (the card just nudged a
+          // pixel via onNodeDragStop instead), which is exactly what "first
+          // card highlights, second click does nothing" looks like from the
+          // outside. A more forgiving threshold fixes click-to-connect
+          // without weakening real drag-to-reposition gestures, which move
+          // far more than this.
+          nodeDragThreshold={10}
           nodesConnectable={false}
           onEdgeClick={handleEdgeClick}
           nodeTypes={nodeTypes}
