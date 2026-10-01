@@ -204,6 +204,27 @@ export const cw2MockDrafts = sqliteTable(
   (table) => [uniqueIndex("student_cw2_draft_idx").on(table.studentId)]
 );
 
+// Week 3 Stage 2's referencing practice — one row per student, same
+// upsert-a-JSON-blob pattern as cw2MockDrafts. Still deliberately unscored
+// (never touches trust bonus or quizAttempts), but now persisted so a
+// student's work and feedback survive a reload rather than vanishing —
+// "submitted" is purely a UI/completion marker per task, not a scoring
+// gate. See lib/reference-practice.ts.
+export const referencePracticeDrafts = sqliteTable(
+  "reference_practice_drafts",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    responses: text("responses").notNull().default("{}"), // JSON Record<taskId, { text, feedback, submitted }>
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [uniqueIndex("student_reference_draft_idx").on(table.studentId)]
+);
+
 // A logged-in instructor session. Unlike `sessions`, there's no teamId —
 // there's exactly one shared instructor passcode (checked against
 // INSTRUCTOR_PASSCODE_HASH), not distinct instructor accounts, so a session

@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getTeamForSession } from "@/lib/auth";
-import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
+import { SESSION_COOKIE_NAME, STUDENT_COOKIE_NAME } from "@/lib/session-cookie";
+import { getStudentById } from "@/lib/students";
 import { getReferenceTask } from "@/lib/reference-tasks";
 import { callClaudeForJsonWithRetry } from "@/lib/anthropic-grading";
+import { ReferencePracticeError, saveCheck, submitTask } from "@/lib/reference-practice";
 
 // Week 3 Stage 2's AI-graded practice feedback — see
 // Reference/case-content/technical-briefs/hollenbourne-claude-code-referencing-brief.md.
-// Unscored, not persisted: this only ever returns feedback for the current
-// submission, never writes to the database.
+// Still unscored (never touches trust bonus or quizAttempts), but now
+// persisted per student (lib/reference-practice.ts) so work and feedback
+// survive a reload, and a task can be marked "submitted" as a clear
+// completion step distinct from checking/rechecking.
 
 type ElementStatus = "correct" | "flawed" | "missing" | "not_applicable";
 type ElementFeedback = { status: ElementStatus; note: string };
@@ -72,30 +76,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not logged in." }, { status: 401 });
   }
 
-  let body: { taskId?: string; text?: string };
+  const studentId = cookieStore.get(STUDENT_COOKIE_NAME)?.value;
+  const student = studentId ? await getStudentById(studentId) : null;
+  if (!student || student.teamId !== team.id) {
+    return NextResponse.json({ error: "Select who you are first." }, { status: 400 });
+  }
+
+  let body: { action?: string; taskId?: string; text?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { taskId, text } = body;
-  if (!taskId || typeof text !== "string" || !text.trim()) {
-    return NextResponse.json({ error: "taskId and a non-empty text are required." }, { status: 400 });
-  }
-
-  const task = getReferenceTask(taskId);
-  if (!task) {
+  const { taskId } = body;
+  if (!taskId || !getReferenceTask(taskId)) {
     return NextResponse.json({ error: "Unknown task." }, { status: 400 });
   }
 
+  if (body.action === "submit") {
+    try {
+      const draft = await submitTask(student.id, taskId);
+      return NextResponse.json({ draft });
+    } catch (e) {
+      if (e instanceof ReferencePracticeError) return NextResponse.json({ error: e.message }, { status: 400 });
+      throw e;
+    }
+  }
+
+  // Default action: "check".
+  const { text } = body;
+  if (typeof text !== "string" || !text.trim()) {
+    return NextResponse.json({ error: "A non-empty text is required." }, { status: 400 });
+  }
+  const task = getReferenceTask(taskId)!;
   const prompt = buildPrompt(task.facts, task.correctReference, text, task.gradingNote);
 
   // One retry on failure, per the technical brief — this is a low-volume,
   // asynchronous practice tool, not something that needs a queue.
   try {
     const result = await callClaudeForJsonWithRetry(prompt, isValidGradingResult);
-    return NextResponse.json({ result });
+    const draft = await saveCheck(student.id, taskId, text, result);
+    return NextResponse.json({ draft });
   } catch {
     return NextResponse.json({ error: "Couldn't get feedback right now — please try again." }, { status: 502 });
   }

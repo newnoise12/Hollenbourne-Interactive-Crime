@@ -12,6 +12,7 @@ import type { Board } from "@/lib/board";
 import type { Student } from "@/lib/students";
 import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
 import type { Cw2Draft } from "@/lib/cw2-practice";
+import type { ReferencePracticeDraft } from "@/lib/reference-practice";
 
 type Tab = "overview" | "investigation" | "case-log";
 
@@ -37,6 +38,7 @@ export default function DashboardShell({
   week2Attempts,
   genericAttempts,
   cw2Draft,
+  referenceDraft,
 }: {
   teamName: string;
   currentWeek: number;
@@ -53,6 +55,7 @@ export default function DashboardShell({
   week2Attempts: RankQuizAttempt[];
   genericAttempts: Record<string, GenericQuizAttempt[]>;
   cw2Draft: Cw2Draft | null;
+  referenceDraft: ReferencePracticeDraft;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   // The Case Log tab (and only this one) hosts @xyflow/react's corkboard,
@@ -118,6 +121,7 @@ export default function DashboardShell({
             log={initialLog}
             reservePoints={initialReservePoints}
             cw2Draft={cw2Draft}
+            referenceDraft={referenceDraft}
             onNavigate={handleSetTab}
           />
         </div>

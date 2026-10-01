@@ -6,6 +6,7 @@ import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
 import type { EvidenceItem } from "@/lib/evidence-catalog";
 import type { LogEntry } from "@/lib/actions";
 import type { Cw2Draft } from "@/lib/cw2-practice";
+import type { ReferencePracticeDraft } from "@/lib/reference-practice";
 import { STAGE_1_ITEMS, STAGE_2_ITEMS, QUIZ_TITLE, QUIZ_WEEK, QUIZ_DEFS } from "@/lib/quiz-catalog";
 import { MOCK_CW2_WEEK } from "@/lib/cw2-items";
 import WhoAreYou from "./quiz/WhoAreYou";
@@ -73,6 +74,7 @@ export default function WeeklyOverviewTab({
   log,
   reservePoints,
   cw2Draft,
+  referenceDraft,
   onNavigate,
 }: {
   currentWeek: number;
@@ -84,6 +86,7 @@ export default function WeeklyOverviewTab({
   log: LogEntry[];
   reservePoints: number;
   cw2Draft: Cw2Draft | null;
+  referenceDraft: ReferencePracticeDraft;
   onNavigate: (tab: Tab) => void;
 }) {
   const completedActionIds = new Set(log.map((entry) => entry.actionId));
@@ -154,12 +157,15 @@ export default function WeeklyOverviewTab({
             )}
             {thisWeekGeneric.map((quiz) => (
               <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])} defaultOpen>
+                {quiz.id === "week3-referencing" && (
+                  <h3 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1 mt-0">Stage 1 — Multiple choice</h3>
+                )}
                 {quiz.kind === "mcq" ? (
                   <McqQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
                 ) : (
                   <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
                 )}
-                {quiz.id === "week3-referencing" && <ReferencingPractice />}
+                {quiz.id === "week3-referencing" && <ReferencingPractice initialDraft={referenceDraft} studentName={validStudent.name} />}
               </QuizCard>
             ))}
             {hasCw2ThisWeek && (
@@ -240,12 +246,15 @@ export default function WeeklyOverviewTab({
             const quiz = activity.quiz;
             return (
               <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])}>
+                {quiz.id === "week3-referencing" && (
+                  <h3 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1 mt-0">Stage 1 — Multiple choice</h3>
+                )}
                 {quiz.kind === "mcq" ? (
                   <McqQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
                 ) : (
                   <MultiselectQuiz quiz={quiz} initialAttempts={genericAttempts[quiz.id] ?? []} studentName={validStudent.name} />
                 )}
-                {quiz.id === "week3-referencing" && <ReferencingPractice />}
+                {quiz.id === "week3-referencing" && <ReferencingPractice initialDraft={referenceDraft} studentName={validStudent.name} />}
               </QuizCard>
             );
           })}

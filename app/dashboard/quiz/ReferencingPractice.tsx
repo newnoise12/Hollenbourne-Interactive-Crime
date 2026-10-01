@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { ReferencePracticeDraft } from "@/lib/reference-practice";
 
 type ElementStatus = "correct" | "flawed" | "missing" | "not_applicable";
 type ElementFeedback = { status: ElementStatus; note: string };
@@ -15,6 +17,10 @@ type GradingResult = {
   overall: "correct" | "mostly_correct" | "needs_work";
   summary: string;
 };
+
+function isGradingResult(value: unknown): value is GradingResult {
+  return !!value && typeof value === "object" && "elements" in value && "overall" in value;
+}
 
 const ELEMENT_LABELS: Record<keyof GradingResult["elements"], string> = {
   author: "Author",
@@ -97,13 +103,19 @@ function FeedbackPanel({ result }: { result: GradingResult }) {
   );
 }
 
-function TaskCard({ task }: { task: TaskDef }) {
-  const [text, setText] = useState("");
+function TaskCard({ task, initialResponse }: { task: TaskDef; initialResponse?: { text: string; feedback: unknown; submitted: boolean } }) {
+  const [text, setText] = useState(initialResponse?.text ?? "");
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<GradingResult | null>(null);
+  const [result, setResult] = useState<GradingResult | null>(isGradingResult(initialResponse?.feedback) ? initialResponse.feedback : null);
+  // The exact text the current `result` is feedback for — submitting is only
+  // ever enabled when the textarea still matches this, so a student can
+  // never submit unchecked edits under an old check's feedback.
+  const [lastCheckedText, setLastCheckedText] = useState<string | null>(result ? (initialResponse?.text ?? null) : null);
+  const [submitted, setSubmitted] = useState(!!initialResponse?.submitted);
 
-  const submit = async () => {
+  const check = async () => {
     if (!text.trim() || loading) return;
     setLoading(true);
     setError(null);
@@ -111,14 +123,18 @@ function TaskCard({ task }: { task: TaskDef }) {
       const res = await fetch("/api/quiz/reference-feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId: task.id, text }),
+        body: JSON.stringify({ action: "check", taskId: task.id, text }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
         return;
       }
-      setResult(data.result);
+      const draft = data.draft as ReferencePracticeDraft;
+      const mine = draft[task.id];
+      setResult(isGradingResult(mine?.feedback) ? mine.feedback : null);
+      setLastCheckedText(text);
+      setSubmitted(!!mine?.submitted);
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     } finally {
@@ -126,40 +142,105 @@ function TaskCard({ task }: { task: TaskDef }) {
     }
   };
 
+  const submitAnswer = async () => {
+    if (submitting || submitted || text !== lastCheckedText || !result) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/quiz/reference-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submit", taskId: task.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Something went wrong.");
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canSubmit = !!result && text === lastCheckedText && !submitted;
+
   return (
     <div className="bg-[#E8E1D0] border border-[#D6CDB4] px-4 py-3.5 mb-3">
       <h4 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1.5 mt-0">{task.title}</h4>
       <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-3 mt-0">{task.facts}</p>
       <textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (submitted) setSubmitted(false); // edited since submitting — no longer the submitted answer
+        }}
         placeholder="Write your Harvard reference here..."
         rows={2}
         className="w-full font-mono text-[13px] text-[#2A2F27] bg-[#F4EFE1] border border-[#D6CDB4] px-3 py-2 mb-2.5 resize-y"
       />
-      <button
-        onClick={submit}
-        disabled={loading || !text.trim()}
-        className="font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] px-4 py-2 border border-[#2A2F27] disabled:opacity-50"
-      >
-        {loading ? "CHECKING…" : result ? "CHECK AGAIN" : "CHECK MY REFERENCE"}
-      </button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={check}
+          disabled={loading || !text.trim() || submitted}
+          className="font-mono text-xs tracking-wide bg-[#2A2F27] text-[#E8E1D0] px-4 py-2 border border-[#2A2F27] disabled:opacity-50"
+        >
+          {loading ? "CHECKING…" : result ? "CHECK AGAIN" : "CHECK MY REFERENCE"}
+        </button>
+        <button
+          onClick={submitAnswer}
+          disabled={!canSubmit || submitting}
+          className="font-mono text-xs tracking-wide bg-transparent px-4 py-2 border disabled:opacity-50"
+          style={submitted ? { color: "#2F6B4F", borderColor: "#2F6B4F" } : { color: "#A6764A", borderColor: "#A6764A" }}
+        >
+          {submitted ? "✓ SUBMITTED" : submitting ? "SUBMITTING…" : "SUBMIT AS MY ANSWER"}
+        </button>
+        {result && !submitted && text !== lastCheckedText && (
+          <span className="font-mono text-[11px] text-[#8A8A80]">Check your latest edit before submitting it.</span>
+        )}
+      </div>
       {error && <p className="font-mono text-xs text-[#8B3226] mt-2.5 mb-0">{error}</p>}
       {result && <FeedbackPanel result={result} />}
     </div>
   );
 }
 
-export default function ReferencingPractice() {
+function SwitchStudentLink({ studentName }: { studentName: string }) {
+  const router = useRouter();
+  const [switching, setSwitching] = useState(false);
+  return (
+    <p className="font-mono text-[11px] text-[#8A8A80] mb-4 mt-0">
+      Answering as <span className="text-[#2A2F27]">{studentName}</span> &mdash;{" "}
+      <button
+        onClick={async () => {
+          setSwitching(true);
+          await fetch("/api/students/forget", { method: "POST" });
+          router.refresh();
+        }}
+        disabled={switching}
+        className="underline bg-transparent border-none p-0 text-[#8A8A80] cursor-pointer disabled:opacity-50"
+      >
+        not you?
+      </button>
+    </p>
+  );
+}
+
+export default function ReferencingPractice({ initialDraft, studentName }: { initialDraft: ReferencePracticeDraft; studentName: string }) {
   return (
     <div className="mt-5 pt-4 border-t border-[#D6CDB4]">
       <h3 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1 mt-0">Stage 2 — Write your own</h3>
-      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-4 mt-0">
-        Not scored, and not saved — this is for your own practice. Write a full Harvard reference for each source
-        below and get instant, structured feedback on each element. Resubmit as many times as you like.
+      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-1 mt-0">
+        The second half of this week&apos;s activity, now that Stage 1&apos;s multiple choice has covered the
+        basics: write a full Harvard reference for each source below and get instant, structured feedback on each
+        element. Not scored, but your work and feedback are saved — check and revise as many times as you like,
+        then submit each one as your answer when you&apos;re happy with it.
       </p>
+      <SwitchStudentLink studentName={studentName} />
       {TASKS.map((task) => (
-        <TaskCard key={task.id} task={task} />
+        <TaskCard key={task.id} task={task} initialResponse={initialDraft[task.id]} />
       ))}
     </div>
   );
