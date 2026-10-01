@@ -99,6 +99,18 @@ export async function connectPins(teamId: string, fromPinId: string, toPinId: st
   return getBoard(teamId);
 }
 
+/**
+ * Clears every pin (and, via the FK cascade, every connection) from a
+ * team's corkboard. The in-page "UNDO CLEAR" control (EvidenceBoard.tsx)
+ * handles restoring the previous layout itself, client-side, from a
+ * snapshot it took right before calling this — nothing is kept server-side,
+ * so this is a genuine, immediate delete, not a soft-delete/trash.
+ */
+export async function clearBoard(teamId: string): Promise<Board> {
+  await db.delete(evidencePins).where(eq(evidencePins.teamId, teamId));
+  return getBoard(teamId);
+}
+
 export async function deleteConnection(teamId: string, connectionId: string): Promise<Board> {
   const connection = await db.query.evidenceConnections.findFirst({
     where: and(eq(evidenceConnections.id, connectionId), eq(evidenceConnections.teamId, teamId)),

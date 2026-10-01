@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
-import { getBoard, pinEvidence, BoardError } from "@/lib/board";
+import { getBoard, pinEvidence, clearBoard, BoardError } from "@/lib/board";
 
 export async function GET() {
   const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
@@ -42,6 +42,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: e.message }, { status: 400 });
     }
     console.error("Unexpected error in /api/board:", e);
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+  }
+}
+
+/** Clears the whole corkboard. The client takes its own snapshot beforehand for "undo" — see EvidenceBoard.tsx. */
+export async function DELETE() {
+  const sessionId = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const team = await getTeamForSession(sessionId);
+  if (!team) {
+    return NextResponse.json({ error: "Not logged in." }, { status: 401 });
+  }
+
+  try {
+    const board = await clearBoard(team.id);
+    return NextResponse.json(board);
+  } catch (e) {
+    if (e instanceof BoardError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    console.error("Unexpected error in DELETE /api/board:", e);
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

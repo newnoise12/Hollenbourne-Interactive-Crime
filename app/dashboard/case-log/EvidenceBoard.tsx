@@ -253,6 +253,12 @@ export default function EvidenceBoard({
   const [openPin, setOpenPin] = useState<BoardPin | null>(null);
   const [openExhibitId, setOpenExhibitId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
+  // A snapshot taken client-side right before "clear board" — nothing is
+  // kept server-side, so undo only works for as long as this stays in
+  // memory (i.e. until the page reloads or another clear overwrites it).
+  const [clearSnapshot, setClearSnapshot] = useState<Board | null>(null);
+  const [pendingClear, setPendingClear] = useState(false);
+  const [undoBusy, setUndoBusy] = useState(false);
 
   const actionsById = new Map(actions.map((a) => [a.id, a]));
 
@@ -307,6 +313,74 @@ export default function EvidenceBoard({
     );
 
   const deleteConnection = (connectionId: string) => refreshBoard(fetch(`/api/board/connections/${connectionId}`, { method: "DELETE" }));
+
+  const handleClearBoard = async () => {
+    setPendingClear(false);
+    setClearSnapshot(board);
+    await refreshBoard(fetch("/api/board", { method: "DELETE" }));
+  };
+
+  // Replays a cleared board from the client-side snapshot: re-pins every
+  // exhibit (new pin ids — the old ones are gone), then re-creates every
+  // connection by mapping old pin ids to new ones via the shared exhibit id,
+  // then re-applies any notes. Sequential, not parallel, since connections
+  // depend on the pins existing first.
+  const handleUndoClear = async () => {
+    if (!clearSnapshot || undoBusy) return;
+    setUndoBusy(true);
+    setSaveError(false);
+    try {
+      let latestBoard: Board = board;
+      for (const pin of clearSnapshot.pins) {
+        const res = await fetch("/api/board", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ exhibitId: pin.evidence.id, x: pin.x, y: pin.y }),
+        });
+        if (!res.ok) throw new Error("Couldn't restore a pin.");
+        latestBoard = await res.json();
+      }
+
+      const exhibitToNewPinId = new Map<string, string>();
+      for (const pin of clearSnapshot.pins) {
+        const newPin = latestBoard.pins.find((p) => p.evidence.id === pin.evidence.id);
+        if (newPin) exhibitToNewPinId.set(pin.evidence.id, newPin.id);
+      }
+
+      for (const pin of clearSnapshot.pins) {
+        if (!pin.note) continue;
+        const newPinId = exhibitToNewPinId.get(pin.evidence.id);
+        if (!newPinId) continue;
+        const res = await fetch(`/api/board/pins/${newPinId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note: pin.note }),
+        });
+        if (res.ok) latestBoard = await res.json();
+      }
+
+      for (const connection of clearSnapshot.connections) {
+        const fromExhibitId = clearSnapshot.pins.find((p) => p.id === connection.fromPinId)?.evidence.id;
+        const toExhibitId = clearSnapshot.pins.find((p) => p.id === connection.toPinId)?.evidence.id;
+        const newFromId = fromExhibitId && exhibitToNewPinId.get(fromExhibitId);
+        const newToId = toExhibitId && exhibitToNewPinId.get(toExhibitId);
+        if (!newFromId || !newToId) continue;
+        const res = await fetch("/api/board/connections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromPinId: newFromId, toPinId: newToId, label: connection.label }),
+        });
+        if (res.ok) latestBoard = await res.json();
+      }
+
+      setBoard(latestBoard);
+      setClearSnapshot(null);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setUndoBusy(false);
+    }
+  };
 
   const pinnedExhibitIds = new Set(board.pins.map((p) => p.evidence.id));
   const unlockedCount = evidence.filter((e) => isEvidenceUnlocked(e, currentWeek, completedActionIds)).length;
@@ -380,11 +454,54 @@ export default function EvidenceBoard({
         )}
 
         <div className="mt-8">
-          <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] mb-3 mt-0">Corkboard</h2>
+          <div className="flex justify-between items-start gap-3 mb-3">
+            <h2 className="font-serif font-semibold text-lg text-[#E8E1D0] m-0">Corkboard</h2>
+            <div className="flex gap-2 shrink-0">
+              {clearSnapshot && (
+                <button
+                  onClick={handleUndoClear}
+                  disabled={undoBusy}
+                  className="font-mono text-[11px] tracking-wide bg-transparent border border-[#A6764A] text-[#A6764A] px-2.5 py-1 disabled:opacity-50"
+                >
+                  {undoBusy ? "RESTORING…" : "UNDO CLEAR"}
+                </button>
+              )}
+              {board.pins.length > 0 && (
+                <button
+                  onClick={() => setPendingClear(true)}
+                  className="font-mono text-[11px] tracking-wide bg-transparent border border-[#8B3226] text-[#8B3226] px-2.5 py-1"
+                >
+                  clear board
+                </button>
+              )}
+            </div>
+          </div>
           <p className="font-mono text-xs text-[#8A8A80] mb-3 mt-0">
             Use &quot;move to corkboard&quot; on an unlocked exhibit above to lay out the case visually and connect
             related threads &mdash; drag cards here to arrange them, not to add them.
           </p>
+          {pendingClear && (
+            <div className="mb-3 bg-[#E8E1D0] border border-[#8B3226] px-4 py-3.5">
+              <p className="font-mono text-xs text-[#2A2F27] mb-3 mt-0">
+                Clear the whole corkboard? This removes every pinned card and connection for the team &mdash; you can
+                undo it right after, but not once you&apos;ve navigated away or reloaded the page.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleClearBoard}
+                  className="font-mono text-xs tracking-wide bg-[#8B3226] text-[#F4EFE1] px-3.5 py-1.5 border border-[#8B3226]"
+                >
+                  CLEAR BOARD
+                </button>
+                <button
+                  onClick={() => setPendingClear(false)}
+                  className="font-mono text-xs tracking-wide bg-transparent text-[#5B5A4E] px-3.5 py-1.5 border border-[#5B5A4E]"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          )}
           <Corkboard
             pins={board.pins}
             connections={board.connections}

@@ -5,6 +5,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  ConnectionMode,
   applyNodeChanges,
   applyEdgeChanges,
   type Node,
@@ -37,22 +38,16 @@ export interface BoardConnection {
 const BOARD_WIDTH = 2000;
 const BOARD_HEIGHT = 1100;
 
-// One target + one source handle stacked at each of the four edges, so a
-// connection can be started or finished from whichever side two cards
-// happen to face each other on the board — not just straight up/down.
-// Visible only on hover (opacity-0 → group-hover:opacity-100), matching the
-// existing hover-reveal tooltip below, rather than cluttering the board
-// with eight dots per card at all times.
-const CONNECTION_HANDLES: { position: Position; type: "source" | "target" }[] = [
-  { position: Position.Top, type: "target" },
-  { position: Position.Top, type: "source" },
-  { position: Position.Right, type: "target" },
-  { position: Position.Right, type: "source" },
-  { position: Position.Bottom, type: "target" },
-  { position: Position.Bottom, type: "source" },
-  { position: Position.Left, type: "target" },
-  { position: Position.Left, type: "source" },
-];
+// One handle per edge (not a stacked target+source pair — two DOM elements
+// sitting at the exact same pixel made drops land ambiguously and silently
+// fail to register a connection at all, which is what "I can't get it to
+// connect" turned out to be). Paired with connectionMode="loose" on the
+// ReactFlow element below, a single handle can both start and end a
+// connection regardless of its declared type, so one per side is enough to
+// connect from whichever edge two cards happen to face each other on the
+// board. Visible only on hover (opacity-0 → group-hover:opacity-100),
+// matching the existing hover-reveal tooltip below.
+const CONNECTION_HANDLE_POSITIONS: Position[] = [Position.Top, Position.Right, Position.Bottom, Position.Left];
 
 function EvidenceCardNode({ data }: NodeProps) {
   const { evidence, note, onOpen } = data as unknown as {
@@ -65,13 +60,13 @@ function EvidenceCardNode({ data }: NodeProps) {
 
   return (
     <div className="group relative">
-      {CONNECTION_HANDLES.map(({ position, type }) => (
+      {CONNECTION_HANDLE_POSITIONS.map((position) => (
         <Handle
-          key={`${position}-${type}`}
-          type={type}
+          key={position}
+          type="source"
           position={position}
-          id={`${position}-${type}`}
-          style={{ background: color, width: 10, height: 10, border: "2px solid #FBF8F0" }}
+          id={position}
+          style={{ background: color, width: 16, height: 16, border: "2px solid #FBF8F0" }}
           className="opacity-0 group-hover:opacity-100 transition-opacity"
         />
       ))}
@@ -215,6 +210,7 @@ export default function Corkboard({
           onEdgesChange={handleEdgesChange}
           onNodeDragStop={handleNodeDragStop}
           onConnect={handleConnect}
+          connectionMode={ConnectionMode.Loose}
           onEdgeClick={handleEdgeClick}
           nodeTypes={nodeTypes}
           translateExtent={[
