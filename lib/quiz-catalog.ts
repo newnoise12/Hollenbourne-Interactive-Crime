@@ -774,28 +774,28 @@ export const WEEK3_REFERENCING_QUIZ: McqQuizDef = {
     {
       questions: [
         {
-          q: "The source: an article by Robinson, K., Ahmed, S. and Clarke, T., published in 2019 in the International Journal of Offender Therapy and Comparative Criminology, volume 63, issue 4, pages 512–530. Which is the correctly formatted Harvard reference?",
+          q: "The source: an article by Robinson, K., Ahmed, S. and Clarke, T., titled \"Group-based therapy for repeat offenders,\" published in 2019 in the International Journal of Offender Therapy and Comparative Criminology, volume 63, issue 4, pages 512–530. Which is the correctly formatted Harvard reference?",
           options: [
-            "Robinson, K. (2019) International Journal of Offender Therapy and Comparative Criminology, 63(4), pp.512–530.",
-            "Robinson, K., Ahmed, S. and Clarke, T. (2019) Article title here. International Journal of Offender Therapy and Comparative Criminology, 63(4), pp.512–530.",
+            "Robinson, K. (2019) International Journal of Offender Therapy and Comparative Criminology, 63(4), pp. 512–530.",
+            "Robinson, K., Ahmed, S. and Clarke, T. (2019) 'Group-based therapy for repeat offenders', International Journal of Offender Therapy and Comparative Criminology, 63(4), pp. 512–530.",
             "Robinson et al., 2019, Journal of Offender Therapy.",
             "K. Robinson, S. Ahmed and T. Clarke wrote an article in 2019 about offender therapy.",
           ],
           correct: 1,
           explain:
-            "All three authors (not just the first, in the reference list — \"et al.\" is for in-text citations only), the year, the article title (not italicised — the journal name is italicised instead, since the journal is the standalone work here), volume and issue in brackets, and the page range. Option A drops two authors and the article title. Option C is an in-text citation style, not a reference list entry, and abbreviates the journal name incorrectly. Option D isn't a reference at all.",
+            "All three authors (not just the first, in the reference list — \"et al.\" is for in-text citations only), the year, the article title in single quotation marks (not italicised — the journal title is italicised instead, since the journal is the standalone work here), volume and issue as 63(4), and the page range with \"pp.\" — this is LSBU's journal article format. Option A drops two authors and the article title. Option C is an in-text citation style, not a reference list entry, and abbreviates the journal name incorrectly. Option D isn't a reference at all.",
         },
         {
-          q: "The source: a book by Newburn, T., titled \"Criminology,\" 3rd edition, published in 2017 by Routledge, in Abingdon. Which is the correctly formatted Harvard reference?",
+          q: "The source: a book by Newburn, T., titled \"Criminology,\" 3rd edition, published in 2017 by Routledge. Which is the correctly formatted Harvard reference?",
           options: [
-            "Newburn, T. (2017) Criminology. 3rd edn. Abingdon: Routledge.",
+            "Newburn, T. (2017) Criminology. 3rd edn. Routledge.",
             "T. Newburn, Criminology, Routledge, 2017.",
             "Newburn (2017) Criminology.",
             "Newburn, T. (2017) \"Criminology.\" Routledge.",
           ],
           correct: 0,
           explain:
-            "Author, year, italicised title, edition (when not the first), place of publication, publisher. Option B has the elements in the wrong order and format entirely. Option C drops the edition, place, and publisher. Option D wrongly puts the title in quotation marks instead of italics — that convention is for article or chapter titles, not standalone books.",
+            "Author, year, italicised title, edition (when not the first), publisher — LSBU's print book format has no place of publication. Option B has the elements in the wrong order and format entirely. Option C drops the edition and publisher. Option D wrongly puts the title in quotation marks instead of italics — that convention is for article or chapter titles, not standalone books.",
         },
         {
           q: "The source: \"The Code for Crown Prosecutors,\" published by the Crown Prosecution Service, most recently reviewed in 2024, found at a government web address. Which is the correctly formatted Harvard reference?",
@@ -807,7 +807,7 @@ export const WEEK3_REFERENCING_QUIZ: McqQuizDef = {
           ],
           correct: 1,
           explain:
-            "Full organisational name (not the acronym), year, full and accurate title, and the \"Available at\" / \"Accessed\" structure every online source needs — a reader needs both the URL and the date you accessed it, since government web content can change or move.",
+            "This follows LSBU's webpage format: full organisational name (not the acronym), year, full and accurate title (in italics), and the \"Available at\" / \"Accessed\" structure every online source needs — a reader needs both the URL and the date you accessed it, since government web content can change or move.",
         },
         {
           q: "The source: an internal police memorandum, written by DS H. Ferris, dated 2 June 2025, addressed to the Divisional Commander and the Hollenbourne Case Review Panel. It doesn't fit neatly into \"book,\" \"article,\" or \"report\" — it's an internal document you've been given access to as part of the case materials, not something publicly published. Which approach is most defensible?",

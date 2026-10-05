@@ -576,10 +576,13 @@ team's overall progress, with buttons that switch tabs programmatically
   (the box is plain text; unmarked italics aren't penalised, italics on the
   wrong element are). Task ids changed, so any rows saved under the old
   ids (`newspaper`, `undated-website`, `book-chapter`) are simply ignored.
-  **Known inconsistency left alone on purpose:** Stage 1's MCQ answers
-  (approved by the user as-is) still show a place of publication
-  ("Abingdon: Routledge") and no quote marks around the article title,
-  which differs from LSBU's own format — flagged to the user, not changed.
+  Stage 1's MCQ answers were brought into line with the same LSBU format
+  at the user's request (the book answer no longer has a place of
+  publication, the journal answer now has a quoted article title and
+  "pp. 512–530", and the CPS answer's explanation names the webpage
+  format); correct-answer indexes are unchanged so saved attempts still
+  score the same. `Reference/case-content/quizzes/hollenbourne-week3-referencing-quiz.md`
+  was updated to match, so a future re-port from it won't undo this.
 - **CPS Application Quiz** (`hollenbourne-cps-application-quiz.md`, from a
   second handover drop landing directly in `Reference/case-content/quizzes/`
   — see "Repo location" below) — a companion to the existing Week 7 CPS
