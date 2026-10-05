@@ -128,15 +128,6 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     snippet: "Recorded violent incidents by year, with a dip across 2020–21.",
   },
   {
-    id: "ex02",
-    exhibit: "EX.02",
-    type: "visual",
-    case: "mason",
-    group: "cameras",
-    title: "CCTV still — woodland car park",
-    snippet: "Dark 4x4 parked near the tree line around the time of Mason's death.",
-  },
-  {
     id: "ex03",
     exhibit: "EX.03",
     type: "interview",

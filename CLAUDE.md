@@ -804,8 +804,19 @@ team's overall progress, with buttons that switch tabs programmatically
   endgame's minimum cost (**17**, from the catalog, not hardcoded), and runs
   the spec's walkthroughs. **Flagged, not changed**: `takeAction` doesn't
   refuse an action already in the log, so a team can pay twice (the new UI
-  just stops offering it); baseline exhibit EX.02 is titled "CCTV still —
-  woodland car park" despite the retired car-park CCTV action.
+  just stops offering it). **EX.02 ("CCTV still — woodland car park") was
+  removed** at the user's request: a prototype-era placeholder with no source
+  image anywhere, duplicating the retired car-park CCTV action (the real
+  footage is the paid traffic-camera exhibit). Baseline exhibit numbers are
+  not renumbered — the catalog now runs EX.01, EX.03… — and `getBoard`
+  skips pins (and their connections) whose exhibit has left the catalog.
+- **Instructor "Preview all evidence" page** (`app/instructor/evidence/page.tsx`,
+  linked from `/instructor`): every exhibit in `EVIDENCE`, grouped by case,
+  fully readable with images regardless of any team's progress, each with a
+  line saying how a team unlocks it (action / release week / free). Read-only,
+  instructor-passcode-gated like the other `/instructor` pages, and derived
+  from the live catalog — so it can't drift from what students see. Use it to
+  proofread the case file instead of playing through or bumping the week.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.

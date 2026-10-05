@@ -35,6 +35,13 @@ export default async function InstructorDashboardPage() {
 
         <CurrentWeekControl initialWeek={currentWeek} />
 
+        <p className="font-mono text-xs text-[#8A8A80] mb-5 mt-0">
+          <Link href="/instructor/evidence" className="text-[#A6764A] underline">
+            Preview all evidence
+          </Link>{" "}
+          &mdash; every exhibit fully unlocked, read-only, for proofreading the case file.
+        </p>
+
         {teams.length === 0 ? (
           <p className="font-mono text-xs text-[#8A8A80] bg-[#E8E1D0] border border-dashed border-[#A6764A] px-8 py-8 text-center">
             No teams have registered yet.

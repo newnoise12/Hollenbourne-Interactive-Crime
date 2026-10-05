@@ -25,12 +25,16 @@ export async function getBoard(teamId: string): Promise<Board> {
     pins.push({ id: row.id, x: row.x, y: row.y, note: row.note, evidence });
   }
 
-  const connections = connectionRows.map((row) => ({
-    id: row.id,
-    fromPinId: row.fromPinId,
-    toPinId: row.toPinId,
-    label: row.label,
-  }));
+  // Also drop connections whose pin was skipped above (its exhibit left the catalog).
+  const pinIds = new Set(pins.map((p) => p.id));
+  const connections = connectionRows
+    .filter((row) => pinIds.has(row.fromPinId) && pinIds.has(row.toPinId))
+    .map((row) => ({
+      id: row.id,
+      fromPinId: row.fromPinId,
+      toPinId: row.toPinId,
+      label: row.label,
+    }));
 
   return { pins, connections };
 }
