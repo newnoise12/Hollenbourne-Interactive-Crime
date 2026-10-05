@@ -554,6 +554,32 @@ team's overall progress, with buttons that switch tabs programmatically
   elements and "Needs work" overall; confirmed not persisted (textareas
   empty again after a reload); confirmed a logged-out request to
   `/api/quiz/reference-feedback` is rejected with 401.
+  **Superseded in two later passes (read these over the paragraph above
+  wherever they differ):** (1) Stage 2 is now *persisted* per student
+  (`referencePracticeDrafts` table, `lib/reference-practice.ts`, mirroring
+  `cw2MockDrafts`) and has a distinct "SUBMIT AS MY ANSWER" step beside
+  "check my reference" — still unscored, submit is only a completion marker
+  and is only enabled when the text matches what was last checked; Stage 1
+  is labelled "Stage 1 — Multiple choice" in `WeeklyOverviewTab.tsx` (not
+  inside the shared `McqQuiz`) so Stage 2 has a visible partner. (2) The
+  three Stage 2 tasks were rewritten (2026-10-05) to be easier and to match
+  **LSBU's own Harvard guide** (`https://library.lsbu.ac.uk/harvard`, each
+  task links to its page): Task 1 a print book (`print-book`), Task 2 a
+  journal article (`journal-article`), Task 3 the online news article
+  (`online-news`) deliberately referenced as a **webpage** — LSBU has no
+  online-newspaper entry (only print newspaper and webpage), so year-only,
+  italic title, no newspaper name, no quote marks. Verified against the live
+  guide pages: LSBU print books have **no place of publication**; journal
+  article titles go in single quotes with the journal title italic. The
+  grader prompt in `reference-feedback/route.ts` now says it's grading
+  against LSBU's format and that students mark italics with `*asterisks*`
+  (the box is plain text; unmarked italics aren't penalised, italics on the
+  wrong element are). Task ids changed, so any rows saved under the old
+  ids (`newspaper`, `undated-website`, `book-chapter`) are simply ignored.
+  **Known inconsistency left alone on purpose:** Stage 1's MCQ answers
+  (approved by the user as-is) still show a place of publication
+  ("Abingdon: Routledge") and no quote marks around the article title,
+  which differs from LSBU's own format — flagged to the user, not changed.
 - **CPS Application Quiz** (`hollenbourne-cps-application-quiz.md`, from a
   second handover drop landing directly in `Reference/case-content/quizzes/`
   — see "Repo location" below) — a companion to the existing Week 7 CPS

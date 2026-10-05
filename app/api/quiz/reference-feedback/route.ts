@@ -49,7 +49,9 @@ function isValidGradingResult(value: unknown): value is GradingResult {
 }
 
 function buildPrompt(facts: string, correctReference: string, studentText: string, gradingNote?: string): string {
-  return `You are checking a student's attempt at a Harvard-style reference against the correct version, for a UK criminology module.
+  return `You are checking a student's attempt at a Harvard-style reference against the correct version, for a UK criminology module. The module follows London South Bank University's (LSBU) Harvard guide (https://library.lsbu.ac.uk/harvard), so grade against that format specifically rather than other Harvard variants — for example, LSBU book references have no place of publication.
+
+Students type in a plain text box with no formatting tools. They were told to mark anything that should be in italics with *asterisks*; also accept _underscores_. If a student hasn't marked italics at all, don't mark the element flawed for that alone — but do mark it flawed if they've put italics (or quotation marks) on the wrong element, e.g. italicising an article title instead of the journal title.
 
 Raw source facts:
 ${facts}

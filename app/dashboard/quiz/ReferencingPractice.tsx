@@ -50,26 +50,38 @@ const OVERALL_LABELS: Record<GradingResult["overall"], string> = {
   needs_work: "Needs work",
 };
 
-type TaskDef = { id: string; title: string; facts: string };
+type TaskDef = { id: string; title: string; facts: string; guideUrl: string; guideLabel: string; note?: string };
 
+const LSBU_GUIDE_HOME = "https://library.lsbu.ac.uk/harvard";
+
+// Kept in step with lib/reference-tasks.ts (the server-side copy, which also
+// holds the answer key) — this is the student-facing half only.
 const TASKS: TaskDef[] = [
   {
-    id: "newspaper",
-    title: "Task 1 — Newspaper article",
+    id: "print-book",
+    title: "Task 1 — Print book",
     facts:
-      "Author: Sarah Chen | Publication: The Guardian | Date: 14 March 2025 | Headline: \"Rising prison populations and the sentencing debate\" | URL: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate | Accessed: online",
+      "Author: Okafor, R. | Title: Understanding youth justice | Year of publication: 2021 | Edition: 2nd | Publisher: Policy Press",
+    guideUrl: "https://library.lsbu.ac.uk/harvard/printbook",
+    guideLabel: "LSBU guide: print book",
   },
   {
-    id: "undated-website",
-    title: "Task 2 — Undated website",
+    id: "journal-article",
+    title: "Task 2 — Journal article",
     facts:
-      "Author: none named (organisational) | Publisher: Crown Prosecution Service | Title: a UK government page explaining how the Crown Prosecution Service works | Publication date: not given on the page | URL: https://www.cps.gov.uk/about-cps | Accessed: on a date of your choosing",
+      "Authors: Kaur, P. and Whitfield, T. | Year: 2020 | Article title: Neighbourhood policing and public trust | Journal: Journal of Community Safety Research | Volume: 14 | Issue: 3 | Pages: 201–219",
+    guideUrl: "https://library.lsbu.ac.uk/harvard/journalarticle",
+    guideLabel: "LSBU guide: journal article",
   },
   {
-    id: "book-chapter",
-    title: "Task 3 — Chapter in an edited book",
+    id: "online-news",
+    title: "Task 3 — Online news article (reference it as a webpage)",
     facts:
-      "Chapter author: Okafor, R. | Chapter title: \"Community sentencing in practice\" | Pages: 88–104 | Book editor: Patel-Singh, J. | Book title: Contemporary Approaches to Sentencing | Year: 2022 | Publisher: Palgrave Macmillan | Place: London",
+      "Author: Sarah Chen | Website: The Guardian | Year: 2025 | Headline: Rising prison populations and the sentencing debate | URL: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate | Accessed: on a date of your choosing",
+    guideUrl: "https://library.lsbu.ac.uk/harvard/webpage",
+    guideLabel: "LSBU guide: webpage",
+    note:
+      "The LSBU guide has no entry for online news articles — only print newspapers and webpages — so reference this one as a webpage. That means the year is all you need for the date.",
   },
 ];
 
@@ -170,7 +182,13 @@ function TaskCard({ task, initialResponse }: { task: TaskDef; initialResponse?: 
   return (
     <div className="bg-[#E8E1D0] border border-[#D6CDB4] px-4 py-3.5 mb-3">
       <h4 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1.5 mt-0">{task.title}</h4>
-      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-3 mt-0">{task.facts}</p>
+      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-2 mt-0">{task.facts}</p>
+      {task.note && <p className="font-mono text-xs text-[#2A2F27] leading-relaxed mb-2 mt-0">{task.note}</p>}
+      <p className="font-mono text-[11px] mb-3 mt-0">
+        <a href={task.guideUrl} target="_blank" rel="noopener noreferrer" className="text-[#A6764A] underline">
+          {task.guideLabel} ↗
+        </a>
+      </p>
       <textarea
         value={text}
         onChange={(e) => {
@@ -235,8 +253,16 @@ export default function ReferencingPractice({ initialDraft, studentName }: { ini
       <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-1 mt-0">
         The second half of this week&apos;s activity, now that Stage 1&apos;s multiple choice has covered the
         basics: write a full Harvard reference for each source below and get instant, structured feedback on each
-        element. Not scored, but your work and feedback are saved — check and revise as many times as you like,
-        then submit each one as your answer when you&apos;re happy with it.
+        element. Use the{" "}
+        <a href={LSBU_GUIDE_HOME} target="_blank" rel="noopener noreferrer" className="text-[#A6764A] underline">
+          LSBU Harvard referencing guide ↗
+        </a>{" "}
+        — each task links to the page you need. Not scored, but your work and feedback are saved — check and revise
+        as many times as you like, then submit each one as your answer when you&apos;re happy with it.
+      </p>
+      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-1 mt-0">
+        You can&apos;t format text in the box, so put *asterisks* around anything that should be in italics, e.g.
+        *Title of book*.
       </p>
       <SwitchStudentLink studentName={studentName} />
       {TASKS.map((task) => (

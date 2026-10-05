@@ -26,34 +26,33 @@ export type ReferenceTask = {
 
 export const REFERENCE_TASKS: ReferenceTask[] = [
   {
-    id: "newspaper",
-    title: "Task 1 — Newspaper article",
+    id: "print-book",
+    title: "Task 1 — Print book",
     facts:
-      "Author: Sarah Chen | Publication: The Guardian | Date: 14 March 2025 | Headline: \"Rising prison populations and the sentencing debate\" | URL: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate | Accessed: online",
-    correctReference:
-      "Chen, S. (2025) 'Rising prison populations and the sentencing debate', The Guardian, 14 March. Available at: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate (Accessed: [date]).",
+      "Author: Okafor, R. | Title: Understanding youth justice | Year of publication: 2021 | Edition: 2nd | Publisher: Policy Press",
+    correctReference: "Okafor, R. (2021) *Understanding youth justice*. 2nd edn. Policy Press.",
     gradingNote:
-      "The access date is the student's own choice — any real-looking date is fine, do not require a specific one. The URL above is the one actually given to the student: mark it flawed if they've used a different, less specific, or invented URL (e.g. just the homepage) instead of this one.",
+      "LSBU's print-book format has NO place of publication — do not require one, and don't mark it down if a student leaves it out. Required: author surname + initial, year in brackets, title (italicised if they've marked it), '2nd edn.' for the edition, then the publisher. Mark access_details and publication_details sensibly: publication_details covers edition + publisher; access_details is not_applicable (it's a print book).",
   },
   {
-    id: "undated-website",
-    title: "Task 2 — Undated website",
+    id: "journal-article",
+    title: "Task 2 — Journal article",
     facts:
-      "Author: none named (organisational) | Publisher: Crown Prosecution Service | Title: a UK government page explaining how the Crown Prosecution Service works | Publication date: not given on the page | URL: https://www.cps.gov.uk/about-cps | Accessed: on a date of the student's choosing",
+      "Authors: Kaur, P. and Whitfield, T. | Year: 2020 | Article title: Neighbourhood policing and public trust | Journal: Journal of Community Safety Research | Volume: 14 | Issue: 3 | Pages: 201–219",
     correctReference:
-      "Crown Prosecution Service (no date) About the CPS. Available at: https://www.cps.gov.uk/about-cps (Accessed: [date]).",
+      "Kaur, P. and Whitfield, T. (2020) 'Neighbourhood policing and public trust', *Journal of Community Safety Research*, 14(3), pp. 201–219.",
     gradingNote:
-      "There is no single correct string here — the student chooses their own access date and may phrase the page title slightly differently (anything reasonably close to 'About the CPS' is fine). Grade the SHAPE of the answer: organisational author (Crown Prosecution Service, not a named individual), 'no date' used honestly in place of a fabricated year, a plausible title, the URL given above (not a different or invented one), and a genuine 'Available at' / 'Accessed: [some real-looking date]' structure. Do not mark it down for using a different (but real, sensible) access date than any other attempt.",
+      "LSBU journal-article format: article title in single quotation marks (not italics), journal title italicised (if they've marked it), then volume(issue), then 'pp.' and the page range. Both authors needed, joined with 'and'. Spacing around 'pp.' and the type of dash used in the page range don't matter. publication_details covers journal title, volume, issue and pages. access_details is not_applicable (no URL or DOI was given).",
   },
   {
-    id: "book-chapter",
-    title: "Task 3 — Chapter in an edited book",
+    id: "online-news",
+    title: "Task 3 — Online news article (reference it as a webpage)",
     facts:
-      "Chapter author: Okafor, R. | Chapter title: \"Community sentencing in practice\" | Pages: 88–104 | Book editor: Patel-Singh, J. | Book title: Contemporary Approaches to Sentencing | Year: 2022 | Publisher: Palgrave Macmillan | Place: London",
+      "Author: Sarah Chen | Website: The Guardian | Year: 2025 | Headline: Rising prison populations and the sentencing debate | URL: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate | Accessed: on a date of your choosing",
     correctReference:
-      "Okafor, R. (2022) 'Community sentencing in practice', in Patel-Singh, J. (ed.) Contemporary Approaches to Sentencing. London: Palgrave Macmillan, pp.88-104.",
+      "Chen, S. (2025) *Rising prison populations and the sentencing debate*. Available at: https://www.theguardian.com/society/2025/mar/14/rising-prison-populations-and-the-sentencing-debate (Accessed: [date]).",
     gradingNote:
-      "Check specifically that both layers are represented: the chapter (author, year, chapter title in quotation marks, not italics) AND the book it sits inside (the editor marked '(ed.)', the book title italicised, publisher, place, and the page range for the chapter specifically) — a common error is citing only the book, or only the chapter, rather than both.",
+      "LSBU's guide has no entry for online newspaper articles (only print newspapers and webpages), so students were deliberately told to use the WEBPAGE format: Author (Year) Title. Available at: URL (Accessed: date). Only the YEAR of publication is needed — do NOT require the day/month, the newspaper's name, or quotation marks around the title, and don't mark the answer down for leaving them out. The access date is the student's own choice (any real-looking date is fine). The URL must be the one given, not a homepage or an invented address. If the student has used the print-newspaper layout instead (title in quotation marks, newspaper name in italics, day and month, 'p.' page number), mark the relevant elements flawed and explain that this task wants the webpage format. publication_details is not_applicable when the webpage format is followed correctly.",
   },
 ];
 
