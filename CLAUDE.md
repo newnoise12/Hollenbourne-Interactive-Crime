@@ -874,9 +874,22 @@ team's overall progress, with buttons that switch tabs programmatically
   notes are gone, and Nigel's property search no longer mentions "the anomalous
   cleaning that flagged Burgess's". Left in on purpose: spoken dialogue,
   witnesses' own impressions, and analyst hedges that belong to a real report
-  ("consistent with…"). `Reference/case-content/` was NOT changed, so it still
-  has the old text — re-porting from it would reintroduce the commentary; edit
-  it too, or treat the app as the source, before the next port.
+  ("consistent with…").
+  **Reference synced to match (same day).** `Reference/case-content/` now carries
+  the same exhibit text: all "Investigative relevance" blocks removed from
+  `hollenbourne-cell-site-data.md` (9) and `hollenbourne-procedural-documents.md`
+  (1), the two Finding clauses trimmed, the policy-file/FLO/canvass closers and
+  the Haddad "Relevance to case review" paragraph removed, the Riverbank and
+  Holly Creagan closers shortened, and "Pull phone data" taken out of the
+  mechanics tables with a "Retired" note (also noting EX.05/EX.06 retired).
+  Each of those files has an "Authoring note": exhibit text states what a
+  document says; rationale and "what students should take" live in authoring
+  notes, never in the exhibit. **Deliberately left alone:** the design-rationale
+  prose in the mechanics docs and case bible (pricing logic, "genuine
+  institutional friction", "priced highest deliberately") and the bracketed
+  author notes at the end of transcripts in `hollenbourne-interviews.md` — both
+  are designer-facing, not exhibit text; plus the historical prototypes
+  (`action-economy.jsx`, `evidence-board.jsx`, `prototype-reference/index.html`).
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.

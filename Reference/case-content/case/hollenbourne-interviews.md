@@ -2,6 +2,8 @@
 
 *Every full interview transcript, split out from the main case bible for its own space to work in. The case bible retains a short summary of what each interview establishes, with a pointer here for the full text. Organised chronologically.*
 
+*Authoring note: bracketed italic notes at the end of a transcript explain how a scene is meant to play. They are not part of the exhibit — students are given the transcript only, and draw their own conclusions from it. The Burgess arrest interview (Appendix H) is the verbatim text now on the site.*
+
 ---
 
 ## Appendix A: Full interview transcript — M. Burgess, 16 October 2019
@@ -1023,7 +1025,7 @@ Time concluded: not specified
 
   ---
 
-  *No further action taken on the Mason reference — outside this unit's remit, and nothing formally flags it for the Porterhouse murder team. Swayne's shock is genuine: he never connected the men who approached Mason to Mason's later death, so there was never anything for him to volunteer to anyone else.*
+  *Time concluded: not specified. No further action taken.*
 
 ---
 

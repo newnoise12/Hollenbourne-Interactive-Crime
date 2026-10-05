@@ -2,6 +2,8 @@
 
 *Policy/decision logs, family liaison contact logs, and house-to-house canvass summaries for each case. Same category as the forensic reports and primary interviews — genuine baseline case-file material, available to the whole team from the start of that case's relevant week, not gated behind costed actions. New investigative work students choose to pursue themselves (re-interviews, forensic comparisons, CCTV requests) is what's gated; what the original investigation actually did is not.*
 
+*Authoring note: this file holds exhibit text — what a document says, and nothing else. Rationale for what an exhibit is for, how a scene is meant to play, or what students should take from it belongs in an authoring note (italic, bracketed, or in the mechanics docs) and is never ported into the exhibit itself: students draw their own conclusions. The app's exhibits were brought into line with this on 2026-10-05.*
+
 ---
 
 ## Geoff Mason (2019)
@@ -56,8 +58,6 @@ Following completion of fast-track actions and absence of any substantive new li
 - Neither able to account for his exact movements on 8 October specifically — contact with him in his final weeks was by phone only, roughly weekly, nothing raised in those calls suggested anything was wrong.
 - Both confirm a boiler service was expected around that time but neither aware of the specific date or engineer.
 
-*No lines of enquiry identified from family liaison contact. Ongoing support offered; no further investigative action arising from this contact at this time.*
-
 ---
 
 **HOLLENBOURNE POLICE**
@@ -75,8 +75,6 @@ Of 14 addresses canvassed, 9 residents made contact (5 no reply, follow-up not p
 - One neighbour (No. 9) reports occasionally seeing Mr Mason on the marsh path "most evenings, like clockwork" — consistent with family liaison account.
 - No neighbour reports any unfamiliar persons, vehicles, or disturbances around the relevant period.
 - No neighbour reports any dispute, disturbance, or concern involving Mr Mason at any time.
-
-*No lines of enquiry identified beyond confirmation of the deceased's routine and the previously-established boiler service visit.*
 
 ---
 
@@ -131,8 +129,6 @@ Mr Wooley released on bail pending further enquiries. Investigation to continue 
 - Confirms Susan had recently begun seeing someone new, though states she doesn't know who, or how serious it was — only that Susan had mentioned it to her in the weeks before her death, "excited, like herself again."
 - No knowledge of any other person in Susan's life who might wish her harm.
 
-*Family liaison contact consistent with, and reinforcing, the current primary line of enquiry. No alternative lines of enquiry identified from this contact.*
-
 ---
 
 **HOLLENBOURNE POLICE**
@@ -149,8 +145,6 @@ Of 11 addresses canvassed, 8 residents made contact.
 - Two neighbours independently mention Nigel by name, unprompted, both describing him as having seemed "on edge" or "not himself" in the period after the separation. Neither reports seeing him on the day of the death specifically.
 - One neighbour (No. 12) recalls a van parked outside a nearby address at some point that week — didn't pay it much attention at the time, assumed someone was having work done. Couldn't say which house, or which day, with any confidence.
 - No neighbour reports anything unusual on 6 January specifically.
-
-*No lines of enquiry identified beyond reinforcing existing concerns regarding Nigel Wooley.*
 
 ---
 
@@ -204,7 +198,7 @@ Both individuals released — Mr Swayne on bail pending further enquiries, Mr Ha
 - Attends formal identification. Declines further liaison contact beyond what's legally necessary, stating he "wouldn't know what to tell you" about his brother's life in recent years.
 - No other family members identified or traced.
 
-*Contact concluded at family's request. No lines of enquiry identified from family liaison — none anticipated, given the nature and length of the estrangement.*
+*Contact concluded at family's request. None anticipated, given the nature and length of the estrangement.*
 
 ---
 
@@ -222,8 +216,6 @@ Of 9 addresses canvassed, 6 residents made contact.
 - One resident recalls seeing a man matching Colin Swayne's description walking in the direction of Bamford Street at approximately 8:30pm that evening — consistent with, and already incorporated into, the timeline established in his interview.
 - General resident view of Mr Porterhouse is mixed — several describe him as "always civil," a few more guarded, consistent with awareness of his history. No resident reports any specific dispute or threat involving him directly.
 - No resident reports any unfamiliar vehicles or persons beyond the sighting above.
-
-*No further lines of enquiry identified beyond what is already incorporated into the active investigation.*
 
 ---
 
@@ -261,7 +253,7 @@ Given the case's public profile, a senior pathologist to be assigned to conduct 
 
 ---
 
-*Case remains an active Major Incident investigation at full resourcing as of this file's most recent entry — not scaled back, unlike the other three cases in this set. Disclosure note: no material currently held as unused beyond routine investigative documentation.*
+*Case remains an active Major Incident investigation at full resourcing as of this file's most recent entry. Disclosure note: no material currently held as unused beyond routine investigative documentation.*
 
 ---
 
@@ -277,8 +269,6 @@ Given the case's public profile, a senior pathologist to be assigned to conduct 
 - Confirm she took the bus home from Stratford most weekends after seeing friends, and had done so many times before without incident.
 - Neither parent aware of any dispute, concern, or unfamiliar person in her life. No history of anything similar.
 - Parents have engaged fully and continuously with the investigation, attending every update. Family liaison contact ongoing and expected to continue for the duration of the case.
-
-*No lines of enquiry identified from family liaison beyond confirmation of the deceased's routine and known movements.*
 
 ---
 
@@ -296,8 +286,6 @@ Of 16 addresses canvassed in the immediate area, 12 residents made contact. Addi
 - Several residents confirm Sara was a familiar, well-liked local figure — general character observations only.
 - No resident or respondent to the public appeal reports any unfamiliar person or vehicle in the immediate vicinity of the bus stop or marsh that evening.
 - No information received regarding movements further afield (bus network, town centre, or routes from Featherton/Critchley) — consistent with the canvass scope set out in the Policy File.
-
-*No lines of enquiry identified. Canvass scope and findings consistent with Policy File Decision 5.*
 
 ---
 
@@ -356,10 +344,6 @@ Extraction method: Standard mobile device forensic extraction
 
 A WhatsApp message sent from the deceased's device to a contact saved as "Mum & Dad" at **22:49:07 on 22 May 2025**, reading: *"back in 10"*. GPS metadata attached to the message places the device within the expected range of the bus stop on the southern edge of Boresfield at the time of sending. No further outgoing activity from the device after this timestamp. The device's own local clock is consistent with network time at the point of extraction, giving no reason to doubt the accuracy of the timestamp.
 
-**Investigative relevance**
-
-Primarily useful for timeline construction rather than direct identification of any suspect: establishes with confidence the point at which Sara was both alive and in the immediate vicinity of the bus stop, and narrows the window in which the attack must have taken place to the minutes immediately following. Cross-references cleanly with the bus operator's own boarding timestamp (8:52pm) and the Paget Street doorbell camera sighting (approximately 9:45pm) already on file — all three independently timestamped records are consistent with a single continuous account of the evening, though none of them were compared against each other until this review.
-
 ---
 
 ## Holly Creagan — witness statement, Swayne alibi (case review, 2025)
@@ -386,7 +370,7 @@ Signed: H. Creagan
 
 ---
 
-*No further action taken on this statement alone. Leaves Swayne's whereabouts on the Butt evening genuinely unresolved — neither confirmed nor contradicted — rather than closing the question either way.*
+*No further action taken on this statement alone.*
 
 ---
 
@@ -412,5 +396,3 @@ Signed: H. Creagan
 - Conclusive grounds decision: **positive**, confirmed some months later
 
 ---
-
-*Relevance to case review: this is a formal, positive finding by the Home Office's own competent authority — not a character reference, not a plea in mitigation, an official determination that Haddad was a victim of criminal exploitation as a minor-to-young-adult. Anyone reading his file cold, starting from the 2023 arrest and the "no comment" interview, would reasonably read him as someone with a drugs-adjacent record who won't cooperate. This record inverts that reading entirely, and it was sitting in the system the whole time — nobody thought to pull it until this review. The clearest single document in the case for demonstrating how profiling actually functions: not malice, just nobody connecting a record that already said the opposite of what everyone assumed.*

@@ -2,6 +2,8 @@
 
 *Every piece of content generated across the whole project, organised by when and how it should reach students. Four categories: never distributed, free from day one, free but time-released, and bought with trust points. A few items turned up with no clear existing gating — flagged at the end rather than silently assigned one.*
 
+> **Retired (2026-10-05):** "Pull phone data" (1 pt, EX.33) has been removed from the game, along with the baseline exhibits EX.05 ("AI-drafted report vs. transcript") and EX.06 ("Court transcript excerpt"). Other exhibit numbers are unchanged.
+
 ---
 
 ## Category 0: Never distributed to students
@@ -87,7 +89,7 @@ This is a summary view of the full unlock tree (hollenbourne-unlock-tree.md has 
 
 **General/cross-case:**
 - Re-interview Nigel Wooley, Colin Swayne, Khalid Haddad (general versions)
-- Pull phone data; pull case-prioritisation memo
+- Pull case-prioritisation memo
 
 ---
 

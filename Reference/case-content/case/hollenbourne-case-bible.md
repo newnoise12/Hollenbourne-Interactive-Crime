@@ -191,7 +191,7 @@ These are the threads the institutional-review side of the game should keep surf
 - **Porterhouse (convenient suspect):** county lines is correctly identified as the context, but Swayne — visible, known, poor, previously convicted — absorbs all the suspicion that should have gone toward whoever was actually running the operation above him.
 - **Haddad (profiling as suspect vs. listening as witness):** the clearest structural point in the whole case — treating someone as a suspect because his movements fit a pattern means nobody asks him what he saw.
 - **Butt ("ideal victim"):** why does *this* death trigger the public and institutional response the other three didn't? Worth teaching against Nils Christie's "ideal victim" concept directly — not that the earlier deaths mattered less, but that nobody with power was positioned to demand a response until now.
-- **AI/documentary reliability** (placement still under review, per earlier discussion): if kept, the natural home is wherever AI-drafted reporting can be shown distorting or flattening a real account — e.g. a summarised version of a witness statement that smooths over the very uncertainty that would have mattered.
+- **AI/documentary reliability** (placement still under review, per earlier discussion): if kept, the natural home is wherever AI-drafted reporting can be shown distorting or flattening a real account — e.g. a summarised version of a witness statement that smooths over the very uncertainty that would have mattered. **Retired (2026-10-05):** the baseline exhibits "AI-drafted report vs. transcript" (EX.05) and "Court transcript excerpt" (EX.06) have been removed from the site.
 
 ---
 

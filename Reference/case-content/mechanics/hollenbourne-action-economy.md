@@ -1,6 +1,8 @@
 # Hollenbourne — Action Economy Reference
 
 > **Superseded in part (2026-10-05, evidence gating pass).** Eight prerequisites were added that this document does not show: comparative forensic review ← pathology reports Mason AND Wooley; DNA retest ← Wooley pathology report; high street CCTV ← bus records; Paget Street canvass ← high street CCTV; Hollen Marsh 2019 ANPR sweep ← traffic camera; Featherton 2022 ANPR sweep ← Haddad Marsh Road ANPR check; Nigel and Swayne cell site ← their initial interviews. `lib/actions-catalog.ts` is the source of truth; `npm run check:actions` validates it.
+>
+> **Retired (2026-10-05):** "Pull phone data" (1 pt, EX.33) has been removed from the game, along with the baseline exhibits EX.05 ("AI-drafted report vs. transcript") and EX.06 ("Court transcript excerpt"). Other exhibit numbers are unchanged.
 
 *Everything designed across this project, pulled into one place. Individual student budgets, not team budgets — each student gets their own weekly points, spent on whatever they choose, no approval needed from teammates. The team-shared resource is the evidence pool and case reserve, not the points themselves.*
 
@@ -49,7 +51,6 @@
 | ⚠️ Re-interview Martin Burgess (generic) | 2 | **Retired** — redundant with the interim interview (Appendix L), which already is the low-evidence tier (gated on the tool-mark chain, well before arrest-level evidence). No need for a third, lower tier below that. |
 | Retest DNA — Wooley scene | 2 | |
 | ⚠️ Generic vehicle check — dark 4x4 | 1 | Likely superseded by the Mason movements chain's specific, properly-gated version below — recommend retiring this one |
-| Pull phone data | 1 | |
 | Pull case-prioritisation memo | 2 | |
 | Witness canvas — Boresfield/Featherton | 1 | |
 | Re-interview homeowner after Wooley (never interviewed at the time) | 2 | Cold, unprompted, against the original investigation's focus. New witness, not previously interviewed — no initial-interview gate applies here |
