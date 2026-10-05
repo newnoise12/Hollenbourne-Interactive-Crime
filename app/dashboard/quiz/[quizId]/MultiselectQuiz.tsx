@@ -98,15 +98,20 @@ export default function MultiselectQuiz({
     return (
       <div>
           <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
-            Attempt {attemptsUsed} of {MAX_ATTEMPTS}
+            Attempt {attemptsUsed} of {MAX_ATTEMPTS} &mdash; saved to your record, so it&apos;ll be here whenever you come back.
           </p>
           <SwitchStudentLink studentName={studentName} />
 
-          <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4 mb-6 flex justify-between items-center">
-            <span className="font-mono text-sm text-[#2A2F27]">
-              This attempt&apos;s score: {latestAttempt.correct} / {latestAttempt.total}
-            </span>
-            <span className="font-serif font-semibold text-xl text-[#2A2F27]">trust bonus +{latestAttempt.score}</span>
+          <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4 mb-6">
+            <p className="font-mono text-[11px] uppercase tracking-wide text-[#2F6B4F] font-semibold mb-2 mt-0">
+              ✓ Submitted and saved
+            </p>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-sm text-[#2A2F27]">
+                This attempt&apos;s score: {latestAttempt.correct} / {latestAttempt.total}
+              </span>
+              <span className="font-serif font-semibold text-xl text-[#2A2F27]">trust bonus +{latestAttempt.score}</span>
+            </div>
           </div>
 
           {quiz.passage && (
@@ -153,6 +158,7 @@ export default function MultiselectQuiz({
         <p className="font-mono text-xs text-[#8A8A80] mb-2 mt-0 border-b border-[#A6764A55] pb-4">
           Attempt {attemptsUsed + 1} of {MAX_ATTEMPTS} &mdash; your best score across all attempts is averaged with your
           teammates&apos; to set the team&apos;s trust bonus for Week {quiz.week}.
+          {attemptsUsed > 0 && " Your earlier attempt is already saved and counts — a retry can only improve your best score, never lower it."}
         </p>
         <SwitchStudentLink studentName={studentName} />
 

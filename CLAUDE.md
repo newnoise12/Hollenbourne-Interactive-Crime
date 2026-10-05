@@ -865,6 +865,18 @@ team's overall progress, with buttons that switch tabs programmatically
   back, look for `[ai-grading]` lines in the Railway logs first** — they say
   whether it's 429s (raise the org's limits or lower the queue), truncation,
   or something else.
+- **Quiz persistence was never the problem — visibility was (2026-10-05).**
+  Generic quiz attempts have always been saved per student
+  (`quizAttempts`) and come back as the results view on reload; what was
+  missing was any sign of it, which, alongside the old reveal-isn't-save
+  button, read as "it didn't save". The results view now opens with
+  "✓ Submitted and saved" and "saved to your record, so it'll be here
+  whenever you come back", a retry screen says an earlier attempt is saved
+  and a retry can only raise the best score, and the card header reads
+  "✓ submitted — 3/4 correct (+2)" (or "✓ complete (+3)" on full marks)
+  instead of a bare "best 2/3". Persistence is per *student* (picked via
+  `WhoAreYou`), not per team: a teammate sees their own attempts, and
+  switching name or browser shows that person's, not the other's.
 
 ## Env vars
 

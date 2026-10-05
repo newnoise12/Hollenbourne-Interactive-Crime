@@ -60,7 +60,10 @@ function genericStatus(attempts: GenericQuizAttempt[]): string {
   if (attempts.length === 0) return "not started";
   const best = Math.max(...attempts.map((a) => a.score));
   if (attempts.some(isPerfectAttempt)) return `✓ complete (+${best})`;
-  return `best ${best}/${attempts[0].maxScore}`;
+  // Not perfect yet, but handed in and saved — say so, rather than just a
+  // bare "best 2/3" that reads as unfinished.
+  const top = attempts.reduce((a, b) => (b.score > a.score || (b.score === a.score && b.correct > a.correct) ? b : a));
+  return `✓ submitted — ${top.correct}/${top.total} correct (+${best})`;
 }
 
 // The Week 3 referencing quiz is two stages under one card: only Stage 1 is
