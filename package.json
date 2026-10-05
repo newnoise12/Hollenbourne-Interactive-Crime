@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "check:actions": "tsx scripts/check-action-graph.ts"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.6",

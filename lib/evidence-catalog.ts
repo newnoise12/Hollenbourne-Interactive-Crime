@@ -13,7 +13,7 @@
 // lives in actionLog (for action-unlocked items) and the module-wide
 // current week (db/schema.ts, lib/module-settings.ts).
 
-import { ACTIONS, type ActionItem } from "./actions-catalog";
+import { ACTIONS, type ActionItem, type CaseName, type EvidenceGroup } from "./actions-catalog";
 import { ACTION_EVIDENCE_BODY } from "./action-evidence-bodies";
 
 export type EvidenceType = "statistical" | "visual" | "interview" | "documentary";
@@ -21,7 +21,9 @@ export type EvidenceType = "statistical" | "visual" | "interview" | "documentary
 // The four cases under review, for the corkboard's "filing cabinet" grouping
 // (Reference/case-content/hollenbourne-evidence-board-design.md) — plus
 // "general" for force-wide/cross-case material that isn't any one victim's.
-export type CaseName = "mason" | "wooley" | "porterhouse" | "butt" | "general";
+// Defined in actions-catalog.ts (an action is where its case is set); re-exported
+// so existing imports keep working.
+export type { CaseName } from "./actions-catalog";
 
 // Suspects worth colour-coding per the design brief's own palette (matching
 // the cell-site exhibit filenames in Reference/case-content/visuals/). Most
@@ -41,6 +43,9 @@ export type EvidenceItem = {
   exhibit: string;
   type: EvidenceType;
   case: CaseName;
+  // Which of the evidence page's six "By evidence type" groups this files under.
+  // For an action-derived exhibit this comes from the action itself.
+  group: EvidenceGroup;
   suspect?: Suspect;
   title: string;
   snippet: string;
@@ -105,7 +110,7 @@ export function getEvidenceColor(item: Pick<EvidenceItem, "suspect">): string {
 export function isEvidenceUnlocked(
   item: Pick<EvidenceItem, "unlocksWeek" | "unlockedByActionId">,
   currentWeek: number,
-  completedActionIds: Set<string>
+  completedActionIds: ReadonlySet<string>
 ): boolean {
   const weekOk = !item.unlocksWeek || currentWeek >= item.unlocksWeek;
   const actionOk = !item.unlockedByActionId || completedActionIds.has(item.unlockedByActionId);
@@ -118,6 +123,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.01",
     type: "statistical",
     case: "general",
+    group: "maps",
     title: "Boresfield incident stats, 2015–2025",
     snippet: "Recorded violent incidents by year, with a dip across 2020–21.",
   },
@@ -126,6 +132,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.02",
     type: "visual",
     case: "mason",
+    group: "cameras",
     title: "CCTV still — woodland car park",
     snippet: "Dark 4x4 parked near the tree line around the time of Mason's death.",
   },
@@ -134,6 +141,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.03",
     type: "interview",
     case: "wooley",
+    group: "interviews",
     title: "Neighbour account, Wooley case",
     snippet: "Heavy-set man in a dark puffer jacket, seen entering and leaving the property.",
   },
@@ -142,6 +150,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.04",
     type: "documentary",
     case: "general",
+    group: "records",
     title: "Internal force memo",
     snippet: "Case prioritisation notes.",
     unlocksWeek: 8,
@@ -151,6 +160,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.05",
     type: "documentary",
     case: "general",
+    group: "records",
     title: "AI-drafted report vs. transcript",
     snippet: "Comparison worksheet.",
     unlocksWeek: 5,
@@ -160,6 +170,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.06",
     type: "interview",
     case: "general",
+    group: "records",
     title: "Court transcript excerpt",
     snippet: "Earlier, unrelated case.",
     unlocksWeek: 9,
@@ -175,6 +186,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.07",
     type: "documentary",
     case: "general",
+    group: "records",
     title: "Ferris's opening memo",
     snippet: "DS Ferris sets out, informally, why she thinks four deaths across six years deserve a joined-up look — mixing sound instinct with real error.",
     unlocksWeek: 9,
@@ -200,6 +212,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.08",
     type: "documentary",
     case: "mason",
+    group: "records",
     title: "Victim biography — Geoff Mason",
     snippet: "Widower, retired Critchley cement-plant worker, walked the marsh daily since his wife's death — the habit that put him there at all.",
     unlocksWeek: 3,
@@ -218,6 +231,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.09",
     type: "documentary",
     case: "wooley",
+    group: "records",
     title: "Victim biography — Susan Wooley",
     snippet: "Teaching assistant, church and food-bank volunteer, moved to Hollenbourne alone after her first marriage ended — well-regarded by neighbours and former students alike.",
     unlocksWeek: 3,
@@ -236,6 +250,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.10",
     type: "documentary",
     case: "porterhouse",
+    group: "records",
     title: "Victim biography — Carl Porterhouse",
     snippet: "Deliberately thin: known at the Robin Hood pub, a back injury ended his manual work, financially precarious in his final years.",
     unlocksWeek: 3,
@@ -253,6 +268,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.11",
     type: "documentary",
     case: "butt",
+    group: "records",
     title: "Victim biography — Sara Butt",
     snippet: "British-Pakistani, lifelong Hollenbourne resident, dental student working part-time to help support her parents — the only one of the four who never lived anywhere else.",
     unlocksWeek: 3,
@@ -271,6 +287,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.12",
     type: "documentary",
     case: "butt",
+    group: "records",
     title: "Sara Butt — missing person report",
     snippet: "Filed high-risk from the outset: her last message home was \"back in 10.\" She never arrived.",
     unlocksWeek: 9,
@@ -291,6 +308,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.13",
     type: "visual",
     case: "general",
+    group: "maps",
     title: "Hollenbourne town map",
     snippet: "The marsh, the estates, and the routes between them, laid out end to end.",
     image: "/case-images/hollenbourne-town-map.png",
@@ -307,6 +325,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.14",
     type: "visual",
     case: "general",
+    group: "maps",
     title: "Boresfield street map",
     snippet: "Every named house on the estate marked against the streets that connect them.",
     image: "/case-images/boresfield-street-map.png",
@@ -323,6 +342,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.15",
     type: "statistical",
     case: "general",
+    group: "maps",
     title: "Hollenbourne homicide rate, 2018–2025",
     snippet: "Twenty-four murders in eight years, unevenly spread — none of the four ever the standout case in its own year.",
     body: [
@@ -339,6 +359,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.16",
     type: "documentary",
     case: "mason",
+    group: "records",
     title: "Policy file & canvass summary — Geoff Mason",
     snippet: "Fast-tracked for three weeks, then scaled back to a core team once no clear line of enquiry emerged — a traffic-camera canvass of the approach roads was never authorised at all.",
     unlocksWeek: 9,
@@ -376,6 +397,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.17",
     type: "documentary",
     case: "wooley",
+    group: "records",
     suspect: "nigel",
     title: "Policy file & canvass summary — Susan Wooley",
     snippet: "Investigative resource prioritised toward Nigel Wooley from the first evening; a tradesperson's attendance on a neighbouring street that afternoon is logged only as unused disclosure material.",
@@ -414,6 +436,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.18",
     type: "documentary",
     case: "porterhouse",
+    group: "records",
     suspect: "swayne",
     title: "Policy file & canvass summary — Carl Porterhouse",
     snippet: "County lines set as the investigative frame within two hours; Swayne and Haddad both arrested, both released for insufficient evidence three weeks later.",
@@ -452,6 +475,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     exhibit: "EX.19",
     type: "documentary",
     case: "butt",
+    group: "records",
     title: "Policy file & canvass summary — Sara Butt",
     snippet: "The only one of the four kept at full Major Incident resourcing rather than scaled back — but the canvass scope was deliberately limited to the immediate route home, excluding the wider approach routes into the area.",
     unlocksWeek: 9,
@@ -496,83 +520,77 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
 // types (no separate "forensic" exhibit type exists — forensic findings are
 // filed as "documentary", matching how nothing in EX.01-19 uses a
 // forensic-specific type either).
-const ACTION_EVIDENCE_META: Record<string, { case: CaseName; suspect?: Suspect; type: EvidenceType; image?: string; imageCaption?: string }> = {
-  "pull-interview-burgess-mason": { case: "mason", suspect: "burgess", type: "interview" },
+const ACTION_EVIDENCE_META: Record<string, { suspect?: Suspect; type: EvidenceType; image?: string; imageCaption?: string }> = {
+  "pull-interview-burgess-mason": { suspect: "burgess", type: "interview" },
   "pull-interview-wooley": {
-    case: "wooley",
     suspect: "nigel",
     type: "interview",
     image: "/case-images/cctv-hollen-marsh-footpath-2022.jpg",
     imageCaption: "CAM 2 — Hollen Marsh Footpath, 6 January 2022, 21:47:03: a man walking a dog. This is the footage put to Nigel Wooley in the interview below.",
   },
-  "pull-interview-haddad": { case: "porterhouse", suspect: "haddad", type: "interview" },
-  "pull-interview-swayne": { case: "porterhouse", suspect: "swayne", type: "interview" },
-  "forensic-report-mason": { case: "mason", type: "documentary" },
-  "forensic-report-wooley": { case: "wooley", type: "documentary" },
-  "forensic-report-porterhouse": { case: "porterhouse", suspect: "swayne", type: "documentary" },
-  "forensic-report-butt-initial": { case: "butt", type: "documentary" },
-  "forensic-report-butt-followup": { case: "butt", type: "documentary" },
-  "reint-wooley": { case: "wooley", suspect: "nigel", type: "interview" },
-  "reint-swayne": { case: "porterhouse", suspect: "swayne", type: "interview" },
-  "reint-haddad": { case: "porterhouse", suspect: "haddad", type: "interview" },
-  "forensic-dna": { case: "wooley", type: "documentary" },
-  "phone-data": { case: "general", type: "documentary" },
-  "doc-memo": { case: "mason", type: "documentary" },
-  canvas: { case: "general", type: "interview" },
-  "homeowner-witness-wooley": { case: "wooley", suspect: "burgess", type: "interview" },
-  "reint-nigel-butt-evening": { case: "butt", suspect: "nigel", type: "interview" },
-  "holly-creagan-statement": { case: "porterhouse", suspect: "swayne", type: "interview" },
-  "phone-data-butt": { case: "butt", type: "documentary" },
+  "pull-interview-haddad": { suspect: "haddad", type: "interview" },
+  "pull-interview-swayne": { suspect: "swayne", type: "interview" },
+  "forensic-report-mason": { type: "documentary" },
+  "forensic-report-wooley": { type: "documentary" },
+  "forensic-report-porterhouse": { suspect: "swayne", type: "documentary" },
+  "forensic-report-butt-initial": { type: "documentary" },
+  "forensic-report-butt-followup": { type: "documentary" },
+  "reint-wooley": { suspect: "nigel", type: "interview" },
+  "reint-swayne": { suspect: "swayne", type: "interview" },
+  "reint-haddad": { suspect: "haddad", type: "interview" },
+  "forensic-dna": { type: "documentary" },
+  "phone-data": { type: "documentary" },
+  "doc-memo": { type: "documentary" },
+  canvas: { type: "interview" },
+  "homeowner-witness-wooley": { suspect: "burgess", type: "interview" },
+  "reint-nigel-butt-evening": { suspect: "nigel", type: "interview" },
+  "holly-creagan-statement": { suspect: "swayne", type: "interview" },
+  "phone-data-butt": { type: "documentary" },
   "traffic-cam-hollen-marsh": {
-    case: "mason",
     type: "visual",
     image: "/case-images/traffic-cam-marsh-car-park-2019.jpg",
     imageCaption: "CAM 3 — Marsh Car Park Access, 8 October 2019: a dark 4x4 entering at 21:14:03 and leaving at 21:52:17.",
   },
   "canvass-doorbell-mason": {
-    case: "mason",
     type: "visual",
     image: "/case-images/ring-doorbell-mason-2019.jpg",
     imageCaption: "Doorbell camera, residential street near the Hollen Marsh car park, 8 October 2019, 21:47:03: a heavy-set man on foot, carrying something bulky.",
   },
-  "vehicle-reg-lookup": { case: "mason", suspect: "burgess", type: "documentary" },
-  "toolmark-review-mason-wooley": { case: "general", type: "documentary" },
-  "property-search-burgess": { case: "general", suspect: "burgess", type: "documentary" },
-  "property-search-wooley": { case: "general", suspect: "nigel", type: "documentary" },
-  "property-search-swayne": { case: "general", suspect: "swayne", type: "documentary" },
-  "interim-interview-burgess": { case: "general", suspect: "burgess", type: "interview" },
+  "vehicle-reg-lookup": { suspect: "burgess", type: "documentary" },
+  "toolmark-review-mason-wooley": { type: "documentary" },
+  "property-search-burgess": { suspect: "burgess", type: "documentary" },
+  "property-search-wooley": { suspect: "nigel", type: "documentary" },
+  "property-search-swayne": { suspect: "swayne", type: "documentary" },
+  "interim-interview-burgess": { suspect: "burgess", type: "interview" },
   "bus-cctv-butt": {
-    case: "butt",
     type: "visual",
     image: "/case-images/butt-bus-interior-2025.jpg",
     imageCaption: "Bus 102, rear interior, 22 May 2025, 20:52:16.",
   },
   "highstreet-cctv-butt": {
-    case: "butt",
     type: "visual",
     image: "/case-images/butt-high-street-2025.jpg",
     imageCaption: "Hollenbourne High Street, Cam 04, 22 May 2025, 21:38:27.",
   },
   "doorbell-paget-street-butt": {
-    case: "butt",
     type: "visual",
     image: "/case-images/butt-paget-street-2025.jpg",
     imageCaption: "Paget Street, front-door camera, 22 May 2025, 21:45:03.",
   },
-  "endgame-arrest-burgess-butt": { case: "butt", suspect: "burgess", type: "interview" },
-  "haddad-wooley-crossref": { case: "wooley", suspect: "haddad", type: "documentary" },
-  "haddad-wooley-further-interview": { case: "wooley", suspect: "haddad", type: "interview" },
-  "cellsite-burgess-wooley": { case: "wooley", suspect: "burgess", type: "documentary", image: "/case-images/cellsite-burgess-wooley.png" },
-  "cellsite-burgess-mason": { case: "mason", suspect: "burgess", type: "documentary", image: "/case-images/cellsite-burgess-mason.png" },
-  "cellsite-burgess-butt": { case: "butt", suspect: "burgess", type: "documentary", image: "/case-images/cellsite-burgess-butt.png" },
-  "cellsite-nigel-butt": { case: "butt", suspect: "nigel", type: "documentary", image: "/case-images/cellsite-nigel-butt.png" },
-  "cellsite-swayne-porterhouse": { case: "porterhouse", suspect: "swayne", type: "documentary", image: "/case-images/cellsite-swayne-porterhouse.png" },
-  "haddad-record-summary": { case: "porterhouse", suspect: "haddad", type: "documentary" },
-  "riverbank-liaison-swayne": { case: "porterhouse", suspect: "swayne", type: "documentary" },
-  "anpr-burgess-vehicle-history": { case: "mason", suspect: "burgess", type: "documentary" },
-  "anpr-sweep-hollen-marsh-2019": { case: "mason", suspect: "burgess", type: "documentary" },
-  "anpr-haddad-marsh-road": { case: "wooley", suspect: "haddad", type: "documentary" },
-  "anpr-sweep-featherton-2022": { case: "wooley", suspect: "haddad", type: "documentary" },
+  "endgame-arrest-burgess-butt": { suspect: "burgess", type: "interview" },
+  "haddad-wooley-crossref": { suspect: "haddad", type: "documentary" },
+  "haddad-wooley-further-interview": { suspect: "haddad", type: "interview" },
+  "cellsite-burgess-wooley": { suspect: "burgess", type: "documentary", image: "/case-images/cellsite-burgess-wooley.png" },
+  "cellsite-burgess-mason": { suspect: "burgess", type: "documentary", image: "/case-images/cellsite-burgess-mason.png" },
+  "cellsite-burgess-butt": { suspect: "burgess", type: "documentary", image: "/case-images/cellsite-burgess-butt.png" },
+  "cellsite-nigel-butt": { suspect: "nigel", type: "documentary", image: "/case-images/cellsite-nigel-butt.png" },
+  "cellsite-swayne-porterhouse": { suspect: "swayne", type: "documentary", image: "/case-images/cellsite-swayne-porterhouse.png" },
+  "haddad-record-summary": { suspect: "haddad", type: "documentary" },
+  "riverbank-liaison-swayne": { suspect: "swayne", type: "documentary" },
+  "anpr-burgess-vehicle-history": { suspect: "burgess", type: "documentary" },
+  "anpr-sweep-hollen-marsh-2019": { suspect: "burgess", type: "documentary" },
+  "anpr-haddad-marsh-road": { suspect: "haddad", type: "documentary" },
+  "anpr-sweep-featherton-2022": { suspect: "haddad", type: "documentary" },
 };
 
 /** One exhibit per action, reusing its own outcome text — see the module comment above. */
@@ -584,7 +602,8 @@ function buildActionEvidence(): EvidenceItem[] {
       id: `ev-${action.id}`,
       exhibit: `EX.${20 + i}`,
       type: meta.type,
-      case: meta.case,
+      case: action.case,
+      group: action.group,
       suspect: meta.suspect,
       title: action.label,
       snippet: action.description,

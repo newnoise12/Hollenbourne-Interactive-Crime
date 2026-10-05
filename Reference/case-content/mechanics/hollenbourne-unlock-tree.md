@@ -1,5 +1,7 @@
 # Hollenbourne — The Unlock Tree
 
+> **Superseded in part (2026-10-05, evidence gating pass).** Eight prerequisites were added that this document does not show: comparative forensic review ← pathology reports Mason AND Wooley; DNA retest ← Wooley pathology report; high street CCTV ← bus records; Paget Street canvass ← high street CCTV; Hollen Marsh 2019 ANPR sweep ← traffic camera; Featherton 2022 ANPR sweep ← Haddad Marsh Road ANPR check; Nigel and Swayne cell site ← their initial interviews. `lib/actions-catalog.ts` is the source of truth; `npm run check:actions` validates it.
+
 *Every costed action in the game, pulled from across the action economy document into one place, organised by actual dependency rather than by which narrative thread it belongs to. This is the structure a "prerequisite gating" system needs to be built against. Three real inconsistencies turned up while consolidating — flagged inline, resolved with a reasonable default, but worth you confirming rather than treating as settled.*
 
 ---
