@@ -838,6 +838,33 @@ team's overall progress, with buttons that switch tabs programmatically
   touched the trust bonus; the wording now says so in both the Stage 1 intro
   and the Stage 2 intro, and the Week 3 card header shows both ("Stage 1: …
   · Stage 2: n/3 submitted").
+- **"Check my reference" kept erroring (2026-10-05) — two causes in
+  `lib/anthropic-grading.ts`, both fixed.** Reproduced by calling the API
+  directly with the production prompt, so the numbers are real: (1)
+  **Rate limiting, the main one.** The org's API key caps *concurrent*
+  requests (it tripped at roughly 25 in flight: "Number of concurrent
+  requests across all models has exceeded your organization's limit" — a
+  429). A lab of students pressing check together exceeds that, and the old
+  retry fired instantly so it was rejected too (5 of 30 simultaneous calls
+  failed). Calls now queue behind a process-level limit of 10
+  (`MAX_CONCURRENT_CALLS` — fine because it's one Railway instance; a second
+  instance would need the limit lowered or shared), and a 429/5xx/timeout is
+  retried with back-off honouring `Retry-After`. (2) **Truncation.** The
+  grader asked for `max_tokens: 1024`, and reasoning + JSON ran past it
+  about 1 call in 20 on *wrong* answers (which need longer notes — the ones
+  students resubmit most), giving cut-off JSON. Stage 2 now asks for 4096,
+  and the helper detects `stop_reason: "max_tokens"` and retries with double
+  the budget. Also: a 120s fetch timeout, non-retryable errors (bad key or
+  request) fail immediately instead of retrying, every failed attempt is
+  logged as `[ai-grading] attempt n/N failed: <real reason>`, and
+  `GradingError.busy` lets the route tell students "the service is busy, press
+  check again" rather than a generic error. Stage 2 makes up to 4 attempts
+  (its calls take seconds); Mock CW2 keeps the default 2 because its calls
+  take 30–60s. After the fix 30 simultaneous checks all succeeded (slowest
+  ~31s, from queueing); a single check is a few seconds. **If errors come
+  back, look for `[ai-grading]` lines in the Railway logs first** — they say
+  whether it's 429s (raise the org's limits or lower the queue), truncation,
+  or something else.
 
 ## Env vars
 

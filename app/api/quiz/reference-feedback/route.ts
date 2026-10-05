@@ -4,7 +4,7 @@ import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME, STUDENT_COOKIE_NAME } from "@/lib/session-cookie";
 import { getStudentById } from "@/lib/students";
 import { getReferenceTask } from "@/lib/reference-tasks";
-import { callClaudeForJsonWithRetry } from "@/lib/anthropic-grading";
+import { callClaudeForJsonWithRetry, GradingError } from "@/lib/anthropic-grading";
 import { ReferencePracticeError, saveCheck, submitTask } from "@/lib/reference-practice";
 
 // Week 3 Stage 2's AI-graded practice feedback — see
@@ -27,6 +27,8 @@ type GradingResult = {
   overall: "correct" | "mostly_correct" | "needs_work";
   summary: string;
 };
+
+const REFERENCE_MAX_TOKENS = 4096;
 
 const ELEMENT_KEYS = ["author", "year", "title", "publication_details", "access_details"] as const;
 const STATUSES: ElementStatus[] = ["correct", "flawed", "missing", "not_applicable"];
@@ -117,10 +119,20 @@ export async function POST(req: NextRequest) {
   // One retry on failure, per the technical brief — this is a low-volume,
   // asynchronous practice tool, not something that needs a queue.
   try {
-    const result = await callClaudeForJsonWithRetry(prompt, isValidGradingResult);
+    // 4096, not the 1024 this used to ask for: the reasoning plus the JSON ran
+    // past 1024 on weaker answers (the ones students resubmit most) and came
+    // back cut off. Output is only billed as used. Four attempts because
+    // these calls are quick and a busy API is worth waiting out.
+    const result = await callClaudeForJsonWithRetry(prompt, isValidGradingResult, REFERENCE_MAX_TOKENS, undefined, 4);
     const draft = await saveCheck(student.id, taskId, text, result);
     return NextResponse.json({ draft });
-  } catch {
+  } catch (e) {
+    if (e instanceof GradingError && e.busy) {
+      return NextResponse.json(
+        { error: "The feedback service is busy right now — wait a few seconds and press check again. Your answer is still in the box." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: "Couldn't get feedback right now — please try again." }, { status: 502 });
   }
 }
