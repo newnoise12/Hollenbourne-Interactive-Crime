@@ -47,7 +47,6 @@
 | ⚠️ Re-interview Martin Burgess (generic) | 2 | **Retired** — redundant with the interim interview (Appendix L), which already is the low-evidence tier (gated on the tool-mark chain, well before arrest-level evidence). No need for a third, lower tier below that. |
 | Retest DNA — Wooley scene | 2 | |
 | ⚠️ Generic vehicle check — dark 4x4 | 1 | Likely superseded by the Mason movements chain's specific, properly-gated version below — recommend retiring this one |
-| ⚠️ Chase CCTV — Hollen Marsh car park | 1 | Possibly redundant with the newer chains — worth checking against them before keeping both |
 | Pull phone data | 1 | |
 | Pull case-prioritisation memo | 2 | |
 | Witness canvas — Boresfield/Featherton | 1 | |

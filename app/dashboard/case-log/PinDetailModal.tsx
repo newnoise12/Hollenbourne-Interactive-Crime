@@ -38,7 +38,7 @@ export default function PinDetailModal({
 
         {evidence.image && (
           <div className="mt-3">
-            <ExhibitImage src={evidence.image} alt={evidence.title} />
+            <ExhibitImage src={evidence.image} alt={evidence.title} caption={evidence.imageCaption} />
           </div>
         )}
 

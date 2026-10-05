@@ -88,7 +88,7 @@ These need no other action first. Some carry a nominal "gated behind X already b
 The source document flags two early, generic actions as likely superseded and recommends retiring them:
 
 - ⚠️ Generic vehicle check — dark 4x4 (cost 1) — superseded by the properly-gated Mason movements chain (traffic camera → vehicle registration)
-- ⚠️ Chase CCTV — Hollen Marsh car park (cost 1) — possibly redundant with the newer, more specific chains
+- ⚠️ Chase CCTV — Hollen Marsh car park (cost 1) — **retired (2026-10-05)**: it duplicated the now-built Mason traffic camera exhibit, and has been removed from the app
 
 **Recommendation: retire both.** Keeping a cheap, ungated shortcut sitting alongside a properly-gated chain that reaches the same evidence undermines the whole point of the gating — a team would just take the cheap route. This is a genuine design decision rather than a consolidation fix, though, so flagging it here rather than just removing them.
 

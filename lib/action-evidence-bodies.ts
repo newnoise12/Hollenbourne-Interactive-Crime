@@ -94,7 +94,7 @@ export const ACTION_EVIDENCE_BODY: Record<string, EvidenceBodySection[]> = {
         "FERRIS: You were convicted of stalking her last year and given a suspended sentence with a restraining order. Can you talk me through that?",
         "WOOLEY: [defensive] That got blown up a lot more than it needed to be, if I'm honest. I sent some messages, I turned up a couple of times because I wanted to talk to her properly, that's all it ever was. Court gave me a suspended sentence, didn't they — not prison. That tells you something about how serious it actually was, doesn't it.",
         "FERRIS: Can you talk me through your evening on the 6th of January? From when you got home.",
-        "WOOLEY: Yeah, so — got in from work about five, sorted some dinner, had that about six. Watched a bit of telly, football was on I think. Didn't take Baxter out again that evening — he'd already had a walk earlier, over the rec. Just stayed in, really. Bed about eleven.",
+        "WOOLEY: Yeah, so — got in from work about five, sorted some dinner, had that about six. Watched a bit of telly, football was on I think. Didn't take Missy out again that evening — she'd already had a walk earlier, over the rec. Just stayed in, really. Bed about eleven.",
         "FERRIS: So you didn't leave the house at all that evening?",
         "WOOLEY: No. Not that I remember, no.",
         "FERRIS: Your phone was at your home address until about quarter past nine, and then nothing for a couple of hours. Where was it?",
@@ -387,7 +387,7 @@ export const ACTION_EVIDENCE_BODY: Record<string, EvidenceBodySection[]> = {
         "FERRIS: No Nigel, we're just trying to rule you out and to see if you know anything. We know you were in the area at a time that overlaps with her going missing, so I'm just wondering if you saw anything or can tell me anything more about that night.",
         "WOOLEY: I don't understand this. I know you have to do your job and I understand why you pulled me in before. I didn't give the best account of myself and I regret that. But what on earth do you want from me now. I have enough shit from people who still think I killed Susan, now I'm being painted as some serial killer. I didn't do it. I walked the dog and went home.",
         "FERRIS: Nigel, we just need your honest account. We are not charging you with anything, and you know that you don't have to answer and can leave at any time. Are you sure that you went to the marshes and came straight back?",
-        "WOOLEY: Yes, I'm sure. I didn't realise I was a suspect in a murder case! I went out around 6 or 7. It could have been 7, when it's milder out I leave it a bit later sometimes and I think that was quite a mild evening. That's all I remember. I didn't see anyone, I walked my normal route from Featherton to the marshes, walked Baxter, and came home. You can verify that with the concierge.",
+        "WOOLEY: Yes, I'm sure. I didn't realise I was a suspect in a murder case! I went out around 6 or 7. It could have been 7, when it's milder out I leave it a bit later sometimes and I think that was quite a mild evening. That's all I remember. I didn't see anyone, I walked my normal route from Featherton to the marshes, walked Missy, and came home. You can verify that with the concierge.",
         "FERRIS: Did you know Sara Butt at all? She worked in the Piazza, you wouldn't have seen her there at all?",
         "WOOLEY: No. Not to my knowledge.",
         "FERRIS: Ok, thank you Nigel. We will be able to verify all that. If there's nothing else you want to add to your account then we can leave it there. If you remember anything else you have my contact details, ok?",
@@ -618,7 +618,7 @@ export const ACTION_EVIDENCE_BODY: Record<string, EvidenceBodySection[]> = {
     {
       heading: "ANPR data request — case review",
       paragraphs: [
-        "Vehicle: [registration], registered to Patricia Burgess. Period requested: 1 October 2019 – 31 May 2025 (spanning all three relevant dates).",
+        "Vehicle: KN58 TVP (dark 4x4), registered to Patricia Burgess. Period requested: 1 October 2019 – 31 May 2025 (spanning all three relevant dates).",
         "Finding: The vehicle is picked up by ANPR cameras on the approach roads to Hollen Marsh at 9:11pm and 9:54pm on 8 October 2019 — independently corroborating the local authority traffic camera sighting already on file (9:14pm/9:52pm), two separate camera networks reaching the same conclusion without ever having been cross-checked against each other until this review. The same plate returns no ANPR hits in the vicinity of Susan Wooley's address on 6 January 2022, or near Hollen Marsh or the Boresfield/Critchley area on 22 May 2025.",
         "Investigative relevance: The Mason-night result is confirming, not new. The absence of any hit on the other two dates is the genuinely useful finding here: it's consistent with, and corroborates, Burgess's already-established methods for those two killings — walking from a neighbouring job for Wooley, bus and on foot for Butt — rather than driving. A negative result from a properly targeted search is still evidence; it closes off an alternative theory (that he drove on those nights too) as cleanly as a positive hit confirms one.",
       ],

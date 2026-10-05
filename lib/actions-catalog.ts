@@ -356,7 +356,7 @@ export const ACTIONS: ActionItem[] = [
     description: "Cross-reference the plate read from the traffic-camera footage against DVLA records.",
     cost: 1,
     prerequisiteActionIds: ["traffic-cam-hollen-marsh"],
-    outcome: "Registered keeper: Mrs [P.] Burgess. No other flags on file.",
+    outcome: "Registration KN58 TVP — registered keeper: Mrs [P.] Burgess. No other flags on file.",
   },
 
   // ---------------------------------------------------------------------
@@ -438,7 +438,7 @@ export const ACTIONS: ActionItem[] = [
     shortLabel: "high street CCTV",
     description: "Follow the same evening's movements onto the high street.",
     cost: 1,
-    outcome: "A heavy-set man matching the earlier description is briefly visible on high street CCTV shortly after 10pm, before leaving the frame down a side street rather than continuing toward the town centre or the piazza.",
+    outcome: "A heavy-set man matching the earlier description is briefly visible on high street CCTV at 9:38pm, before leaving the frame down a side street rather than continuing toward the town centre or the piazza.",
   },
   {
     id: "doorbell-paget-street-butt",

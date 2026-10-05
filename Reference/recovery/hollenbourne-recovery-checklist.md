@@ -110,7 +110,7 @@
 
 - [ ] "Harrison Road," not "Harrison Street" (both the interim interview and established geography)
 - [ ] "Paget Street, North Hollenbourne," not "Featherton doorbell canvass" (renamed throughout); Butt-night bus boarding is **8:52pm**, not 9:52pm (the Mason-night 9:52pm is a separate, correct, unrelated coincidence — do not "fix" that one)
-- [ ] Nigel's dog is **Baxter**, not Maxwell, consistently
+- [ ] Nigel's dog is **Missy** (female) consistently — renamed from Baxter on 2026-10-01; "Maxwell" in any older transcript is stale
 - [ ] **DS Ferris** conducts interviews throughout — the separately-published prototype artifact has a "DS Fenwick" for the Porterhouse arrests, which was flagged as a discrepancy to resolve, defaulting to Ferris unless deliberately overridden
 
 ---

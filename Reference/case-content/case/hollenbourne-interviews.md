@@ -188,7 +188,7 @@ Time commenced: 09:20
 
 **DS FERRIS:** Can you talk me through your evening on the 6th of January? From when you got home.
 
-**WOOLEY:** Yeah, so — got in from work about five, sorted some dinner, had that about six. Watched a bit of telly, football was on I think, something like that. Didn't take Baxter out again that evening — he'd already had a walk earlier, over the rec. Just stayed in, really. Bed about eleven.
+**WOOLEY:** Yeah, so — got in from work about five, sorted some dinner, had that about six. Watched a bit of telly, football was on I think, something like that. Didn't take Missy out again that evening — she'd already had a walk earlier, over the rec. Just stayed in, really. Bed about eleven.
 
 **DS FERRIS:** So you didn't leave the house at all that evening?
 
@@ -1531,7 +1531,7 @@ Time commenced: 14:05
 
 **DS FERRIS:** Ok, you said you didn't remember anything earlier.
 
-**WOOLEY:** I didn't realise I was a suspect in a murder case! I went out around 6 or 7. It could have been 7, when it's milder out I leave it a bit later sometimes and I think that was quite a mild evening. That's all I remember. I didn't see anyone, I walked my normal route from Featherton to the marshes, walked Baxter, and came home. You can verify that with the concierge.
+**WOOLEY:** I didn't realise I was a suspect in a murder case! I went out around 6 or 7. It could have been 7, when it's milder out I leave it a bit later sometimes and I think that was quite a mild evening. That's all I remember. I didn't see anyone, I walked my normal route from Featherton to the marshes, walked Missy, and came home. You can verify that with the concierge.
 
 **DS FERRIS:** Did you know Sara Butt at all?
 

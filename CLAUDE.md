@@ -931,6 +931,33 @@ on the doc itself at creation time — check there for the answer before
 assuming either way. The `Reference/` file-drop convention documented above
 still works as a fallback; it's just no longer the primary path.
 
+**First inbox drop ported (2026-10-05)** — worth knowing what that process
+actually involved, since the next one will look the same. The doc's own
+"Applied to source documents" list described edits made in the user's
+*other* chat's copies of the case files, not ours, so each one had to be
+re-applied to `Reference/` as well as the app. Done: Burgess's dark 4x4 is
+**KN58 TVP** (the ANPR exhibit in `lib/action-evidence-bodies.ts`, the
+`vehicle-reg-lookup` outcome, and `hollenbourne-cell-site-data.md` — Haddad's
+`[registration]` placeholder is deliberately still a placeholder); the high
+street CCTV sighting is **9:38pm**, not "shortly after 10pm"; Nigel's dog is
+**Missy** (female, so "she'd", not "he'd"), not Baxter; the "Chase CCTV —
+Hollen Marsh car park" action was already absent from the app (it had been
+retired with the other generic placeholders) and was removed from the two
+mechanics docs. Four approved exhibit images were added under
+`public/case-images/` as JPEGs: the Mason traffic-camera stills
+(`traffic-cam-hollen-marsh`), the Mason doorbell still (`canvass-doorbell-mason`),
+and the Butt bus / high street / Paget Street frames. **Two placement calls
+that were mine, not the user's:** the Butt image arrived as one three-panel
+composite, but those three actions are independent and priced separately
+(2/1/2), so showing the whole set on each would have given away the other
+two for the price of one — it was cropped into one panel per action; and
+the Wooley footpath CCTV (21:47:03, 6 Jan 2022) has no action of its own, so
+it sits on the Wooley initial-interview exhibit, where Ferris puts that very
+footage to Nigel. `EvidenceItem` gained an optional `imageCaption` (shown
+under the image) to carry what/when for each. The doc's design notes about
+each image (e.g. "coat kept deliberately ambiguous") were not copied into
+captions — they're notes for the authors, not for students.
+
 ## Decisions worth knowing (so they don't get re-litigated)
 
 - **Drizzle, not Prisma**: Prisma needs to download a query-engine binary

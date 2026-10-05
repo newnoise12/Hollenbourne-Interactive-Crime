@@ -128,7 +128,7 @@ Deliberately, no cell site report has been built for Haddad. His movements for b
 **HOLLENBOURNE POLICE**
 **ANPR data request — case review**
 
-Vehicle: [registration], registered to Patricia Burgess
+Vehicle: KN58 TVP, registered to Patricia Burgess
 Requested by: Case review team
 Period requested: 1 October 2019 – 31 May 2025 (spanning all three relevant dates)
 

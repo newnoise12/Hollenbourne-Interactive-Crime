@@ -58,6 +58,9 @@ export type EvidenceItem = {
   // Only a handful of exhibits have a real image behind them (the two case
   // maps, and the five cell-site exhibits); most are text-only documents.
   image?: string;
+  // One line shown under the image: what it is and when — taken from the
+  // exhibit's own description, never from design notes about it.
+  imageCaption?: string;
 };
 
 export const TYPE_META: Record<EvidenceType, { label: string; color: string }> = {
@@ -493,9 +496,15 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
 // types (no separate "forensic" exhibit type exists — forensic findings are
 // filed as "documentary", matching how nothing in EX.01-19 uses a
 // forensic-specific type either).
-const ACTION_EVIDENCE_META: Record<string, { case: CaseName; suspect?: Suspect; type: EvidenceType; image?: string }> = {
+const ACTION_EVIDENCE_META: Record<string, { case: CaseName; suspect?: Suspect; type: EvidenceType; image?: string; imageCaption?: string }> = {
   "pull-interview-burgess-mason": { case: "mason", suspect: "burgess", type: "interview" },
-  "pull-interview-wooley": { case: "wooley", suspect: "nigel", type: "interview" },
+  "pull-interview-wooley": {
+    case: "wooley",
+    suspect: "nigel",
+    type: "interview",
+    image: "/case-images/cctv-hollen-marsh-footpath-2022.jpg",
+    imageCaption: "CAM 2 — Hollen Marsh Footpath, 6 January 2022, 21:47:03: a man walking a dog. This is the footage put to Nigel Wooley in the interview below.",
+  },
   "pull-interview-haddad": { case: "porterhouse", suspect: "haddad", type: "interview" },
   "pull-interview-swayne": { case: "porterhouse", suspect: "swayne", type: "interview" },
   "forensic-report-mason": { case: "mason", type: "documentary" },
@@ -514,17 +523,42 @@ const ACTION_EVIDENCE_META: Record<string, { case: CaseName; suspect?: Suspect; 
   "reint-nigel-butt-evening": { case: "butt", suspect: "nigel", type: "interview" },
   "holly-creagan-statement": { case: "porterhouse", suspect: "swayne", type: "interview" },
   "phone-data-butt": { case: "butt", type: "documentary" },
-  "traffic-cam-hollen-marsh": { case: "mason", type: "visual" },
-  "canvass-doorbell-mason": { case: "mason", type: "visual" },
+  "traffic-cam-hollen-marsh": {
+    case: "mason",
+    type: "visual",
+    image: "/case-images/traffic-cam-marsh-car-park-2019.jpg",
+    imageCaption: "CAM 3 — Marsh Car Park Access, 8 October 2019: a dark 4x4 entering at 21:14:03 and leaving at 21:52:17.",
+  },
+  "canvass-doorbell-mason": {
+    case: "mason",
+    type: "visual",
+    image: "/case-images/ring-doorbell-mason-2019.jpg",
+    imageCaption: "Doorbell camera, residential street near the Hollen Marsh car park, 8 October 2019, 21:47:03: a heavy-set man on foot, carrying something bulky.",
+  },
   "vehicle-reg-lookup": { case: "mason", suspect: "burgess", type: "documentary" },
   "toolmark-review-mason-wooley": { case: "general", type: "documentary" },
   "property-search-burgess": { case: "general", suspect: "burgess", type: "documentary" },
   "property-search-wooley": { case: "general", suspect: "nigel", type: "documentary" },
   "property-search-swayne": { case: "general", suspect: "swayne", type: "documentary" },
   "interim-interview-burgess": { case: "general", suspect: "burgess", type: "interview" },
-  "bus-cctv-butt": { case: "butt", type: "visual" },
-  "highstreet-cctv-butt": { case: "butt", type: "visual" },
-  "doorbell-paget-street-butt": { case: "butt", type: "visual" },
+  "bus-cctv-butt": {
+    case: "butt",
+    type: "visual",
+    image: "/case-images/butt-bus-interior-2025.jpg",
+    imageCaption: "Bus 102, rear interior, 22 May 2025, 20:52:16.",
+  },
+  "highstreet-cctv-butt": {
+    case: "butt",
+    type: "visual",
+    image: "/case-images/butt-high-street-2025.jpg",
+    imageCaption: "Hollenbourne High Street, Cam 04, 22 May 2025, 21:38:27.",
+  },
+  "doorbell-paget-street-butt": {
+    case: "butt",
+    type: "visual",
+    image: "/case-images/butt-paget-street-2025.jpg",
+    imageCaption: "Paget Street, front-door camera, 22 May 2025, 21:45:03.",
+  },
   "endgame-arrest-burgess-butt": { case: "butt", suspect: "burgess", type: "interview" },
   "haddad-wooley-crossref": { case: "wooley", suspect: "haddad", type: "documentary" },
   "haddad-wooley-further-interview": { case: "wooley", suspect: "haddad", type: "interview" },
@@ -556,6 +590,7 @@ function buildActionEvidence(): EvidenceItem[] {
       snippet: action.description,
       unlockedByActionId: action.id,
       image: meta.image,
+      imageCaption: meta.imageCaption,
       // A handful of actions (mostly interviews, cell-site/ANPR reports, and
       // a few witness statements) have a genuine fuller source document —
       // see lib/action-evidence-bodies.ts. Everything else falls back to

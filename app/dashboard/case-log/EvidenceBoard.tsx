@@ -88,7 +88,7 @@ export function ImageLightbox({ src, alt, onClose }: { src: string; alt: string;
 
 // A clickable exhibit image — thumbnail-sized inside the reader panel, opens
 // the same image at genuine full size in an ImageLightbox on click.
-export function ExhibitImage({ src, alt }: { src: string; alt: string }) {
+export function ExhibitImage({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -96,6 +96,7 @@ export function ExhibitImage({ src, alt }: { src: string; alt: string }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} className="max-w-full border border-[#A6764A]" />
       </button>
+      {caption && <p className="font-mono text-[11px] text-[#5B5A4E] leading-relaxed mb-1 mt-0">{caption}</p>}
       <p className="font-mono text-[10px] text-[#8A8A80] mb-3 mt-0">Click the image to view it full size.</p>
       {open && <ImageLightbox src={src} alt={alt} onClose={() => setOpen(false)} />}
     </>
@@ -211,7 +212,7 @@ function ExhibitDetail({
 
       <p className="font-mono text-[13px] text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{item.snippet}</p>
 
-      {item.image && <ExhibitImage src={item.image} alt={item.title} />}
+      {item.image && <ExhibitImage src={item.image} alt={item.title} caption={item.imageCaption} />}
 
       <FullTextReader
         sections={item.body ?? [{ paragraphs: ["No fuller record exists on file for this exhibit beyond the summary above."] }]}
