@@ -750,6 +750,62 @@ team's overall progress, with buttons that switch tabs programmatically
     evaluation already in the app (prompt wording adapted from "guidance"
     to "evaluation"). Swapping is a content-only edit in
     `lib/cw2-items.ts` and `lib/cw2-grading.ts`.
+- **Evidence gating and the two-view evidence page (2026-10-05, branch
+  `evidence-gating`, checkpoint tag `pre-evidence-gating`).** Supersedes the
+  older "locked actions stay visible, greyed, with a requires: line" behaviour
+  described above. (1) **One source of truth**: `ActionItem` now carries
+  `case`, `group` (one of six evidence-type groups, `EVIDENCE_GROUP_META`) and
+  optional `alsoRelatesTo`; `lib/evidence-catalog.ts` derives case/group for
+  action exhibits from the action (`ACTION_EVIDENCE_META` keeps only suspect,
+  image and the legacy four-value `EvidenceType`, which still drives card
+  colours and the corkboard). Baseline exhibits EX.01-19 got an explicit
+  `group`. (2) **Eight new prerequisites**, data only (`takeAction` already
+  enforced prerequisites server-side, unchanged): comparative review (the
+  tool-mark action) ← Mason AND Wooley pathology reports; DNA retest ← Wooley
+  report; high street CCTV ← bus records; Paget Street ← high street CCTV;
+  2019 Hollen Marsh ANPR sweep ← traffic camera; 2022 Featherton sweep ←
+  Haddad Marsh Road ANPR; Nigel and Swayne cell site ← their initial
+  interviews. Because the pathology reports are Week-9 gated, the comparative
+  review, property searches, Burgess cell site and the endgame are
+  effectively Week 9+. Two cell-site descriptions that said "needs no gate of
+  its own" were reworded. (3) **`lib/action-graph.ts`** (pure, client-safe)
+  derives everything the page shows: `getEnquiryState` — *available* (no
+  prerequisites or all met), *waiting* (at least one met and at most one
+  outstanding — shown greyed with a "Waiting on" list), *hidden* (further
+  away — not shown at all), *done* (stays done forever, never re-locked even
+  if its prerequisites were never taken). **The "at most one outstanding"
+  clause is a deliberate refinement** of "some but not all met": identical for
+  every action with 1-2 prerequisites, but without it the five-prerequisite
+  endgame appeared as soon as the first prerequisite was done, contradicting
+  the spec's own "completing bus records opens high street CCTV and nothing
+  further" walkthrough. Unmet prerequisites the team can't see yet are shown
+  as "an enquiry that isn't open yet" rather than by title, otherwise the
+  endgame's list would name "Burgess property search" two steps early. Locked
+  cards show title, cost and what they wait on — never their description or
+  what they'd reveal. (4) **"Opens next" strip** (`OpensNext.tsx`) on a
+  completed enquiry's card and in the Case Log reader: immediate dependents
+  only, title and cost, with "still needs…" for ones waiting on something
+  else; hidden dependents are skipped; renders nothing when none. No total
+  cost to the endgame is ever shown to students (`minimumCostToComplete` is
+  staff/test only). (5) **The page** is the Investigation tab
+  (`EvidenceViews.tsx`, mounted by `ActionEconomy.tsx`, which still owns
+  budget/banking/week picker/log): **By case | By evidence type** toggle,
+  default By case, not remembered (no per-user preference store exists, none
+  added); each group has **On file** (free baseline documents; tiles open the
+  Case Log reader via `DashboardShell`'s `exhibitRequest`) and **Enquiries**.
+  By-case order is Mason, Wooley, Porterhouse, Butt, General / cross-case; an
+  action appears once, under its `case`, with an "also relates to" tag for
+  the comparative review (Mason, Wooley) and the two Haddad/Wooley actions
+  (Porterhouse). The Case Log no longer lists locked action exhibits at all
+  (it used to show a redacted tile for every one, leaking the whole tree);
+  baseline time-released exhibits still show as locked. (6) **Checks**:
+  `npm run check:actions` (`scripts/check-action-graph.ts`) validates no
+  cycles, every prerequisite exists, every action reachable, computes the
+  endgame's minimum cost (**17**, from the catalog, not hardcoded), and runs
+  the spec's walkthroughs. **Flagged, not changed**: `takeAction` doesn't
+  refuse an action already in the log, so a team can pay twice (the new UI
+  just stops offering it); baseline exhibit EX.02 is titled "CCTV still —
+  woodland car park" despite the retired car-park CCTV action.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.

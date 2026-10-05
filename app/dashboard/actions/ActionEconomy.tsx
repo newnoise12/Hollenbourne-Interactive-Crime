@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
-import { CATEGORY_META, THREAD_META, THREAD_ORDER, MAX_TRUST_BONUS, type ActionItem } from "@/lib/actions-catalog";
+import { MAX_TRUST_BONUS, type ActionItem } from "@/lib/actions-catalog";
+import type { EvidenceItem } from "@/lib/evidence-catalog";
+import { getEnquiryView, isTakeable } from "@/lib/action-graph";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
+import EvidenceViews from "./EvidenceViews";
 
 function Pips({ total, used }: { total: number; used: number }) {
   const pips = [];
@@ -24,73 +27,6 @@ function Pips({ total, used }: { total: number; used: number }) {
   return <div className="flex gap-1.5">{pips}</div>;
 }
 
-function ActionCard({
-  action,
-  canAfford,
-  canAffordFromReserve,
-  locked,
-  requirementLabel,
-  onTake,
-}: {
-  action: ActionItem;
-  canAfford: boolean;
-  canAffordFromReserve: boolean;
-  locked: boolean;
-  requirementLabel: string | null;
-  onTake: (useReserve: boolean) => void;
-}) {
-  const meta = CATEGORY_META[action.category];
-  const disabled = locked || !canAfford;
-  return (
-    <div
-      className="bg-[#E8E1D0] border border-[#D6CDB4] border-l-4 px-4 py-3.5 mb-3"
-      style={{ borderLeftColor: locked ? "#8A8A80" : meta.color, opacity: locked ? 0.6 : 1 }}
-    >
-      <div className="flex justify-between items-baseline mb-1.5 flex-wrap gap-2">
-        <span className="font-mono text-[11px]" style={{ color: locked ? "#8A8A80" : meta.color }}>
-          {meta.label}
-        </span>
-        <div className="flex gap-2">
-          {locked && (
-            <span className="font-mono text-[11px] text-[#8A8A80] border border-[#8A8A80] px-2 py-0.5">LOCKED</span>
-          )}
-          <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#D6CDB4] px-2 py-0.5">
-            cost: {action.cost}
-          </span>
-        </div>
-      </div>
-      <h4 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-1 mt-0">{action.label}</h4>
-      <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{action.description}</p>
-      {locked && requirementLabel && (
-        <p className="font-mono text-xs text-[#8B3226] mb-2.5 mt-0">requires: {requirementLabel}</p>
-      )}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => onTake(false)}
-          disabled={disabled}
-          className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
-          style={{
-            borderColor: disabled ? "#D6CDB4" : "#2A2F27",
-            color: disabled ? "#D6CDB4" : "#2A2F27",
-            cursor: disabled ? "not-allowed" : "pointer",
-          }}
-        >
-          {locked ? "LOCKED" : canAfford ? "TAKE ACTION" : "NOT ENOUGH ACTIONS"}
-        </button>
-        {!locked && !canAfford && canAffordFromReserve && (
-          <button
-            onClick={() => onTake(true)}
-            className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border border-[#93650F] text-[#93650F] cursor-pointer"
-            title="Uses your team's shared, permanent case reserve instead of this week's budget"
-          >
-            PAY WITH RESERVE
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function iconBtnClass(disabled: boolean) {
   return `bg-transparent border p-1 flex items-center justify-center ${
     disabled ? "border-[#D6CDB4] text-[#D6CDB4] cursor-not-allowed" : "border-[#2A2F27] text-[#2A2F27] cursor-pointer"
@@ -99,6 +35,8 @@ function iconBtnClass(disabled: boolean) {
 
 export default function ActionEconomy({
   actions,
+  evidence,
+  onOpenExhibit,
   initialWeekState,
   initialLog,
   quizStudentsAttemptedByWeek,
@@ -107,6 +45,8 @@ export default function ActionEconomy({
   currentWeek,
 }: {
   actions: ActionItem[];
+  evidence: EvidenceItem[];
+  onOpenExhibit: (exhibitId: string) => void;
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
   quizStudentsAttemptedByWeek: Record<number, number>;
@@ -137,6 +77,8 @@ export default function ActionEconomy({
   const [saveError, setSaveError] = useState(false);
   const [pending, setPending] = useState(false);
   const [pendingReserveAction, setPendingReserveAction] = useState<ActionItem | null>(null);
+  // The enquiry just taken stays open on screen so its result is the first thing seen.
+  const [justTakenId, setJustTakenId] = useState<string | null>(null);
 
   const current: WeekState = weekStateMap[week] ?? { trustBonus: 0, actionsSpent: 0 };
   const totalAvailable = baselineActions + current.trustBonus;
@@ -150,7 +92,10 @@ export default function ActionEconomy({
   // state so a just-taken prerequisite unlocks its follow-up immediately,
   // without needing a reload.
   const completedActionIds = new Set(log.map((entry) => entry.actionId));
-  const actionsById = new Map(actions.map((a) => [a.id, a]));
+  // The week each action was first taken in (the log is newest-first, so the
+  // last entry for an id is the earliest).
+  const completedWeeks = new Map<string, number>();
+  for (const entry of log) completedWeeks.set(entry.actionId, entry.week);
 
   const changeWeek = (delta: number) => {
     setWeek((w) => Math.min(currentWeek, Math.max(1, w + delta)));
@@ -177,12 +122,8 @@ export default function ActionEconomy({
     }
   };
 
-  const isLocked = (action: ActionItem) =>
-    (!!action.prerequisiteActionIds?.length && !action.prerequisiteActionIds.every((id) => completedActionIds.has(id))) ||
-    (!!action.availableFromWeek && week < action.availableFromWeek);
-
   const takeAction = async (action: ActionItem, useReserve: boolean) => {
-    if (isLocked(action) || pending) return;
+    if (!isTakeable(getEnquiryView(action, completedActionIds, week)) || pending) return;
     if (useReserve) {
       if (reservePoints < action.cost) return;
       setPendingReserveAction(action);
@@ -210,6 +151,7 @@ export default function ActionEconomy({
       setReservePoints(data.reservePoints);
       setLog((prev) => [data.logEntry, ...prev]);
       setPendingReserveAction(null);
+      setJustTakenId(action.id);
       // The Case Log unlocks evidence from this log, and This Week counts it —
       // refresh so they don't wait for a reload.
       router.refresh();
@@ -321,45 +263,20 @@ export default function ActionEconomy({
           </button>
         </div>
 
-        {THREAD_ORDER.map((thread) => {
-          const threadActions = actions.filter((a) => a.thread === thread);
-          if (threadActions.length === 0) return null;
-          const meta = THREAD_META[thread];
-          return (
-            <div key={thread} className="mb-7">
-              <div className="flex items-baseline gap-2.5 mb-1">
-                <h3 className="font-serif font-semibold text-base text-[#E8E1D0] m-0">{meta.label}</h3>
-                <span className="font-mono text-[11px] text-[#8A8A80]">
-                  {threadActions.length} action{threadActions.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <p className="font-mono text-xs text-[#8A8A80] mb-3 mt-0 max-w-[56ch]">{meta.note}</p>
-              {threadActions.map((action) => {
-                const locked = isLocked(action);
-                const missingPrereqLabels = (action.prerequisiteActionIds ?? [])
-                  .filter((id) => !completedActionIds.has(id))
-                  .map((id) => {
-                    const prerequisite = actionsById.get(id);
-                    return prerequisite ? prerequisite.shortLabel ?? prerequisite.label : id;
-                  });
-                const weekLabel =
-                  action.availableFromWeek && week < action.availableFromWeek ? `Week ${action.availableFromWeek}` : null;
-                const requirementLabel = [...missingPrereqLabels, ...(weekLabel ? [weekLabel] : [])].join(", ") || null;
-                return (
-                  <ActionCard
-                    key={action.id}
-                    action={action}
-                    canAfford={remaining >= action.cost && !pending}
-                    canAffordFromReserve={reservePoints >= action.cost && !pending}
-                    locked={locked}
-                    requirementLabel={requirementLabel}
-                    onTake={(useReserve) => takeAction(action, useReserve)}
-                  />
-                );
-              })}
-            </div>
-          );
-        })}
+        <EvidenceViews
+          actions={actions}
+          evidence={evidence}
+          completedActionIds={completedActionIds}
+          completedWeeks={completedWeeks}
+          week={week}
+          moduleWeek={currentWeek}
+          remaining={remaining}
+          reservePoints={reservePoints}
+          pending={pending}
+          justTakenId={justTakenId}
+          onTake={takeAction}
+          onOpenExhibit={onOpenExhibit}
+        />
 
         {pendingReserveAction && (
           <div className="bg-[#F4EFE1] border border-[#93650F] px-5 py-4 mb-5">

@@ -12,10 +12,10 @@ import {
   type CaseName,
   type EvidenceBodySection,
 } from "@/lib/evidence-catalog";
-import type { ActionItem } from "@/lib/actions-catalog";
 import type { Board, BoardPin } from "@/lib/board";
 import Corkboard from "./Corkboard";
 import PinDetailModal from "./PinDetailModal";
+import { OpensNextStrip } from "../actions/OpensNext";
 
 function redact(text: string): string {
   return text.replace(/[A-Za-z0-9]/g, "█");
@@ -179,12 +179,16 @@ function ExhibitTile({
 function ExhibitDetail({
   item,
   pinned,
+  completedActionIds,
+  currentWeek,
   onPin,
   onUnpin,
   onClose,
 }: {
   item: EvidenceItem;
   pinned: boolean;
+  completedActionIds: ReadonlySet<string>;
+  currentWeek: number;
   onPin: (exhibitId: string) => void;
   onUnpin: (exhibitId: string) => void;
   onClose: () => void;
@@ -218,6 +222,12 @@ function ExhibitDetail({
         sections={item.body ?? [{ paragraphs: ["No fuller record exists on file for this exhibit beyond the summary above."] }]}
       />
 
+      {item.unlockedByActionId && (
+        <div className="mb-4">
+          <OpensNextStrip actionId={item.unlockedByActionId} completedActionIds={completedActionIds} week={currentWeek} />
+        </div>
+      )}
+
       {pinned ? (
         <button
           onClick={() => onUnpin(item.id)}
@@ -242,17 +252,24 @@ export default function EvidenceBoard({
   initialBoard,
   currentWeek,
   completedActionIds,
-  actions,
+  exhibitRequest,
 }: {
   evidence: EvidenceItem[];
   initialBoard: Board;
   currentWeek: number;
   completedActionIds: Set<string>;
-  actions: ActionItem[];
+  exhibitRequest: { id: string } | null;
 }) {
   const [board, setBoard] = useState<Board>(initialBoard);
   const [openPin, setOpenPin] = useState<BoardPin | null>(null);
-  const [openExhibitId, setOpenExhibitId] = useState<string | null>(null);
+  const [openExhibitId, setOpenExhibitId] = useState<string | null>(exhibitRequest?.id ?? null);
+  // The Investigation tab can ask for an exhibit to be opened here. Take each
+  // new request once (this tab may mount for the first time because of it).
+  const [seenRequest, setSeenRequest] = useState(exhibitRequest);
+  if (exhibitRequest !== seenRequest) {
+    setSeenRequest(exhibitRequest);
+    if (exhibitRequest) setOpenExhibitId(exhibitRequest.id);
+  }
   const [saveError, setSaveError] = useState(false);
   // A snapshot taken client-side right before "clear board" — nothing is
   // kept server-side, so undo only works for as long as this stays in
@@ -260,8 +277,6 @@ export default function EvidenceBoard({
   const [clearSnapshot, setClearSnapshot] = useState<Board | null>(null);
   const [pendingClear, setPendingClear] = useState(false);
   const [undoBusy, setUndoBusy] = useState(false);
-
-  const actionsById = new Map(actions.map((a) => [a.id, a]));
 
   const refreshBoard = async (promise: Promise<Response>) => {
     setSaveError(false);
@@ -384,16 +399,15 @@ export default function EvidenceBoard({
   };
 
   const pinnedExhibitIds = new Set(board.pins.map((p) => p.evidence.id));
-  const unlockedCount = evidence.filter((e) => isEvidenceUnlocked(e, currentWeek, completedActionIds)).length;
+  // Case Log lists baseline documents (time-released ones show as locked) and
+  // findings the team has actually obtained. A finding not yet unlocked is not
+  // listed at all — showing every locked one would reveal the whole action tree.
+  const listed = evidence.filter((e) => !e.unlockedByActionId || completedActionIds.has(e.unlockedByActionId));
+  const unlockedCount = listed.filter((e) => isEvidenceUnlocked(e, currentWeek, completedActionIds)).length;
   const openItem = openExhibitId ? evidence.find((e) => e.id === openExhibitId) ?? null : null;
   const openItemUnlocked = openItem ? isEvidenceUnlocked(openItem, currentWeek, completedActionIds) : false;
 
   const requirementFor = (item: EvidenceItem): string | null => {
-    if (item.unlockedByActionId && !completedActionIds.has(item.unlockedByActionId)) {
-      const action = actionsById.get(item.unlockedByActionId);
-      const label = action ? action.shortLabel ?? action.label : item.unlockedByActionId;
-      return `Requires: ${label}`;
-    }
     if (item.unlocksWeek && currentWeek < item.unlocksWeek) {
       return `Unlocks in week ${item.unlocksWeek}`;
     }
@@ -405,7 +419,7 @@ export default function EvidenceBoard({
   // spec — general/force-wide material first, then one section per victim.
   const groups = CASE_ORDER.map((caseName) => ({
     caseName,
-    items: evidence.filter((e) => e.case === caseName),
+    items: listed.filter((e) => e.case === caseName),
   })).filter((g) => g.items.length > 0);
 
   return (
@@ -416,7 +430,7 @@ export default function EvidenceBoard({
             corkboard.
           </p>
           <span className="font-mono text-xs text-[#A6764A] shrink-0 ml-4">
-            {unlockedCount} of {evidence.length} unlocked
+            {unlockedCount} of {listed.length} on file
           </span>
         </div>
         {groups.map(({ caseName, items }) => (
@@ -448,6 +462,8 @@ export default function EvidenceBoard({
           <ExhibitDetail
             item={openItem}
             pinned={pinnedExhibitIds.has(openItem.id)}
+            completedActionIds={completedActionIds}
+            currentWeek={currentWeek}
             onPin={pinEvidence}
             onUnpin={unpinByExhibitId}
             onClose={() => setOpenExhibitId(null)}

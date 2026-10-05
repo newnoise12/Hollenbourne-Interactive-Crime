@@ -68,9 +68,16 @@ export default function DashboardShell({
   // after that it's never unmounted, so later tab switches still just
   // toggle `hidden` as everywhere else and don't lose in-progress state.
   const [hasOpenedCaseLog, setHasOpenedCaseLog] = useState(false);
+  // A request, from the Investigation tab, to open one exhibit in the Case Log.
+  // An object (not just an id) so asking for the same exhibit twice still counts as a new request.
+  const [exhibitRequest, setExhibitRequest] = useState<{ id: string } | null>(null);
   const handleSetTab = (next: Tab) => {
     if (next === "case-log") setHasOpenedCaseLog(true);
     setTab(next);
+  };
+  const handleOpenExhibit = (id: string) => {
+    setExhibitRequest({ id });
+    handleSetTab("case-log");
   };
 
   return (
@@ -128,6 +135,8 @@ export default function DashboardShell({
         <div hidden={tab !== "investigation"}>
           <ActionEconomy
             actions={actions}
+            evidence={evidence}
+            onOpenExhibit={handleOpenExhibit}
             initialWeekState={initialWeekState}
             initialLog={initialLog}
             quizStudentsAttemptedByWeek={quizStudentsAttemptedByWeek}
@@ -143,7 +152,7 @@ export default function DashboardShell({
               initialBoard={initialBoard}
               currentWeek={currentWeek}
               completedActionIds={new Set(initialLog.map((e) => e.actionId))}
-              actions={actions}
+              exhibitRequest={exhibitRequest}
             />
           )}
         </div>
