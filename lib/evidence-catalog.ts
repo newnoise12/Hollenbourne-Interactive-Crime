@@ -146,26 +146,6 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     snippet: "Case prioritisation notes.",
     unlocksWeek: 8,
   },
-  {
-    id: "ex05",
-    exhibit: "EX.05",
-    type: "documentary",
-    case: "general",
-    group: "records",
-    title: "AI-drafted report vs. transcript",
-    snippet: "Comparison worksheet.",
-    unlocksWeek: 5,
-  },
-  {
-    id: "ex06",
-    exhibit: "EX.06",
-    type: "interview",
-    case: "general",
-    group: "records",
-    title: "Court transcript excerpt",
-    snippet: "Earlier, unrelated case.",
-    unlocksWeek: 9,
-  },
 
   // -----------------------------------------------------------------
   // Baseline case-file material, all four cases — Reference/case-content's
@@ -179,7 +159,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     case: "general",
     group: "records",
     title: "Ferris's opening memo",
-    snippet: "DS Ferris sets out, informally, why she thinks four deaths across six years deserve a joined-up look — mixing sound instinct with real error.",
+    snippet: "DS Ferris sets out, informally, why she thinks four deaths across six years should be looked at together.",
     unlocksWeek: 9,
     body: [
       {
@@ -205,7 +185,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     case: "mason",
     group: "records",
     title: "Victim biography — Geoff Mason",
-    snippet: "Widower, retired Critchley cement-plant worker, walked the marsh daily since his wife's death — the habit that put him there at all.",
+    snippet: "Widower, retired Critchley cement-plant worker, walked the marsh daily since his wife's death.",
     unlocksWeek: 3,
     body: [
       {
@@ -243,12 +223,12 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     case: "porterhouse",
     group: "records",
     title: "Victim biography — Carl Porterhouse",
-    snippet: "Deliberately thin: known at the Robin Hood pub, a back injury ended his manual work, financially precarious in his final years.",
+    snippet: "Known at the Robin Hood pub; a back injury ended his manual work; financially precarious in his final years.",
     unlocksWeek: 3,
     body: [
       {
         paragraphs: [
-          "Deliberately kept thin, by design. A few confirmed details: known to drink at the Robin Hood pub, well-liked there despite his record; a back injury from labouring work ended his ability to do manual work and contributed to his declining health in the years before his death; borrowed money periodically to keep his utilities running, consistent with his established financial precarity.",
+          "Known to drink at the Robin Hood pub, well-liked there despite his record; a back injury from labouring work ended his ability to do manual work and contributed to his declining health in the years before his death; borrowed money periodically to keep his utilities running, consistent with his established financial precarity.",
           "No fuller biography exists on file.",
         ],
       },
@@ -335,7 +315,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     case: "general",
     group: "maps",
     title: "Hollenbourne homicide rate, 2018–2025",
-    snippet: "Twenty-four murders in eight years, unevenly spread — none of the four ever the standout case in its own year.",
+    snippet: "Twenty-four murders in eight years, unevenly spread.",
     body: [
       {
         paragraphs: [
@@ -352,7 +332,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     case: "mason",
     group: "records",
     title: "Policy file & canvass summary — Geoff Mason",
-    snippet: "Fast-tracked for three weeks, then scaled back to a core team once no clear line of enquiry emerged — a traffic-camera canvass of the approach roads was never authorised at all.",
+    snippet: "SIO policy file, family liaison log and house-to-house canvass summary for the Geoff Mason investigation, October 2019.",
     unlocksWeek: 9,
     body: [
       {
@@ -371,14 +351,12 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
         heading: "Family liaison log — FLO: DC R. Ahmed | Next of kin: two adult children",
         paragraphs: [
           "Mr Mason lived alone since his wife Doreen's death in 2017 — increasingly solitary but not unhappy, a routine centred on his garden and daily marsh walks. Neither child aware of any concerns, threats or disputes. No known financial difficulties. Neither able to account for his exact movements on 8 October — contact was by phone only, roughly weekly. Both confirm a boiler service was expected around that time but weren't aware of the specific date or engineer.",
-          "No lines of enquiry identified from family liaison contact.",
         ],
       },
       {
         heading: "House-to-house canvass — immediate vicinity of Mr Mason's address and the discovery site",
         paragraphs: [
           "Of 14 addresses canvassed, 9 residents made contact. Several neighbours confirm Mr Mason as a familiar, well-liked local figure. One neighbour (No. 14) recalls seeing \"a work van, one of the gas company ones\" outside sometime that week — unable to confirm the exact day or time; not treated as significant given the boiler service was already known and expected. One neighbour (No. 9) reports seeing Mr Mason on the marsh path \"most evenings, like clockwork.\" No unfamiliar persons, vehicles or disturbances reported.",
-          "No lines of enquiry identified beyond confirmation of routine.",
         ],
       },
     ],
@@ -391,7 +369,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     group: "records",
     suspect: "nigel",
     title: "Policy file & canvass summary — Susan Wooley",
-    snippet: "Investigative resource prioritised toward Nigel Wooley from the first evening; a tradesperson's attendance on a neighbouring street that afternoon is logged only as unused disclosure material.",
+    snippet: "SIO policy file, family liaison log and house-to-house canvass summary for the Susan Wooley investigation, January 2022.",
     unlocksWeek: 9,
     body: [
       {
@@ -410,14 +388,12 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
         heading: "Family liaison log — FLO: DC J. Okafor | Next of kin: sister (D. Marsh, née Edwards)",
         paragraphs: [
           "Ms Marsh describes her sister as \"the kindest person I knew\" — active in church and food-bank work, no known disputes. Unambiguous in her own view: believes Nigel Wooley is responsible, citing his history, the restraining order, and his inability to accept the relationship had ended — she says she warned Susan \"more than once.\" Confirms Susan had recently begun seeing someone new, though doesn't know who or how serious — only that Susan mentioned it, \"excited, like herself again.\"",
-          "Reinforces the current primary line of enquiry.",
         ],
       },
       {
         heading: "House-to-house canvass — Harrison Road and immediate vicinity",
         paragraphs: [
           "Of 11 addresses canvassed, 8 residents made contact. Neighbours consistently describe Susan as well-liked and quiet. Two neighbours independently mention Nigel by name, unprompted, describing him as \"on edge\" after the separation — neither reports seeing him on the day itself. One neighbour (No. 12) recalls a van parked outside a nearby address sometime that week — assumed work being done; couldn't say which house or day with confidence. No neighbour reports anything unusual on 6 January specifically.",
-          "No lines of enquiry identified beyond reinforcing existing concerns regarding Nigel Wooley.",
         ],
       },
     ],
@@ -430,7 +406,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     group: "records",
     suspect: "swayne",
     title: "Policy file & canvass summary — Carl Porterhouse",
-    snippet: "County lines set as the investigative frame within two hours; Swayne and Haddad both arrested, both released for insufficient evidence three weeks later.",
+    snippet: "SIO policy file, family liaison log and house-to-house canvass summary for the Carl Porterhouse investigation, June 2023.",
     unlocksWeek: 9,
     body: [
       {
@@ -456,7 +432,6 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
         heading: "House-to-house canvass — immediate vicinity of Bamford Street",
         paragraphs: [
           "Of 9 addresses canvassed, 6 residents made contact. Two independently report hearing shouting and banging from the direction of Mr Porterhouse's address the evening of 29 May — one states a call was made to police at the time, \"nobody come, though.\" No record of attendance found. One resident recalls a man matching Colin Swayne's description walking toward Bamford Street at approximately 8:30pm — consistent with, and already incorporated into, his interview timeline. General view of Mr Porterhouse is mixed; no resident reports a specific dispute or threat.",
-          "No further lines of enquiry beyond what's already incorporated into the active investigation.",
         ],
       },
     ],
@@ -468,7 +443,7 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
     case: "butt",
     group: "records",
     title: "Policy file & canvass summary — Sara Butt",
-    snippet: "The only one of the four kept at full Major Incident resourcing rather than scaled back — but the canvass scope was deliberately limited to the immediate route home, excluding the wider approach routes into the area.",
+    snippet: "SIO policy file, family liaison log and house-to-house canvass summary for the Sara Butt investigation, May–June 2025.",
     unlocksWeek: 9,
     body: [
       {
@@ -480,21 +455,19 @@ const BASELINE_EVIDENCE: EvidenceItem[] = [
           "Decision 4 — 31 May 2025. Initial post-mortem findings indicate blunt force trauma consistent with visible injury. Cause of death treated as such pending further findings.",
           "Decision 5 — 1 June 2025. CCTV and witness canvass to focus on the immediate vicinity of the known route home and the discovery site. Wider canvass of approach routes (bus services, town centre, routes from Featherton or Critchley) not prioritised at this time — no evidence currently indicates the individual responsible travelled in from elsewhere.",
           "Decision 6 — 10 June 2025. Given the case's public profile, a senior pathologist assigned to conduct a fuller review.",
-          "Case remains an active Major Incident investigation at full resourcing, unlike the other three cases in this set.",
+          "Case remains an active Major Incident investigation at full resourcing.",
         ],
       },
       {
         heading: "Family liaison log — FLO: DC N. Osei | Next of kin: parents",
         paragraphs: [
           "Continuous contact since 22 May. Both parents describe Sara as devoted to her studies and to caring for them, well-liked, close with a stable friend group. Confirm she took the bus home from Stratford most weekends without incident. Neither aware of any dispute, concern or unfamiliar person in her life.",
-          "No lines of enquiry identified beyond confirmation of routine and movements.",
         ],
       },
       {
         heading: "House-to-house canvass — known route home, vicinity of the bus stop and Hollen Marsh",
         paragraphs: [
           "Of 16 addresses canvassed, 12 residents made contact; an additional press/social media appeal was made. No resident reports witnessing the incident or any disturbance. Several confirm Sara as a familiar, well-liked local figure. No unfamiliar person or vehicle reported in the immediate vicinity of the bus stop or marsh. No information received regarding movements further afield — consistent with the canvass scope set in Decision 5.",
-          "No lines of enquiry identified. Canvass scope and findings consistent with Policy File Decision 5.",
         ],
       },
     ],
@@ -530,7 +503,6 @@ const ACTION_EVIDENCE_META: Record<string, { suspect?: Suspect; type: EvidenceTy
   "reint-swayne": { suspect: "swayne", type: "interview" },
   "reint-haddad": { suspect: "haddad", type: "interview" },
   "forensic-dna": { type: "documentary" },
-  "phone-data": { type: "documentary" },
   "doc-memo": { type: "documentary" },
   canvas: { type: "interview" },
   "homeowner-witness-wooley": { suspect: "burgess", type: "interview" },
@@ -584,14 +556,22 @@ const ACTION_EVIDENCE_META: Record<string, { suspect?: Suspect; type: EvidenceTy
   "anpr-sweep-featherton-2022": { suspect: "haddad", type: "documentary" },
 };
 
+// Exhibit numbers that belonged to actions since retired. Never reused, so the
+// numbers students and staff already know stay put. EX.33 was "Pull phone data".
+const RETIRED_EXHIBIT_NUMBERS = [33];
+
 /** One exhibit per action, reusing its own outcome text — see the module comment above. */
 function buildActionEvidence(): EvidenceItem[] {
-  return ACTIONS.map((action: ActionItem, i: number) => {
+  let exhibitNumber = 20;
+  return ACTIONS.map((action: ActionItem) => {
+    // Exhibit numbers are handed out in catalog order, skipping any that belong
+    // to a retired action — so retiring one never renumbers the rest.
+    while (RETIRED_EXHIBIT_NUMBERS.includes(exhibitNumber)) exhibitNumber++;
     const meta = ACTION_EVIDENCE_META[action.id];
     if (!meta) throw new Error(`No evidence tagging for action "${action.id}" — add it to ACTION_EVIDENCE_META.`);
     return {
       id: `ev-${action.id}`,
-      exhibit: `EX.${20 + i}`,
+      exhibit: `EX.${exhibitNumber++}`,
       type: meta.type,
       case: action.case,
       group: action.group,

@@ -98,13 +98,20 @@ export async function getActionLog(teamId: string): Promise<LogEntry[]> {
     orderBy: desc(actionLog.createdAt),
   });
 
-  return rows.map((row) => ({
-    week: row.week,
-    actionId: row.actionId,
-    label: row.label,
-    outcome: row.outcome,
-    createdAt: row.createdAt,
-  }));
+  // The outcome text stored on a row is a copy from the day the action was
+  // taken. Show the catalog's current wording instead, so an edit to an action's
+  // text reaches teams who already took it. (Reserve-banking rows, and any
+  // since-retired action, have no catalog entry and keep what was stored.)
+  return rows.map((row) => {
+    const action = getActionItem(row.actionId);
+    return {
+      week: row.week,
+      actionId: row.actionId,
+      label: action?.label ?? row.label,
+      outcome: action?.outcome ?? row.outcome,
+      createdAt: row.createdAt,
+    };
+  });
 }
 
 async function getWeekRow(teamId: string, week: number) {

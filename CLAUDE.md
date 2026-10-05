@@ -817,6 +817,66 @@ team's overall progress, with buttons that switch tabs programmatically
   instructor-passcode-gated like the other `/instructor` pages, and derived
   from the live catalog — so it can't drift from what students see. Use it to
   proofread the case file instead of playing through or bumping the week.
+- **Burgess arrest interview replaced with the verbatim transcript
+  (2026-10-05).** The app's copy (`"endgame-arrest-burgess-butt"` in
+  `lib/action-evidence-bodies.ts`) had been a condensed adaptation — Burgess's
+  consecutive answers merged into single turns and some of Ferris's questions
+  dropped. It is now the full text, one paragraph per line (header block, every
+  turn as its own line labelled `DS FERRIS:` / `BURGESS:`, every `[pause]` /
+  `[silence]`, "Time commenced" and "Time suspended"), identical to Appendix H
+  of `Reference/case-content/case/hollenbourne-interviews.md` (which was
+  already correct — only the app's copy had drifted). Nothing in the app
+  shortens exhibit bodies (static TS data → `FullTextReader`, the corkboard
+  modal and the instructor preview all render `body` as-is; the reader box just
+  scrolls past 50vh). Verified by comparing rendered output to the source line
+  by line (instructor preview) and by hash (student Case Log reader). Not
+  changed: the action's short `outcome` paragraph in `lib/actions-catalog.ts`,
+  still a summary — shown as the result on the Investigation card and copied
+  into a team's action log when the action is taken.
+- **Retired three exhibits and stripped interpretive text (2026-10-05, user's
+  lists).** Principle: students analyse the evidence themselves, so an exhibit
+  states what a document says, never what to conclude from it. (1) **Retired**:
+  baseline EX.05 (AI-drafted report vs. transcript), EX.06 (Court transcript
+  excerpt) and the `phone-data` action ("Pull phone data", EX.33). Exhibit
+  numbers are *not* renumbered — `RETIRED_EXHIBIT_NUMBERS = [33]` in
+  `lib/evidence-catalog.ts` makes `buildActionEvidence` skip retired numbers,
+  so every other EX.nn stays put (add a number there when retiring another
+  action). A team that already took `phone-data` keeps its spent points and its
+  old action-log row; the exhibit is gone. Reference docs still list these
+  items. (2) **Stripped** from EX.17, EX.21, EX.39, EX.51, EX.54, EX.61, EX.62
+  and EX.64: the "Investigative relevance" paragraphs in the bodies (author
+  notes — one was addressed to the game designer), the "single most valuable
+  report" paragraph on the Wooley cell-site report, interpretive clauses in the
+  ANPR/cell-site findings and in each action's one-line `outcome`, two
+  EX.17 summary lines ("Reinforces the current primary line of enquiry", "No
+  lines of enquiry identified beyond reinforcing…"), and judgemental
+  `description`/snippet text (EX.54, EX.61, EX.17, EX.51). Facts, timestamps
+  and in-world dialogue were left. (3) **`getActionLog` now reads `label` and
+  `outcome` from the live catalog by action id**, falling back to the stored
+  row only for reserve banking or a retired action — the stored copy dates from
+  the day the action was taken, so without this existing teams' logs (and the
+  instructor team page) would keep the old wording.
+  **Then applied to everything, for consistency (same day, user: "be consistent
+  and realistic about the framing of the evidence" — they are balancing the
+  game).** The rule now holds across the whole catalog: an **action
+  `description`** says what is being requested (no value judgement, no hint at
+  who or what matters — e.g. the three property searches now read identically,
+  where Burgess's used to cite "his trade, and his 2019 interview"); an
+  **`outcome`/exhibit body** states what the document says, never what it
+  means; **baseline snippets** are neutral (EX.16/17/18/19 all read "SIO policy
+  file, family liaison log and house-to-house canvass summary for the … case");
+  **closing lines** that conclude for the reader were cut from the transcripts
+  and policy files (every "No lines of enquiry identified…" line, the
+  "Nigel has no connection to Sara Butt…" note, the interim interview's "nothing
+  conclusive either way", the Riverbank and Holly Creagan closers). All ten
+  "Investigative relevance" paragraphs, the Haddad record's "Relevance to case
+  review" paragraph, and the "Worth using this deliberately with students"
+  notes are gone, and Nigel's property search no longer mentions "the anomalous
+  cleaning that flagged Burgess's". Left in on purpose: spoken dialogue,
+  witnesses' own impressions, and analyst hedges that belong to a real report
+  ("consistent with…"). `Reference/case-content/` was NOT changed, so it still
+  has the old text — re-porting from it would reintroduce the commentary; edit
+  it too, or treat the app as the source, before the next port.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.
