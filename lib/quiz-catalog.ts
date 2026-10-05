@@ -32,6 +32,16 @@ export const QUIZ_TITLE = "Week 2 Trust Activity: Ranking Sources by Trustworthi
 export const MAX_SCORE = 3;
 export const MAX_ATTEMPTS = 3;
 
+/**
+ * A perfect attempt (every answer right) completes a generic quiz: nothing
+ * higher is possible, so there's nothing left to retry. Client-safe on
+ * purpose — the quiz components use it to show the completed state, and
+ * lib/quiz.ts uses the same rule to refuse a further submission.
+ */
+export function isPerfectAttempt(attempt: { correct: number; total: number }): boolean {
+  return attempt.total > 0 && attempt.correct >= attempt.total;
+}
+
 export const STAGE_1_ITEMS: QuizItem[] = [
   {
     id: "1A",
@@ -763,7 +773,7 @@ export const WEEK3_REFERENCING_QUIZ: McqQuizDef = {
   week: 3,
   title: "Referencing Quiz",
   intro:
-    "The foundational skill everything else in the module assumes — a Harvard reference needs five things: author, year, title, publication details, and (for anything online) access details. Multiple choice, one correct answer each.",
+    "The foundational skill everything else in the module assumes — a Harvard reference needs five things: author, year, title, publication details, and (for anything online) access details. Multiple choice, one correct answer each. This stage is the scored part — submitting it is what sets your trust bonus. Stage 2 below is unscored writing practice and doesn't affect it.",
   bonusThresholds: [
     [0, 0],
     [2, 1],

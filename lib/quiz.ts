@@ -13,6 +13,7 @@ import {
   getQuizDef,
   scoreMcqQuiz,
   scoreMultiselectQuiz,
+  isPerfectAttempt,
 } from "./quiz-catalog";
 
 export class QuizError extends Error {}
@@ -238,6 +239,9 @@ export async function submitGenericQuizAttempt(
   const existing = await getGenericQuizAttempts(studentId, quizId);
   if (existing.length >= MAX_ATTEMPTS) {
     throw new QuizError(`This quiz has already been attempted ${MAX_ATTEMPTS} times — no attempts left.`);
+  }
+  if (existing.some(isPerfectAttempt)) {
+    throw new QuizError("You've already got every answer right — this quiz is complete.");
   }
 
   let score: number;

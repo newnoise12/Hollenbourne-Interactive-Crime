@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { CATEGORY_META, THREAD_META, THREAD_ORDER, MAX_TRUST_BONUS, type ActionItem } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
@@ -113,10 +114,26 @@ export default function ActionEconomy({
   initialReservePoints: number;
   currentWeek: number;
 }) {
+  const router = useRouter();
   const [week, setWeek] = useState(currentWeek);
   const [weekStateMap, setWeekStateMap] = useState<WeekStateMap>(initialWeekState);
   const [log, setLog] = useState<LogEntry[]>(initialLog);
   const [reservePoints, setReservePoints] = useState(initialReservePoints);
+  // This tab mounts once, on page load, and used to hold the server's numbers
+  // forever — so a quiz submitted on another tab never showed up here until a
+  // full reload. When the page's server data is refreshed (after a quiz, or
+  // after an action), take the new values rather than keeping the old ones.
+  const [syncedFrom, setSyncedFrom] = useState({ initialWeekState, initialLog, initialReservePoints });
+  if (
+    syncedFrom.initialWeekState !== initialWeekState ||
+    syncedFrom.initialLog !== initialLog ||
+    syncedFrom.initialReservePoints !== initialReservePoints
+  ) {
+    setSyncedFrom({ initialWeekState, initialLog, initialReservePoints });
+    setWeekStateMap(initialWeekState);
+    setLog(initialLog);
+    setReservePoints(initialReservePoints);
+  }
   const [saveError, setSaveError] = useState(false);
   const [pending, setPending] = useState(false);
   const [pendingReserveAction, setPendingReserveAction] = useState<ActionItem | null>(null);
@@ -193,6 +210,9 @@ export default function ActionEconomy({
       setReservePoints(data.reservePoints);
       setLog((prev) => [data.logEntry, ...prev]);
       setPendingReserveAction(null);
+      // The Case Log unlocks evidence from this log, and This Week counts it —
+      // refresh so they don't wait for a reload.
+      router.refresh();
     } catch {
       setSaveError(true);
     } finally {
@@ -217,6 +237,7 @@ export default function ActionEconomy({
       }
       setWeekStateMap((prev) => ({ ...prev, [week]: data.weekState }));
       setReservePoints(data.reservePoints);
+      router.refresh();
     } catch {
       setSaveError(true);
     } finally {

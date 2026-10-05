@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MAX_ATTEMPTS, type McqQuizDef } from "@/lib/quiz-catalog";
+import { MAX_ATTEMPTS, isPerfectAttempt, type McqQuizDef } from "@/lib/quiz-catalog";
 import type { GenericQuizAttempt } from "@/lib/quiz";
 
 function SwitchStudentLink({ studentName }: { studentName: string }) {
@@ -38,6 +38,7 @@ export default function McqQuiz({
   initialAttempts: GenericQuizAttempt[];
   studentName: string;
 }) {
+  const router = useRouter();
   const [attempts, setAttempts] = useState<GenericQuizAttempt[]>(initialAttempts);
   const [mode, setMode] = useState<"quiz" | "result">(initialAttempts.length > 0 ? "result" : "quiz");
 
@@ -51,6 +52,8 @@ export default function McqQuiz({
   const attemptsUsed = attempts.length;
   const attemptsRemaining = MAX_ATTEMPTS - attemptsUsed;
   const latestAttempt = attempts[attempts.length - 1];
+  const complete = attempts.some(isPerfectAttempt);
+  const bestScore = attempts.length ? Math.max(...attempts.map((a) => a.score)) : 0;
 
   const startNewAttempt = () => {
     setAnswers(quiz.stages.map((s) => s.questions.map(() => undefined)));
@@ -62,7 +65,7 @@ export default function McqQuiz({
   };
 
   const pick = (si: number, qi: number, optionIndex: number) => {
-    if (stageRevealed[si]) return;
+    if (stageRevealed[si] || pendingSubmit) return;
     setAnswers((prev) => {
       const next = prev.map((s) => [...s]);
       next[si][qi] = optionIndex;
@@ -75,6 +78,10 @@ export default function McqQuiz({
   const allAnsweredThisStage = currentAnswers.every((a) => a !== undefined);
   const isLastStage = stageIndex === quiz.stages.length - 1;
 
+  // Earlier stages are "checked" in place so the feedback is there before the
+  // next stage. The last stage isn't: its button is the real submit, and the
+  // answers and explanations come back on the results screen — revealing them
+  // first, before anything was saved, made "submit" look done when it wasn't.
   const revealStage = () => {
     setStageRevealed((prev) => {
       const next = [...prev];
@@ -84,11 +91,7 @@ export default function McqQuiz({
   };
 
   const goNextStage = () => {
-    if (isLastStage) {
-      setPendingSubmit(true);
-    } else {
-      setStageIndex((i) => i + 1);
-    }
+    setStageIndex((i) => i + 1);
   };
 
   const confirmSubmit = async () => {
@@ -109,6 +112,10 @@ export default function McqQuiz({
       setAttempts((prev) => [...prev, data.attempt]);
       setMode("result");
       setPendingSubmit(false);
+      // The trust bonus is derived on the server from every student's best
+      // score — refresh so the Investigation tab and progress counts pick it
+      // up now rather than after the next reload.
+      router.refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     } finally {
@@ -164,7 +171,15 @@ export default function McqQuiz({
             </div>
           ))}
 
-          {attemptsRemaining > 0 ? (
+          {complete ? (
+            <div className="bg-[#F4EFE1] border border-[#2F6B4F] px-5 py-4">
+              <p className="font-mono text-[13px] text-[#2F6B4F] font-semibold mb-1 mt-0">✓ Quiz complete — every answer correct</p>
+              <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed m-0">
+                Your trust bonus of +{bestScore} for Week {quiz.week} is set (your team&apos;s bonus is the average of everyone&apos;s best
+                score). There&apos;s nothing left to retake.
+              </p>
+            </div>
+          ) : attemptsRemaining > 0 ? (
             <button
               onClick={startNewAttempt}
               className="font-mono text-xs tracking-wide bg-transparent text-[#E8E1D0] px-5 py-2.5 border border-[#E8E1D0]"
@@ -223,7 +238,7 @@ export default function McqQuiz({
                     type="radio"
                     name={`q_${stageIndex}_${qi}`}
                     checked={picked === oi}
-                    disabled={revealed}
+                    disabled={revealed || pendingSubmit}
                     onChange={() => pick(stageIndex, qi, oi)}
                     className="mt-1"
                   />
@@ -245,6 +260,9 @@ export default function McqQuiz({
         {pendingSubmit ? (
           <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4">
             <p className="font-mono text-[13px] text-[#2A2F27] mb-1 mt-0">This will be attempt {attemptsUsed + 1} of {MAX_ATTEMPTS}.</p>
+            <p className="font-mono text-xs text-[#5B5A4E] mb-1 mt-0">
+              Submitting saves your answers and sets your trust bonus — you&apos;ll see the correct answers straight after.
+            </p>
             <p className="font-mono text-xs text-[#5B5A4E] mb-4 mt-0">
               {attemptsRemaining - 1 > 0
                 ? `You'll have ${attemptsRemaining - 1} attempt${attemptsRemaining - 1 === 1 ? "" : "s"} left after this one.`
@@ -272,15 +290,15 @@ export default function McqQuiz({
             onClick={goNextStage}
             className="font-mono text-xs tracking-wide bg-[#E8E1D0] text-[#2A2F27] px-5 py-2.5 border border-[#E8E1D0]"
           >
-            {isLastStage ? "FINISH QUIZ" : "CONTINUE"}
+            CONTINUE
           </button>
         ) : (
           <button
-            onClick={revealStage}
+            onClick={isLastStage ? () => setPendingSubmit(true) : revealStage}
             disabled={!allAnsweredThisStage}
             className="font-mono text-xs tracking-wide bg-[#E8E1D0] text-[#2A2F27] px-5 py-2.5 border border-[#E8E1D0] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            SUBMIT ANSWERS
+            {isLastStage ? "SUBMIT ANSWERS" : "CHECK ANSWERS"}
           </button>
         )}
         {error && <p className="font-mono text-xs text-[#8B3226] mt-3">{error}</p>}

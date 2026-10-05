@@ -808,6 +808,36 @@ team's overall progress, with buttons that switch tabs programmatically
      trap entirely rather than trying to get Python into the build image.
   Not yet confirmed live end-to-end — next deploy after the engines pin
   is the one to check.
+- **"My trust points didn't update after the quiz" (2026-10-05) — three
+  separate causes, all fixed.** (1) **The submit button didn't submit.** In
+  `McqQuiz`/`MultiselectQuiz` the button labelled SUBMIT ANSWERS only
+  *revealed* the answers; the real save was two clicks later (FINISH QUIZ →
+  YES, SUBMIT), so a student who stopped after seeing the answers had
+  submitted nothing. The last stage's button is now the real submit (it goes
+  straight to the "this will be attempt N of 3 — saves your answers and sets
+  your trust bonus" confirmation, answers locked meanwhile, and the correct
+  answers appear on the results screen after saving); earlier stages of a
+  multi-stage quiz keep an in-place "CHECK ANSWERS" → CONTINUE. This also
+  closes a hole where answers were revealed before anything was saved, so a
+  reload gave a free look at the key. (2) **The Investigation tab held the
+  server's numbers forever.** `ActionEconomy` copied its props into
+  `useState` once on page load, so even a saved quiz didn't show there until
+  a full reload. It now re-syncs from props (render-time prop-change pattern,
+  as in `Corkboard`), and the quiz submit, take-action and bank-points
+  handlers call `router.refresh()` — which also fixed taking an action not
+  unlocking its Case Log exhibit or updating the This Week counts until a
+  reload. Rule of thumb: the dashboard's server data reaches client state
+  once; anything that changes it must `router.refresh()`, and a component
+  that copies props into state must re-sync. (3) **A perfect score now
+  completes a quiz.** `isPerfectAttempt` (`lib/quiz-catalog.ts`, client-safe
+  so both sides share it): the quiz shows "✓ Quiz complete", no try-again,
+  the card header reads "✓ complete (+N)", and `submitGenericQuizAttempt`
+  refuses any further attempt server-side. Applies to every generic mcq and
+  multiselect quiz, not just Week 3; the Week 2 ranking quiz (`TrustQuiz`)
+  is unchanged. **Only Stage 1 of the Week 3 quiz is scored** — Stage 2 never
+  touched the trust bonus; the wording now says so in both the Stage 1 intro
+  and the Stage 2 intro, and the Week 3 card header shows both ("Stage 1: …
+  · Stage 2: n/3 submitted").
 
 ## Env vars
 

@@ -85,6 +85,8 @@ const TASKS: TaskDef[] = [
   },
 ];
 
+export const REFERENCE_TASK_COUNT = TASKS.length;
+
 function FeedbackPanel({ result }: { result: GradingResult }) {
   return (
     <div className="bg-[#F4EFE1] border border-[#A6764A] px-4 py-3.5 mt-3">
@@ -253,12 +255,14 @@ export default function ReferencingPractice({ initialDraft, studentName }: { ini
       <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-1 mt-0">
         The second half of this week&apos;s activity, now that Stage 1&apos;s multiple choice has covered the
         basics: write a full Harvard reference for each source below and get instant, structured feedback on each
-        element. Use the{" "}
+        element. <strong>Stage 2 is unscored practice — it doesn&apos;t affect your trust bonus, which is set by
+        Stage 1 alone.</strong> Use the{" "}
         <a href={LSBU_GUIDE_HOME} target="_blank" rel="noopener noreferrer" className="text-[#A6764A] underline">
           LSBU Harvard referencing guide ↗
         </a>{" "}
-        — each task links to the page you need. Not scored, but your work and feedback are saved — check and revise
-        as many times as you like, then submit each one as your answer when you&apos;re happy with it.
+        — each task links to the page you need. Your work and feedback are saved — check and revise as many times
+        as you like, then use &quot;submit as my answer&quot; to mark each task done when you&apos;re happy with it.
+        Submitting here only marks the task as done; it isn&apos;t needed for your trust bonus.
       </p>
       <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-1 mt-0">
         You can&apos;t format text in the box, so put *asterisks* around anything that should be in italics, e.g.

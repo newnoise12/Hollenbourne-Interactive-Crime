@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MAX_ATTEMPTS, type MultiselectQuizDef } from "@/lib/quiz-catalog";
+import { MAX_ATTEMPTS, isPerfectAttempt, type MultiselectQuizDef } from "@/lib/quiz-catalog";
 import type { GenericQuizAttempt } from "@/lib/quiz";
 
 function SwitchStudentLink({ studentName }: { studentName: string }) {
@@ -38,10 +38,10 @@ export default function MultiselectQuiz({
   initialAttempts: GenericQuizAttempt[];
   studentName: string;
 }) {
+  const router = useRouter();
   const [attempts, setAttempts] = useState<GenericQuizAttempt[]>(initialAttempts);
   const [mode, setMode] = useState<"quiz" | "result">(initialAttempts.length > 0 ? "result" : "quiz");
   const [selected, setSelected] = useState<string[]>([]);
-  const [revealed, setRevealed] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,17 +49,18 @@ export default function MultiselectQuiz({
   const attemptsUsed = attempts.length;
   const attemptsRemaining = MAX_ATTEMPTS - attemptsUsed;
   const latestAttempt = attempts[attempts.length - 1];
+  const complete = attempts.some(isPerfectAttempt);
+  const bestScore = attempts.length ? Math.max(...attempts.map((a) => a.score)) : 0;
 
   const startNewAttempt = () => {
     setSelected([]);
-    setRevealed(false);
     setError(null);
     setPendingSubmit(false);
     setMode("quiz");
   };
 
   const toggle = (id: string) => {
-    if (revealed) return;
+    if (pendingSubmit) return;
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
@@ -81,6 +82,10 @@ export default function MultiselectQuiz({
       setAttempts((prev) => [...prev, data.attempt]);
       setMode("result");
       setPendingSubmit(false);
+      // The trust bonus is derived on the server from every student's best
+      // score — refresh so the Investigation tab and progress counts pick it
+      // up now rather than after the next reload.
+      router.refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     } finally {
@@ -120,7 +125,15 @@ export default function MultiselectQuiz({
             );
           })}
 
-          {attemptsRemaining > 0 ? (
+          {complete ? (
+            <div className="bg-[#F4EFE1] border border-[#2F6B4F] px-5 py-4 mt-4">
+              <p className="font-mono text-[13px] text-[#2F6B4F] font-semibold mb-1 mt-0">✓ Quiz complete — full marks</p>
+              <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed m-0">
+                Your trust bonus of +{bestScore} for Week {quiz.week} is set (your team&apos;s bonus is the average of everyone&apos;s best
+                score). There&apos;s nothing left to retake.
+              </p>
+            </div>
+          ) : attemptsRemaining > 0 ? (
             <button
               onClick={startNewAttempt}
               className="font-mono text-xs tracking-wide bg-transparent text-[#E8E1D0] px-5 py-2.5 border border-[#E8E1D0] mt-4"
@@ -153,18 +166,14 @@ export default function MultiselectQuiz({
 
         {quiz.options.map((opt) => {
           const picked = selected.includes(opt.id);
-          const revealCls = revealed ? (opt.correct ? (picked ? "#2F6B4F" : "#93650F") : picked ? "#8B3226" : "#5B5A4E") : "#2A2F27";
           return (
             <label
               key={opt.id}
               className="flex items-start gap-2.5 bg-[#E8E1D0] border border-[#D6CDB4] px-4 py-3 mb-2 font-mono text-[13px] cursor-pointer"
-              style={{ color: revealCls }}
+              style={{ color: "#2A2F27" }}
             >
-              <input type="checkbox" checked={picked} disabled={revealed} onChange={() => toggle(opt.id)} className="mt-1" />
-              <span>
-                {opt.label}
-                {revealed && <span className="ml-2 text-xs">{opt.correct ? "— genuine flaw" : "— not a flaw"}</span>}
-              </span>
+              <input type="checkbox" checked={picked} disabled={pendingSubmit} onChange={() => toggle(opt.id)} className="mt-1" />
+              <span>{opt.label}</span>
             </label>
           );
         })}
@@ -172,6 +181,9 @@ export default function MultiselectQuiz({
         {pendingSubmit ? (
           <div className="bg-[#F4EFE1] border border-[#A6764A] px-5 py-4 mt-3">
             <p className="font-mono text-[13px] text-[#2A2F27] mb-1 mt-0">This will be attempt {attemptsUsed + 1} of {MAX_ATTEMPTS}.</p>
+            <p className="font-mono text-xs text-[#5B5A4E] mb-1 mt-0">
+              Submitting saves your answers and sets your trust bonus — you&apos;ll see which were genuine flaws straight after.
+            </p>
             <p className="font-mono text-xs text-[#5B5A4E] mb-4 mt-0">
               {attemptsRemaining - 1 > 0
                 ? `You'll have ${attemptsRemaining - 1} attempt${attemptsRemaining - 1 === 1 ? "" : "s"} left after this one.`
@@ -194,20 +206,13 @@ export default function MultiselectQuiz({
               </button>
             </div>
           </div>
-        ) : revealed ? (
-          <button
-            onClick={() => setPendingSubmit(true)}
-            className="font-mono text-xs tracking-wide bg-[#E8E1D0] text-[#2A2F27] px-5 py-2.5 border border-[#E8E1D0] mt-3"
-          >
-            FINISH QUIZ
-          </button>
         ) : (
           <button
-            onClick={() => setRevealed(true)}
+            onClick={() => setPendingSubmit(true)}
             disabled={selected.length === 0}
             className="font-mono text-xs tracking-wide bg-[#E8E1D0] text-[#2A2F27] px-5 py-2.5 border border-[#E8E1D0] disabled:opacity-50 disabled:cursor-not-allowed mt-3"
           >
-            SUBMIT
+            SUBMIT ANSWERS
           </button>
         )}
         {error && <p className="font-mono text-xs text-[#8B3226] mt-3">{error}</p>}

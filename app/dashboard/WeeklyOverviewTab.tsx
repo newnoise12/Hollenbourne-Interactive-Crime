@@ -7,13 +7,13 @@ import type { EvidenceItem } from "@/lib/evidence-catalog";
 import type { LogEntry } from "@/lib/actions";
 import type { Cw2Draft } from "@/lib/cw2-practice";
 import type { ReferencePracticeDraft } from "@/lib/reference-practice";
-import { STAGE_1_ITEMS, STAGE_2_ITEMS, QUIZ_TITLE, QUIZ_WEEK, QUIZ_DEFS } from "@/lib/quiz-catalog";
+import { STAGE_1_ITEMS, STAGE_2_ITEMS, QUIZ_TITLE, QUIZ_WEEK, QUIZ_DEFS, isPerfectAttempt } from "@/lib/quiz-catalog";
 import { MOCK_CW2_WEEK } from "@/lib/cw2-items";
 import WhoAreYou from "./quiz/WhoAreYou";
 import TrustQuiz from "./quiz/TrustQuiz";
 import McqQuiz from "./quiz/[quizId]/McqQuiz";
 import MultiselectQuiz from "./quiz/[quizId]/MultiselectQuiz";
-import ReferencingPractice from "./quiz/ReferencingPractice";
+import ReferencingPractice, { REFERENCE_TASK_COUNT } from "./quiz/ReferencingPractice";
 import MockCw2Practice from "./quiz/MockCw2Practice";
 
 const EMPTY_CW2_DRAFT: Cw2Draft = { selectedItemIds: [], responses: {}, synthesis: null, synthesisFeedback: null, checksUsedToday: 0 };
@@ -59,7 +59,19 @@ function rankStatus(attempts: RankQuizAttempt[]): string {
 function genericStatus(attempts: GenericQuizAttempt[]): string {
   if (attempts.length === 0) return "not started";
   const best = Math.max(...attempts.map((a) => a.score));
+  if (attempts.some(isPerfectAttempt)) return `✓ complete (+${best})`;
   return `best ${best}/${attempts[0].maxScore}`;
+}
+
+// The Week 3 referencing quiz is two stages under one card: only Stage 1 is
+// scored, but the card's status shows both so it's clear what's been done.
+function referencingStatus(attempts: GenericQuizAttempt[], draft: ReferencePracticeDraft): string {
+  const submitted = Object.values(draft).filter((r) => r.submitted).length;
+  return `Stage 1: ${genericStatus(attempts)} · Stage 2: ${submitted}/${REFERENCE_TASK_COUNT} submitted`;
+}
+
+function statusFor(quizId: string, attempts: GenericQuizAttempt[], draft: ReferencePracticeDraft): string {
+  return quizId === "week3-referencing" ? referencingStatus(attempts, draft) : genericStatus(attempts);
 }
 
 type Tab = "overview" | "investigation" | "case-log";
@@ -156,7 +168,7 @@ export default function WeeklyOverviewTab({
               </QuizCard>
             )}
             {thisWeekGeneric.map((quiz) => (
-              <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])} defaultOpen>
+              <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={statusFor(quiz.id, genericAttempts[quiz.id] ?? [], referenceDraft)} defaultOpen>
                 {quiz.id === "week3-referencing" && (
                   <h3 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1 mt-0">Stage 1 — Multiple choice</h3>
                 )}
@@ -245,7 +257,7 @@ export default function WeeklyOverviewTab({
             }
             const quiz = activity.quiz;
             return (
-              <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={genericStatus(genericAttempts[quiz.id] ?? [])}>
+              <QuizCard key={quiz.id} title={quiz.title} weekLabel={`Week ${quiz.week}`} status={statusFor(quiz.id, genericAttempts[quiz.id] ?? [], referenceDraft)}>
                 {quiz.id === "week3-referencing" && (
                   <h3 className="font-serif font-semibold text-sm text-[#2A2F27] mb-1 mt-0">Stage 1 — Multiple choice</h3>
                 )}
