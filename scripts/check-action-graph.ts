@@ -86,18 +86,18 @@ check(
     "…Paget Street and the endgame stay hidden",
     stateOf("doorbell-paget-street-butt", ["bus-cctv-butt"]) === "hidden" && stateOf("endgame-arrest-burgess-butt", ["bus-cctv-butt"]) === "hidden"
   );
-  const opens = getOpensNext(bus.id, new Set(["bus-cctv-butt"]), MAX);
+  const opens = getOpensNext(bus.id, new Set(["bus-cctv-butt"]));
   check("…and the strip lists only high street CCTV", opens.length === 1 && opens[0].action.id === "highstreet-cctv-butt");
 }
 
 {
   // Everything up to a property search is on file; vary only which suspect was searched.
   const upTo = ["forensic-report-mason", "forensic-report-wooley", "toolmark-review-mason-wooley", "pull-interview-burgess-mason"];
-  const nigel = getOpensNext("property-search-wooley", new Set([...upTo, "property-search-wooley"]), MAX);
-  const swayne = getOpensNext("property-search-swayne", new Set([...upTo, "property-search-swayne"]), MAX);
+  const nigel = getOpensNext("property-search-wooley", new Set([...upTo, "property-search-wooley"]));
+  const swayne = getOpensNext("property-search-swayne", new Set([...upTo, "property-search-swayne"]));
   check("property search on Nigel opens nothing", nigel.length === 0, nigel.map((e) => e.action.id).join(", "));
   check("property search on Swayne opens nothing", swayne.length === 0, swayne.map((e) => e.action.id).join(", "));
-  const burgess = getOpensNext("property-search-burgess", new Set([...upTo, "property-search-burgess"]), MAX);
+  const burgess = getOpensNext("property-search-burgess", new Set([...upTo, "property-search-burgess"]));
   const ids = burgess.map((e) => e.action.id).sort();
   const expected = ["cellsite-burgess-butt", "cellsite-burgess-mason", "cellsite-burgess-wooley", "interim-interview-burgess"];
   check(

@@ -4,10 +4,9 @@ import { getTeamForSession } from "@/lib/auth";
 import { SESSION_COOKIE_NAME, STUDENT_COOKIE_NAME } from "@/lib/session-cookie";
 import { getAllWeekState, getActionLog, getTeamBaselineActions, getTeamReserve } from "@/lib/actions";
 import { getQuizAttempts, getGenericQuizAttempts, getTeamQuizAverage } from "@/lib/quiz";
-import { ACTIONS } from "@/lib/actions-catalog";
 import { ALL_QUIZ_WEEKS, QUIZ_DEFS } from "@/lib/quiz-catalog";
 import { getBoard } from "@/lib/board";
-import { EVIDENCE } from "@/lib/evidence-catalog";
+import { buildTeamView } from "@/lib/team-view";
 import { getCurrentWeek } from "@/lib/module-settings";
 import { getStudentById, getStudentsForTeam } from "@/lib/students";
 import { getDraft as getCw2Draft } from "@/lib/cw2-practice";
@@ -62,17 +61,21 @@ export default async function DashboardPage() {
   );
   const genericAttempts = Object.fromEntries(QUIZ_DEFS.map((q, i) => [q.id, genericAttemptsList[i]]));
 
+  // The only case content that leaves the server: this team's view of it (see lib/team-view.ts).
+  const teamView = buildTeamView(new Set(log.map((entry) => entry.actionId)), currentWeek);
+
   return (
     <DashboardShell
       teamName={team.name}
       currentWeek={currentWeek}
-      actions={ACTIONS}
+      enquiries={teamView.enquiries}
       initialWeekState={weekState}
       initialLog={log}
       quizStudentsAttemptedByWeek={quizStudentsAttemptedByWeek}
       baselineActions={baselineActions}
       initialReservePoints={reservePoints}
-      evidence={EVIDENCE}
+      evidence={teamView.evidence}
+      totalEvidence={teamView.totalEvidence}
       initialBoard={board}
       validStudent={validStudent}
       roster={roster}

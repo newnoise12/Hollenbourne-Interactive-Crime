@@ -40,6 +40,11 @@ export default async function InstructorDashboardPage() {
             Preview all evidence
           </Link>{" "}
           &mdash; every exhibit fully unlocked, read-only, for proofreading the case file.
+          <br />
+          <Link href="/instructor/evidence-map" className="text-[#A6764A] underline">
+            Evidence gating map
+          </Link>{" "}
+          &mdash; a flow chart of every prerequisite, cost and week gate, drawn live from the catalog.
         </p>
 
         {teams.length === 0 ? (

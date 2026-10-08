@@ -88,6 +88,8 @@ If reached by naming Burgess specifically, the search resolves via a search warr
 | Request bus operator CCTV/payment records | 2 | — |
 | Request Hollenbourne high street CCTV | 1 | — |
 | Canvass Paget Street, North Hollenbourne, for doorbell/ring camera footage | 2 | — |
+| Request Londis entrance CCTV, evening of 22 May | 2 | Swayne's initial interview *(added 2026-10-08)* |
+| Canvass Pleasance Street, North Hollenbourne, for doorbell/ring camera footage | 2 | Swayne's initial interview *(added 2026-10-08)* |
 
 ### The endgame
 

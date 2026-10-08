@@ -29,6 +29,8 @@ These need no other action first. Some carry a nominal "gated behind X already b
 | Request bus operator CCTV/payment records | 2 | *(endgame prerequisite)* |
 | Request Hollenbourne high street CCTV | 1 | *(supporting, see note below)* |
 | Canvass Paget Street, North Hollenbourne, for doorbell footage | 2 | *(endgame prerequisite)* |
+| Request Londis entrance CCTV, evening of 22 May | 2 | → requires Swayne's initial interview *(added 2026-10-08)* |
+| Canvass Pleasance Street, North Hollenbourne, for doorbell/ring camera footage | 2 | → requires Swayne's initial interview *(added 2026-10-08)* |
 | Request full ANPR sweep — Hollen Marsh access roads, 8 Oct 2019 | 3 | — |
 | Request full ANPR sweep — Featherton, 6 Jan 2022 | 2 | — |
 | Pull forensic pathology report — Mason / Wooley / Porterhouse / Butt (initial) | 1 each | — *(available Week 9; see institutional inertia note below)* |

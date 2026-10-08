@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Student } from "@/lib/students";
 import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
-import type { EvidenceItem } from "@/lib/evidence-catalog";
+import type { ClientEvidence } from "@/lib/team-view";
 import type { LogEntry } from "@/lib/actions";
 import type { Cw2Draft } from "@/lib/cw2-practice";
 import type { ReferencePracticeDraft } from "@/lib/reference-practice";
@@ -86,6 +86,7 @@ export default function WeeklyOverviewTab({
   week2Attempts,
   genericAttempts,
   evidence,
+  totalEvidence,
   log,
   reservePoints,
   cw2Draft,
@@ -97,20 +98,17 @@ export default function WeeklyOverviewTab({
   roster: Student[];
   week2Attempts: RankQuizAttempt[];
   genericAttempts: Record<string, GenericQuizAttempt[]>;
-  evidence: EvidenceItem[];
+  evidence: ClientEvidence[];
+  totalEvidence: number;
   log: LogEntry[];
   reservePoints: number;
   cw2Draft: Cw2Draft | null;
   referenceDraft: ReferencePracticeDraft;
   onNavigate: (tab: Tab) => void;
 }) {
-  const completedActionIds = new Set(log.map((entry) => entry.actionId));
-  const unlockedCount = evidence.filter((e) => {
-    const weekOk = !e.unlocksWeek || currentWeek >= e.unlocksWeek;
-    const actionOk = !e.unlockedByActionId || completedActionIds.has(e.unlockedByActionId);
-    return weekOk && actionOk;
-  }).length;
-  const newlyUnlocked = evidence.filter((e) => e.unlocksWeek === currentWeek);
+  // Worked out on the server (lib/team-view.ts), which only sends what the team has unlocked.
+  const unlockedCount = evidence.filter((e) => e.unlocked).length;
+  const newlyUnlocked = evidence.filter((e) => e.unlocked && e.unlocksWeek === currentWeek);
 
   const thisWeekGeneric = QUIZ_DEFS.filter((q) => q.week === currentWeek);
   const hasWeek2Quiz = currentWeek === QUIZ_WEEK;
@@ -212,7 +210,7 @@ export default function WeeklyOverviewTab({
       <div className="bg-[#E8E1D0] border border-[#D6CDB4] px-5 py-4.5 mb-8">
         <h3 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-3 mt-0">Your team&apos;s progress</h3>
         <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[13px] text-[#5B5A4E] mb-4">
-          <span>{unlockedCount} / {evidence.length} evidence unlocked</span>
+          <span>{unlockedCount} / {totalEvidence} evidence unlocked</span>
           <span>{log.length} action{log.length === 1 ? "" : "s"} taken</span>
           <span>{reservePoints} reserve pt{reservePoints === 1 ? "" : "s"}</span>
         </div>

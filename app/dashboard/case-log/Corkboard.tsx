@@ -17,7 +17,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { SUSPECT_META, getEvidenceColor, type EvidenceItem } from "@/lib/evidence-catalog";
+import { SUSPECT_META, getEvidenceColor, type EvidenceItem } from "@/lib/evidence-meta";
 
 export interface BoardPin {
   id: string;

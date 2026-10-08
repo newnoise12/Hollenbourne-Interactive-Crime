@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MinusIcon, PlusIcon } from "@/components/icons";
-import { MAX_WEEK } from "@/lib/actions-catalog";
+import { MAX_WEEK } from "@/lib/actions-meta";
 
 export default function CurrentWeekControl({ initialWeek }: { initialWeek: number }) {
   const router = useRouter();

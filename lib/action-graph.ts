@@ -97,7 +97,8 @@ export function isTakeable(view: EnquiryView): boolean {
 }
 
 export type OpensNextEntry =
-  | { kind: "available"; action: ActionItem; weekLocked: number | null }
+  /** `weekGate` is the action's own week gate (null if none) — whether the team has reached it is the caller's call. */
+  | { kind: "available"; action: ActionItem; weekGate: number | null }
   | { kind: "waiting"; action: ActionItem; stillNeeds: string[] };
 
 /**
@@ -109,15 +110,15 @@ export type OpensNextEntry =
  * `completed` should already include `actionId`. Titles and cost only — the
  * caller never sees a total cost for any chain.
  */
-export function getOpensNext(actionId: string, completed: ReadonlySet<string>, week: number): OpensNextEntry[] {
+export function getOpensNext(actionId: string, completed: ReadonlySet<string>): OpensNextEntry[] {
   const entries: OpensNextEntry[] = [];
   for (const action of ACTIONS) {
     if (!action.prerequisiteActionIds?.includes(actionId)) continue;
     if (completed.has(action.id)) continue;
-    const view = getEnquiryView(action, completed, week);
+    const view = getEnquiryView(action, completed, 0);
     if (view.state === "hidden") continue; // further away than one step — never previewed
     if (view.state === "available") {
-      entries.push({ kind: "available", action, weekLocked: view.weekLocked });
+      entries.push({ kind: "available", action, weekGate: action.availableFromWeek ?? null });
     } else {
       entries.push({ kind: "waiting", action, stillNeeds: view.waitingOn.filter((w) => !w.met).map((w) => w.title) });
     }

@@ -5,9 +5,8 @@ import LogoutButton from "./LogoutButton";
 import ActionEconomy from "./actions/ActionEconomy";
 import EvidenceBoard from "./case-log/EvidenceBoard";
 import WeeklyOverviewTab from "./WeeklyOverviewTab";
-import type { ActionItem } from "@/lib/actions-catalog";
+import type { ClientEnquiry, ClientEvidence } from "@/lib/team-view";
 import type { WeekStateMap, LogEntry } from "@/lib/actions";
-import type { EvidenceItem } from "@/lib/evidence-catalog";
 import type { Board } from "@/lib/board";
 import type { Student } from "@/lib/students";
 import type { RankQuizAttempt, GenericQuizAttempt } from "@/lib/quiz";
@@ -25,13 +24,14 @@ const TABS: { id: Tab; label: string }[] = [
 export default function DashboardShell({
   teamName,
   currentWeek,
-  actions,
+  enquiries,
   initialWeekState,
   initialLog,
   quizStudentsAttemptedByWeek,
   baselineActions,
   initialReservePoints,
   evidence,
+  totalEvidence,
   initialBoard,
   validStudent,
   roster,
@@ -42,13 +42,14 @@ export default function DashboardShell({
 }: {
   teamName: string;
   currentWeek: number;
-  actions: ActionItem[];
+  enquiries: ClientEnquiry[];
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
   quizStudentsAttemptedByWeek: Record<number, number>;
   baselineActions: number;
   initialReservePoints: number;
-  evidence: EvidenceItem[];
+  evidence: ClientEvidence[];
+  totalEvidence: number;
   initialBoard: Board;
   validStudent: { id: string; name: string } | null;
   roster: Student[];
@@ -125,6 +126,7 @@ export default function DashboardShell({
             week2Attempts={week2Attempts}
             genericAttempts={genericAttempts}
             evidence={evidence}
+            totalEvidence={totalEvidence}
             log={initialLog}
             reservePoints={initialReservePoints}
             cw2Draft={cw2Draft}
@@ -134,7 +136,7 @@ export default function DashboardShell({
         </div>
         <div hidden={tab !== "investigation"}>
           <ActionEconomy
-            actions={actions}
+            enquiries={enquiries}
             evidence={evidence}
             onOpenExhibit={handleOpenExhibit}
             initialWeekState={initialWeekState}
@@ -151,7 +153,6 @@ export default function DashboardShell({
               evidence={evidence}
               initialBoard={initialBoard}
               currentWeek={currentWeek}
-              completedActionIds={new Set(initialLog.map((e) => e.actionId))}
               exhibitRequest={exhibitRequest}
             />
           )}

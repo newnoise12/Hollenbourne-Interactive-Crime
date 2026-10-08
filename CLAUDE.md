@@ -890,6 +890,74 @@ team's overall progress, with buttons that switch tabs programmatically
   author notes at the end of transcripts in `hollenbourne-interviews.md` — both
   are designer-facing, not exhibit text; plus the historical prototypes
   (`action-economy.jsx`, `evidence-board.jsx`, `prototype-reference/index.html`).
+- **Instructor "Evidence gating map"** (`app/instructor/evidence-map/`, linked from
+  `/instructor`): a flow chart of every action as a box (cost, case, evidence
+  group, week gate) with arrows from each prerequisite, laid out left to right by
+  depth — 0 steps (open from the start) through 3 — with hover/tab-to-trace of a
+  box's whole chain and the cheapest route to the endgame (17 pts, from
+  `minimumCostToComplete`) in gold. Layout is `lib/action-graph-layout.ts`
+  (layer = longest path from the start; a few barycentre sweeps to cut crossings);
+  everything is derived from `lib/actions-catalog.ts`, so it changes the moment a
+  prerequisite, cost or week gate does and can't drift. Staff-only: it shows the
+  whole tree and the endgame's total cost, which students never see. Colour is by
+  case, and every box also names its case and group in text.
+- **New action: Londis entrance CCTV (2026-10-08)** — `londis-cctv-butt`, EX.65.
+  User's choices: **2 pts, requires Swayne's initial interview
+  (`pull-interview-swayne`)**, Butt case, "Cameras & vehicles". The image is the
+  Londis shop-front still, on-screen label "Londis Boresfield - Entrance CAM 1",
+  **22/05/2025 23:23:17** (`Reference/exhibit-londis-entrance-cam1.png`, served as
+  `public/case-images/londis-entrance-butt-2025.jpg`, a 213 KB JPEG of the 2 MB
+  PNG). Outcome is a neutral description of the still only (grey hooded tracksuit,
+  dark side stripes, rip at the knee, dark boots, entering the shop doorway, face
+  visible) — **no suspect tag and no identification**; nothing in the case files
+  says who he is. Note the time: 23:23 is *after* Sara Butt's 22:49 message.
+  A first attempt used the wrong file — the user had mis-named it: that one is
+  **Ring-camera footage, 22/05/2025 21:52:08**, a man in a similar grey striped
+  tracksuit walking a residential street (`Reference/exhibit-ring-cam-footage-2025-05-22.png`).
+  It is now its own action, **`ring-cam-pleasance-street-butt` (EX.66)**: "Canvass
+  Pleasance Street, North Hollenbourne, for doorbell/ring camera footage", user's
+  choices **2 pts, requires Swayne's initial interview** (same gate as the Londis
+  CCTV), image `public/case-images/ring-cam-pleasance-street-2025.jpg`, neutral
+  outcome (no identification). **"Pleasance Street" is a new name** — it isn't in
+  the case bible or on either map, so the maps may want it added. Two near-identical alternates of the
+  Londis shot (rainy, and a plain "CAM 1" version without the Londis label) are in
+  the user's Downloads and were not used. The action is appended **last** in
+  `ACTIONS` so no existing exhibit number moves (numbers are handed out in catalog
+  order). Added to `hollenbourne-unlock-tree.md` and `hollenbourne-action-economy.md`;
+  no case-bible text exists for it yet.
+- **Locked content no longer reaches the browser (2026-10-08).** Found while testing
+  the Londis action: the gating hid things correctly on screen, but every exhibit's
+  full text and every action's result was in the page's embedded data *and* in a
+  downloadable JavaScript bundle (the catalogs build their text at load time, so any
+  client import of `evidence-catalog`/`actions-catalog`/`action-graph` packs all of it
+  in) — view-source revealed the Burgess arrest transcript to a team that had unlocked
+  nothing. Fixed by separating content from display: **`lib/actions-meta.ts` and
+  `lib/evidence-meta.ts`** hold the types, labels, colours and `isEvidenceUnlocked`
+  (browser-safe, no case text; the catalogs re-export them so server imports are
+  unchanged); **`lib/team-view.ts` (server-only) `buildTeamView(completedActionIds,
+  currentWeek)`** decides what one team's browser may know and `app/dashboard/page.tsx`
+  sends only that: an enquiry further than one step away is **absent**; a waiting one
+  is a title, a cost and its "waiting on" list (unmet prerequisites it can't see are a
+  placeholder, with no id); an available one adds its description; a done one adds its
+  result and its "opens next" list; an exhibit is full only when unlocked (a
+  calendar-locked baseline document is a blank stub with a redacted title, and an
+  exhibit whose action hasn't been taken is not sent at all). **Rules for future
+  work:** never import `actions-catalog`, `evidence-catalog`, `action-evidence-bodies`,
+  `action-graph` or `team-view` (values) from a client component — import the `-meta`
+  modules or `import type`; anything the browser needs about a locked item must be
+  worked out in `team-view.ts`. The Investigation tab no longer recomputes states
+  client-side; after taking an action it refreshes the server data
+  (`startRefresh(() => router.refresh())`) and holds the buttons until it lands.
+  `getOpensNext` lost its `week` argument (it returns the action's `weekGate`; the
+  browser compares it to the browse week). **Guard: `npm run build && npm run
+  check:leak`** scans the built JS for ~600 case-text markers (exhibit bodies, results,
+  descriptions); `npm run check:leak -- --live http://localhost:3000` (dev server
+  running, local `dev.db`) also registers a throwaway team and checks its page data
+  contains nothing it hasn't unlocked (the team is deleted afterwards). Verified:
+  before the fix the bundle check failed on hundreds of markers; after it, 0, and a
+  click-through confirmed taking an action reveals exactly its dependents. **Not
+  covered / still true:** `lib/quiz-catalog.ts` is imported by client components, so
+  quiz answer keys and question text are in the bundle — a separate issue.
 - The endgame submission form (`hollenbourne-endgame-form.md`) is
   confirmed **not** a gap — it's explicit in its own header that it's
   offline and hand-graded, no app integration intended.

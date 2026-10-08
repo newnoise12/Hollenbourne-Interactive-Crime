@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MinusIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
-import { MAX_TRUST_BONUS, type ActionItem } from "@/lib/actions-catalog";
-import type { EvidenceItem } from "@/lib/evidence-catalog";
-import { getEnquiryView, isTakeable } from "@/lib/action-graph";
+import { MAX_TRUST_BONUS } from "@/lib/actions-meta";
+import type { ClientEnquiry, ClientEvidence } from "@/lib/team-view";
 import { ALL_QUIZ_WEEKS } from "@/lib/quiz-catalog";
 import type { WeekState, WeekStateMap, LogEntry } from "@/lib/actions";
 import EvidenceViews from "./EvidenceViews";
@@ -34,7 +33,7 @@ function iconBtnClass(disabled: boolean) {
 }
 
 export default function ActionEconomy({
-  actions,
+  enquiries,
   evidence,
   onOpenExhibit,
   initialWeekState,
@@ -44,8 +43,8 @@ export default function ActionEconomy({
   initialReservePoints,
   currentWeek,
 }: {
-  actions: ActionItem[];
-  evidence: EvidenceItem[];
+  enquiries: ClientEnquiry[];
+  evidence: ClientEvidence[];
   onOpenExhibit: (exhibitId: string) => void;
   initialWeekState: WeekStateMap;
   initialLog: LogEntry[];
@@ -76,7 +75,12 @@ export default function ActionEconomy({
   }
   const [saveError, setSaveError] = useState(false);
   const [pending, setPending] = useState(false);
-  const [pendingReserveAction, setPendingReserveAction] = useState<ActionItem | null>(null);
+  // After an action the page's server data is refreshed (the enquiry list, the Case Log and
+  // the counts are all worked out on the server, which is what keeps locked text out of the
+  // browser) — hold the buttons until the fresh data lands, so nothing is taken twice.
+  const [refreshing, startRefresh] = useTransition();
+  const busy = pending || refreshing;
+  const [pendingReserveAction, setPendingReserveAction] = useState<ClientEnquiry | null>(null);
   // The enquiry just taken stays open on screen so its result is the first thing seen.
   const [justTakenId, setJustTakenId] = useState<string | null>(null);
 
@@ -87,11 +91,6 @@ export default function ActionEconomy({
   const quizStudentsAttempted = quizStudentsAttemptedByWeek[week] ?? 0;
   const canBank = current.trustBonus > 0 && remaining >= 2;
 
-  // Prerequisites are permanent, not weekly — completed in any week, on any
-  // team's own timeline, they stay completed. Derived from the live log
-  // state so a just-taken prerequisite unlocks its follow-up immediately,
-  // without needing a reload.
-  const completedActionIds = new Set(log.map((entry) => entry.actionId));
   // The week each action was first taken in (the log is newest-first, so the
   // last entry for an id is the earliest).
   const completedWeeks = new Map<string, number>();
@@ -122,8 +121,10 @@ export default function ActionEconomy({
     }
   };
 
-  const takeAction = async (action: ActionItem, useReserve: boolean) => {
-    if (!isTakeable(getEnquiryView(action, completedActionIds, week)) || pending) return;
+  const takeAction = async (action: ClientEnquiry, useReserve: boolean) => {
+    // Time-gated actions can be "available" yet not takeable until their week.
+    const weekLocked = action.availableFromWeek !== null && week < action.availableFromWeek;
+    if (action.state !== "available" || weekLocked || busy) return;
     if (useReserve) {
       if (reservePoints < action.cost) return;
       setPendingReserveAction(action);
@@ -133,7 +134,7 @@ export default function ActionEconomy({
     await submitTakeAction(action, false);
   };
 
-  const submitTakeAction = async (action: ActionItem, useReserve: boolean) => {
+  const submitTakeAction = async (action: ClientEnquiry, useReserve: boolean) => {
     setSaveError(false);
     setPending(true);
     try {
@@ -154,7 +155,7 @@ export default function ActionEconomy({
       setJustTakenId(action.id);
       // The Case Log unlocks evidence from this log, and This Week counts it —
       // refresh so they don't wait for a reload.
-      router.refresh();
+      startRefresh(() => router.refresh());
     } catch {
       setSaveError(true);
     } finally {
@@ -163,7 +164,7 @@ export default function ActionEconomy({
   };
 
   const bank = async () => {
-    if (!canBank || pending) return;
+    if (!canBank || busy) return;
     setSaveError(false);
     setPending(true);
     try {
@@ -179,7 +180,7 @@ export default function ActionEconomy({
       }
       setWeekStateMap((prev) => ({ ...prev, [week]: data.weekState }));
       setReservePoints(data.reservePoints);
-      router.refresh();
+      startRefresh(() => router.refresh());
     } catch {
       setSaveError(true);
     } finally {
@@ -250,12 +251,12 @@ export default function ActionEconomy({
           </div>
           <button
             onClick={bank}
-            disabled={!canBank || pending}
+            disabled={!canBank || busy}
             className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
             style={{
-              borderColor: !canBank || pending ? "#D6CDB4" : "#93650F",
-              color: !canBank || pending ? "#D6CDB4" : "#93650F",
-              cursor: !canBank || pending ? "not-allowed" : "pointer",
+              borderColor: !canBank || busy ? "#D6CDB4" : "#93650F",
+              color: !canBank || busy ? "#D6CDB4" : "#93650F",
+              cursor: !canBank || busy ? "not-allowed" : "pointer",
             }}
             title="Convert 2 of this week's unspent points into 1 permanent case-reserve point"
           >
@@ -264,15 +265,13 @@ export default function ActionEconomy({
         </div>
 
         <EvidenceViews
-          actions={actions}
+          enquiries={enquiries}
           evidence={evidence}
-          completedActionIds={completedActionIds}
           completedWeeks={completedWeeks}
           week={week}
-          moduleWeek={currentWeek}
           remaining={remaining}
           reservePoints={reservePoints}
-          pending={pending}
+          pending={busy}
           justTakenId={justTakenId}
           onTake={takeAction}
           onOpenExhibit={onOpenExhibit}

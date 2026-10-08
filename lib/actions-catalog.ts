@@ -3,29 +3,16 @@
 // Reference/case-content/mechanics/hollenbourne-action-economy.md. Not
 // stored in the database; team progress against this catalog lives in
 // weekActionState + actionLog (db/schema.ts).
+//
+// SERVER-ONLY: never import this from a client component — it holds every action's
+// result text. Browser code reads the per-team view built in lib/team-view.ts.
 
-export type ActionCategory = "interview" | "forensic" | "documentary" | "visual" | "witness";
+import type { ActionCategory, CaseName, EvidenceGroup } from "./actions-meta";
 
-// The four cases under review, plus "general" for material that belongs to no
-// single victim. Lives here (not in evidence-catalog.ts) because an action is
-// the one place its case is defined; the evidence catalog derives from it.
-export type CaseName = "mason" | "wooley" | "porterhouse" | "butt" | "general";
-
-// The six ways the evidence page groups its "By evidence type" view. Separate
-// from evidence-catalog.ts's four-value EvidenceType (statistical / visual /
-// interview / documentary), which still drives card colours and the corkboard.
-export type EvidenceGroup = "interviews" | "forensics" | "cameras" | "phone" | "records" | "maps";
-
-export const EVIDENCE_GROUP_META: Record<EvidenceGroup, { label: string }> = {
-  interviews: { label: "Interviews & statements" },
-  forensics: { label: "Forensics & searches" },
-  cameras: { label: "Cameras & vehicles" },
-  phone: { label: "Phone & location data" },
-  records: { label: "Records & files" },
-  maps: { label: "Maps & background" },
-};
-
-export const EVIDENCE_GROUP_ORDER: EvidenceGroup[] = ["interviews", "forensics", "cameras", "phone", "records", "maps"];
+// Types and display constants live in actions-meta.ts (browser-safe); re-exported
+// here so server code can keep importing everything from one place.
+export type { ActionCategory, CaseName, EvidenceGroup } from "./actions-meta";
+export { CATEGORY_META, EVIDENCE_GROUP_META, EVIDENCE_GROUP_ORDER, MAX_TRUST_BONUS, MAX_WEEK } from "./actions-meta";
 
 // Which narrative chain an action belongs to, for the Investigation tab's
 // grouping — recovered from the standalone artifact prototype (see
@@ -73,14 +60,6 @@ export type ActionItem = {
   // Week 10, to preserve the "wait, that changes things" moment against
   // Ferris's memo. Independent of prerequisiteActionIds; both are checked.
   availableFromWeek?: number;
-};
-
-export const CATEGORY_META: Record<ActionCategory, { label: string; color: string }> = {
-  interview: { label: "Interview", color: "#712B13" },
-  forensic: { label: "Forensic", color: "#8B3226" },
-  documentary: { label: "Documentary", color: "#644421" },
-  visual: { label: "Visual", color: "#085041" },
-  witness: { label: "Witness", color: "#3C3489" },
 };
 
 // Order here is the display order on the Investigation tab: open enquiries
@@ -132,9 +111,6 @@ export const THREAD_ORDER: ActionThread[] = [
   "anpr",
   "endgame",
 ];
-
-export const MAX_TRUST_BONUS = 3;
-export const MAX_WEEK = 11;
 
 export const ACTIONS: ActionItem[] = [
   // ---------------------------------------------------------------------
@@ -740,6 +716,34 @@ export const ACTIONS: ActionItem[] = [
     cost: 2,
     prerequisiteActionIds: ["anpr-haddad-marsh-road"],
     outcome: "Three vehicles pass through besides Haddad's own: a resident's car confirmed as a normal return home, a delivery van on a separate scheduled round, and one plate that returns no match on the DVLA database at all.",
+  },
+  // Added last on purpose: exhibit numbers are handed out in catalog order
+  // (lib/evidence-catalog.ts), so appending keeps every existing EX.nn fixed.
+  {
+    id: "londis-cctv-butt",
+    category: "visual",
+    thread: "butt",
+    case: "butt",
+    group: "cameras",
+    label: "Request Londis entrance CCTV, evening of 22 May",
+    shortLabel: "Londis entrance CCTV",
+    description: "Check the camera at the Londis entrance for the evening of Sara Butt's death.",
+    cost: 2,
+    prerequisiteActionIds: ["pull-interview-swayne"],
+    outcome: "The camera records a man in a grey hooded tracksuit with dark side stripes, a rip at the knee and dark boots entering the shop doorway at 23:23:17 on 22 May 2025. His face is visible.",
+  },
+  {
+    id: "ring-cam-pleasance-street-butt",
+    category: "visual",
+    thread: "butt",
+    case: "butt",
+    group: "cameras",
+    label: "Canvass Pleasance Street, North Hollenbourne, for doorbell/ring camera footage",
+    shortLabel: "the Pleasance Street doorbell canvass",
+    description: "Door-to-door canvass of Pleasance Street for doorbell and home-security cameras.",
+    cost: 2,
+    prerequisiteActionIds: ["pull-interview-swayne"],
+    outcome: "One doorbell camera records a man in a grey hooded tracksuit with dark side stripes and dark boots walking along the pavement at 21:52:08 on 22 May 2025. His face is partly visible in profile.",
   },
 ];
 

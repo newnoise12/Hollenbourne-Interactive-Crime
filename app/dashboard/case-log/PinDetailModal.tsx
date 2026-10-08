@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { EvidenceItem } from "@/lib/evidence-catalog";
+import type { EvidenceItem } from "@/lib/evidence-meta";
 import { FullTextReader, ExhibitImage } from "./EvidenceBoard";
 
 export default function PinDetailModal({

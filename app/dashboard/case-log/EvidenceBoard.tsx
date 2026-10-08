@@ -7,11 +7,11 @@ import {
   SUSPECT_META,
   CASE_META,
   getEvidenceColor,
-  isEvidenceUnlocked,
   type EvidenceItem,
   type CaseName,
   type EvidenceBodySection,
-} from "@/lib/evidence-catalog";
+} from "@/lib/evidence-meta";
+import type { ClientEvidence } from "@/lib/team-view";
 import type { Board, BoardPin } from "@/lib/board";
 import Corkboard from "./Corkboard";
 import PinDetailModal from "./PinDetailModal";
@@ -179,15 +179,13 @@ function ExhibitTile({
 function ExhibitDetail({
   item,
   pinned,
-  completedActionIds,
   currentWeek,
   onPin,
   onUnpin,
   onClose,
 }: {
-  item: EvidenceItem;
+  item: ClientEvidence;
   pinned: boolean;
-  completedActionIds: ReadonlySet<string>;
   currentWeek: number;
   onPin: (exhibitId: string) => void;
   onUnpin: (exhibitId: string) => void;
@@ -222,9 +220,9 @@ function ExhibitDetail({
         sections={item.body ?? [{ paragraphs: ["No fuller record exists on file for this exhibit beyond the summary above."] }]}
       />
 
-      {item.unlockedByActionId && (
+      {item.opensNext && item.opensNext.length > 0 && (
         <div className="mb-4">
-          <OpensNextStrip actionId={item.unlockedByActionId} completedActionIds={completedActionIds} week={currentWeek} />
+          <OpensNextStrip entries={item.opensNext} week={currentWeek} />
         </div>
       )}
 
@@ -251,13 +249,11 @@ export default function EvidenceBoard({
   evidence,
   initialBoard,
   currentWeek,
-  completedActionIds,
   exhibitRequest,
 }: {
-  evidence: EvidenceItem[];
+  evidence: ClientEvidence[];
   initialBoard: Board;
   currentWeek: number;
-  completedActionIds: Set<string>;
   exhibitRequest: { id: string } | null;
 }) {
   const [board, setBoard] = useState<Board>(initialBoard);
@@ -402,10 +398,12 @@ export default function EvidenceBoard({
   // Case Log lists baseline documents (time-released ones show as locked) and
   // findings the team has actually obtained. A finding not yet unlocked is not
   // listed at all — showing every locked one would reveal the whole action tree.
-  const listed = evidence.filter((e) => !e.unlockedByActionId || completedActionIds.has(e.unlockedByActionId));
-  const unlockedCount = listed.filter((e) => isEvidenceUnlocked(e, currentWeek, completedActionIds)).length;
+  // The server never sends a finding the team hasn't unlocked (lib/team-view.ts), so the list is
+  // simply everything it was given; `unlocked` only distinguishes time-released stubs.
+  const listed = evidence;
+  const unlockedCount = listed.filter((e) => e.unlocked).length;
   const openItem = openExhibitId ? evidence.find((e) => e.id === openExhibitId) ?? null : null;
-  const openItemUnlocked = openItem ? isEvidenceUnlocked(openItem, currentWeek, completedActionIds) : false;
+  const openItemUnlocked = openItem ? openItem.unlocked : false;
 
   const requirementFor = (item: EvidenceItem): string | null => {
     if (item.unlocksWeek && currentWeek < item.unlocksWeek) {
@@ -440,7 +438,7 @@ export default function EvidenceBoard({
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {items.map((item) => {
-                const unlocked = isEvidenceUnlocked(item, currentWeek, completedActionIds);
+                const unlocked = item.unlocked;
                 return (
                   <ExhibitTile
                     key={item.id}
@@ -462,7 +460,6 @@ export default function EvidenceBoard({
           <ExhibitDetail
             item={openItem}
             pinned={pinnedExhibitIds.has(openItem.id)}
-            completedActionIds={completedActionIds}
             currentWeek={currentWeek}
             onPin={pinEvidence}
             onUnpin={unpinByExhibitId}

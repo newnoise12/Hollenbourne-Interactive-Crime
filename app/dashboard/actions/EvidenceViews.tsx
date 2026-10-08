@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import {
-  CATEGORY_META,
-  EVIDENCE_GROUP_META,
-  EVIDENCE_GROUP_ORDER,
-  type ActionItem,
-  type CaseName,
-} from "@/lib/actions-catalog";
-import { CASE_META, isEvidenceUnlocked, type EvidenceItem } from "@/lib/evidence-catalog";
-import { getEnquiryView, isTakeable, type EnquiryView } from "@/lib/action-graph";
+import { CATEGORY_META, EVIDENCE_GROUP_META, EVIDENCE_GROUP_ORDER, type CaseName } from "@/lib/actions-meta";
+import { CASE_META } from "@/lib/evidence-meta";
+import type { ClientEnquiry, ClientEvidence } from "@/lib/team-view";
 import { OpensNextStrip } from "./OpensNext";
+
+// Everything on this page comes from the per-team view the server prepared
+// (lib/team-view.ts): enquiries the team can't see yet are simply absent, and a
+// waiting enquiry carries only its title and what it waits on. This component
+// deliberately imports nothing from the case catalogs.
 
 type ViewMode = "case" | "type";
 
@@ -25,17 +24,17 @@ const CASE_VIEW_LABEL: Record<CaseName, string> = {
   general: "General / cross-case",
 };
 
-function OnFileTile({ item, unlocked, week, onOpen }: { item: EvidenceItem; unlocked: boolean; week: number; onOpen: () => void }) {
-  if (!unlocked) {
+function OnFileTile({ item, onOpen }: { item: ClientEvidence; onOpen: () => void }) {
+  if (!item.unlocked) {
     return (
       <div className="bg-[#3A3D3E] border border-dashed border-[#A6764A55] px-4 py-3 opacity-75">
         <div className="flex justify-between items-baseline mb-1.5">
           <span className="font-mono text-[11px] text-[#A6764A] tracking-wide">{item.exhibit}</span>
           <span className="font-mono text-[10px] text-[#8A8A80] border border-[#55554E] px-1.5 py-0.5">LOCKED</span>
         </div>
-        <p className="font-mono text-[13px] text-[#6E6D64] tracking-[1.5px] mb-1 mt-0">{item.title.replace(/[A-Za-z0-9]/g, "█")}</p>
+        <p className="font-mono text-[13px] text-[#6E6D64] tracking-[1.5px] mb-1 mt-0">{item.title}</p>
         <p className="font-mono text-[11px] text-[#8A8A80] m-0">
-          {item.unlocksWeek && week < item.unlocksWeek ? `Unlocks in week ${item.unlocksWeek}` : "Locked"}
+          {item.unlocksWeek ? `Unlocks in week ${item.unlocksWeek}` : "Locked"}
         </p>
       </div>
     );
@@ -56,8 +55,7 @@ function OnFileTile({ item, unlocked, week, onOpen }: { item: EvidenceItem; unlo
 }
 
 function EnquiryCard({
-  view,
-  completedActionIds,
+  enquiry,
   doneWeek,
   week,
   canAfford,
@@ -66,23 +64,24 @@ function EnquiryCard({
   onTake,
   onOpenExhibit,
 }: {
-  view: EnquiryView;
-  completedActionIds: ReadonlySet<string>;
+  enquiry: ClientEnquiry;
   doneWeek: number | null;
   week: number;
   canAfford: boolean;
   canAffordFromReserve: boolean;
   justTaken: boolean;
-  onTake: (action: ActionItem, useReserve: boolean) => void;
+  onTake: (enquiry: ClientEnquiry, useReserve: boolean) => void;
   onOpenExhibit: (exhibitId: string) => void;
 }) {
-  const { action, state } = view;
-  const meta = CATEGORY_META[action.category];
+  const { state } = enquiry;
+  const meta = CATEGORY_META[enquiry.category];
   const [manualOpen, setManualOpen] = useState<boolean | null>(null);
   const resultOpen = manualOpen ?? justTaken;
-  const takeable = isTakeable(view);
+  // A time-gated enquiry can be "available" (every prerequisite met) yet not takeable yet.
+  const weekLocked = enquiry.availableFromWeek && week < enquiry.availableFromWeek ? enquiry.availableFromWeek : null;
+  const takeable = state === "available" && weekLocked === null;
   const muted = state === "waiting" || (state === "available" && !takeable);
-  const alsoRelates = (action.alsoRelatesTo ?? []).filter((c) => c !== action.case);
+  const alsoRelates = (enquiry.alsoRelatesTo ?? []).filter((c) => c !== enquiry.case);
 
   return (
     <div
@@ -102,18 +101,18 @@ function EnquiryCard({
           {state === "waiting" && (
             <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#8A8A80] px-2 py-0.5">WAITING</span>
           )}
-          {state === "available" && view.weekLocked && (
+          {state === "available" && weekLocked && (
             <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#8A8A80] px-2 py-0.5">
-              AVAILABLE FROM WEEK {view.weekLocked}
+              AVAILABLE FROM WEEK {weekLocked}
             </span>
           )}
           {state !== "done" && (
-            <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#D6CDB4] px-2 py-0.5">cost: {action.cost}</span>
+            <span className="font-mono text-[11px] text-[#5B5A4E] border border-[#D6CDB4] px-2 py-0.5">cost: {enquiry.cost}</span>
           )}
         </div>
       </div>
 
-      <h4 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-1 mt-0">{action.label}</h4>
+      <h4 className="font-serif font-semibold text-[15px] text-[#2A2F27] mb-1 mt-0">{enquiry.label}</h4>
       {alsoRelates.length > 0 && (
         <p className="font-mono text-[10px] text-[#5B5A4E] mb-1.5 mt-0">
           also relates to: {alsoRelates.map((c) => CASE_META[c].label).join(", ")}
@@ -121,16 +120,16 @@ function EnquiryCard({
       )}
 
       {/* A locked enquiry shows its title and what it is waiting on — never what it would reveal. */}
-      {state === "available" && takeable && (
-        <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{action.description}</p>
+      {takeable && enquiry.description && (
+        <p className="font-mono text-xs text-[#5B5A4E] leading-relaxed mb-2.5 mt-0">{enquiry.description}</p>
       )}
 
       {state === "waiting" && (
         <div className="mb-1 mt-2">
           <p className="font-mono text-[11px] uppercase tracking-wide text-[#8B3226] mb-1 mt-0">Waiting on</p>
           <ul className="m-0 pl-4 list-disc">
-            {view.waitingOn.map((w) => (
-              <li key={w.id} className="font-mono text-xs text-[#2A2F27] leading-relaxed">
+            {enquiry.waitingOn.map((w, i) => (
+              <li key={i} className="font-mono text-xs text-[#2A2F27] leading-relaxed">
                 {w.title} &mdash; <span className={w.met ? "text-[#2F6B4F]" : "text-[#8B3226]"}>{w.met ? "✓ done" : "○ outstanding"}</span>
               </li>
             ))}
@@ -141,7 +140,7 @@ function EnquiryCard({
       {state === "available" && (
         <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => onTake(action, false)}
+            onClick={() => onTake(enquiry, false)}
             disabled={!takeable || !canAfford}
             className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border"
             style={{
@@ -154,7 +153,7 @@ function EnquiryCard({
           </button>
           {takeable && !canAfford && canAffordFromReserve && (
             <button
-              onClick={() => onTake(action, true)}
+              onClick={() => onTake(enquiry, true)}
               className="font-mono text-xs tracking-wide bg-transparent px-3.5 py-1.5 border border-[#93650F] text-[#93650F] cursor-pointer"
               title="Uses your team's shared, permanent case reserve instead of this week's budget"
             >
@@ -175,7 +174,7 @@ function EnquiryCard({
               {resultOpen ? "HIDE RESULT ▲" : "VIEW RESULT ▾"}
             </button>
             <button
-              onClick={() => onOpenExhibit(`ev-${action.id}`)}
+              onClick={() => onOpenExhibit(`ev-${enquiry.id}`)}
               className="font-mono text-[11px] tracking-wide bg-transparent border border-[#A6764A] text-[#A6764A] px-3 py-1.5 cursor-pointer"
             >
               READ IN CASE LOG &rarr;
@@ -183,10 +182,10 @@ function EnquiryCard({
           </div>
           {resultOpen && (
             <p className="font-mono text-[13px] text-[#2A2F27] leading-relaxed mt-3 mb-0 bg-[#FBF8F0] border border-[#D6CDB4] px-3.5 py-3">
-              {action.outcome}
+              {enquiry.outcome}
             </p>
           )}
-          <OpensNextStrip actionId={action.id} completedActionIds={completedActionIds} week={week} />
+          <OpensNextStrip entries={enquiry.opensNext} week={week} />
         </>
       )}
     </div>
@@ -194,12 +193,10 @@ function EnquiryCard({
 }
 
 export default function EvidenceViews({
-  actions,
+  enquiries,
   evidence,
-  completedActionIds,
   completedWeeks,
   week,
-  moduleWeek,
   remaining,
   reservePoints,
   pending,
@@ -207,19 +204,16 @@ export default function EvidenceViews({
   onTake,
   onOpenExhibit,
 }: {
-  actions: ActionItem[];
-  evidence: EvidenceItem[];
-  completedActionIds: ReadonlySet<string>;
+  enquiries: ClientEnquiry[];
+  evidence: ClientEvidence[];
   completedWeeks: ReadonlyMap<string, number>;
   /** The week being acted in (the browsable week selector) — what week gates are checked against. */
   week: number;
-  /** The module's current week — what free baseline documents unlock against. */
-  moduleWeek: number;
   remaining: number;
   reservePoints: number;
   pending: boolean;
   justTakenId: string | null;
-  onTake: (action: ActionItem, useReserve: boolean) => void;
+  onTake: (enquiry: ClientEnquiry, useReserve: boolean) => void;
   onOpenExhibit: (exhibitId: string) => void;
 }) {
   // Not remembered between visits: the app has no per-user preference store,
@@ -236,21 +230,16 @@ export default function EvidenceViews({
           key: c as string,
           label: CASE_VIEW_LABEL[c],
           onFile: onFile.filter((e) => e.case === c),
-          enquiries: actions.filter((a) => a.case === c),
+          enquiries: enquiries.filter((a) => a.case === c),
         }))
       : EVIDENCE_GROUP_ORDER.map((g) => ({
           key: g as string,
           label: EVIDENCE_GROUP_META[g].label,
           onFile: onFile.filter((e) => e.group === g),
-          enquiries: actions.filter((a) => a.group === g),
+          enquiries: enquiries.filter((a) => a.group === g),
         }));
 
-  const rendered = groups
-    .map((g) => ({
-      ...g,
-      views: g.enquiries.map((a) => getEnquiryView(a, completedActionIds, week)).filter((v) => v.state !== "hidden"),
-    }))
-    .filter((g) => g.onFile.length > 0 || g.views.length > 0);
+  const rendered = groups.filter((g) => g.onFile.length > 0 || g.enquiries.length > 0);
 
   const toggleClass = (active: boolean) =>
     `font-mono text-xs tracking-wide px-3.5 py-2 border cursor-pointer ${
@@ -279,31 +268,24 @@ export default function EvidenceViews({
               <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-[#A6764A] mb-2 mt-0">On file</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {group.onFile.map((item) => (
-                  <OnFileTile
-                    key={item.id}
-                    item={item}
-                    unlocked={isEvidenceUnlocked(item, moduleWeek, completedActionIds)}
-                    week={moduleWeek}
-                    onOpen={() => onOpenExhibit(item.id)}
-                  />
+                  <OnFileTile key={item.id} item={item} onOpen={() => onOpenExhibit(item.id)} />
                 ))}
               </div>
             </div>
           )}
 
-          {group.views.length > 0 && (
+          {group.enquiries.length > 0 && (
             <div>
               <h4 className="font-mono text-[11px] tracking-[0.1em] uppercase text-[#A6764A] mb-2 mt-0">Enquiries</h4>
-              {group.views.map((view) => (
+              {group.enquiries.map((enquiry) => (
                 <EnquiryCard
-                  key={view.action.id}
-                  view={view}
-                  completedActionIds={completedActionIds}
-                  doneWeek={completedWeeks.get(view.action.id) ?? null}
+                  key={enquiry.id}
+                  enquiry={enquiry}
+                  doneWeek={completedWeeks.get(enquiry.id) ?? null}
                   week={week}
-                  canAfford={remaining >= view.action.cost && !pending}
-                  canAffordFromReserve={reservePoints >= view.action.cost && !pending}
-                  justTaken={justTakenId === view.action.id}
+                  canAfford={remaining >= enquiry.cost && !pending}
+                  canAffordFromReserve={reservePoints >= enquiry.cost && !pending}
+                  justTaken={justTakenId === enquiry.id}
                   onTake={onTake}
                   onOpenExhibit={onOpenExhibit}
                 />
